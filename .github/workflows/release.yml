@@ -41,12 +41,12 @@ jobs:
           cp package.json release/
           cp README.md release/
           cp LICENSE release/ || true
-          cd release && zip -r ../instantcms-mcp-${{ github.event.release.tag_name }}.zip .
+          cd release && zip -r ../instantcms-mcp-${{ github.ref_name }}.zip .
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: instantcms-mcp-${{ github.event.release.tag_name }}.zip
+          files: instantcms-mcp-${{ github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

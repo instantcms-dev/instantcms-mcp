@@ -80,9 +80,10 @@ npm run check
 ```text
 src/
 ├── data/                    # runtime-справочники
+├── registry/                # тематические регистрации tools/resources и Zod-схемы
 ├── tools/                   # domain-функции MCP
 ├── utils/serialization.ts   # безопасная сериализация форматов
-├── server.ts                # схемы, tools и resources
+├── server.ts                # composition root MCP-сервера
 └── index.ts                 # stdio entrypoint
 knowledge/                   # provenance и будущий источник данных
 skills/                      # переносимые AI-workflows
@@ -98,7 +99,9 @@ CLAUDE.md                    # тонкий адаптер Claude
 
 GitHub `main` является единственным источником истины. Работайте только из Git clone и начинайте изменения с `git pull --ff-only`. Команда `npm run check` проверяет TypeScript, тесты и наличие AI-адаптеров. GitHub Actions повторяет typecheck, тесты, coverage и build для каждого push и pull request.
 
-`npm run knowledge:update` обновляет runtime-карты из исходников InstantCMS. Путь задаётся через `INSTANTCMS_SOURCE=/path/to/instantcms`; `npm run knowledge:check` проверяет provenance-манифест и generated metadata.
+`npm run knowledge:update -- --ref latest` загружает последний стабильный тег из официального репозитория `instantsoft/icms2`, обновляет runtime-карты и фиксирует точный commit SHA. Для проверки ветки разработки используйте `npm run knowledge:update -- --ref master`, а для просмотра доступного обновления без генерации — `npm run knowledge:source:status -- --ref latest`.
+
+Исходники кэшируются в `.cache/icms2`. Сетевой доступ нужен только во время обновления; MCP и npm-пакет используют проверенный snapshot автономно. `npm run knowledge:check` проверяет provenance-манифест и generated metadata.
 
 Не синхронизируйте проект копированием поверх clone с удалением отсутствующих файлов. База GitHub содержит расширенные инструменты, которых может не быть в старых локальных копиях.
 

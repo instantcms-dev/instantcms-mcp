@@ -5,6 +5,8 @@
 - Added modular meta-tool registry, structured MCP results, cursor pagination and InstantCMS version profiles.
 - Added real XML, INI and YAML parsing, safe in-memory ZIP build/inspection and artifact diagnostics.
 - Added a provenance-validated knowledge pipeline and configurable InstantCMS source parsers.
+- Added reproducible synchronization with the official `instantsoft/icms2` repository, weekly update PRs, stable/master compatibility checks, and a pinned upstream commit.
+- Split all MCP registrations into thematic registry modules and made ESLint warnings fail CI.
 - Added MCP integration tests, expanded cross-client evals, Node 18–24 CI matrix and Dependabot.
 - Replaced the vulnerable legacy ESLint/release toolchain; npm audit now reports zero vulnerabilities.
 - Removed generated coverage artifacts from version control.

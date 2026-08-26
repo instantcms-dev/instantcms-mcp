@@ -28,7 +28,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "deleteItem",
       "namespace": "icms\\controllers\\actions",
-      "filePath": "/source/system/traits/controllers/actions/deleteItem.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/actions/deleteItem.php",
       "methods": [
         {
           "name": "run",
@@ -42,7 +42,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "formFieldItem",
       "namespace": "icms\\controllers\\actions",
-      "filePath": "/source/system/traits/controllers/actions/formFieldItem.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/actions/formFieldItem.php",
       "methods": [
         {
           "name": "run",
@@ -58,7 +58,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "formItem",
       "namespace": "icms\\controllers\\actions",
-      "filePath": "/source/system/traits/controllers/actions/formItem.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/actions/formItem.php",
       "methods": [
         {
           "name": "run",
@@ -78,7 +78,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "listgrid",
       "namespace": "icms\\controllers\\actions",
-      "filePath": "/source/system/traits/controllers/actions/listgrid.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/actions/listgrid.php",
       "methods": [
         {
           "name": "prepareRun",
@@ -141,7 +141,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "fieldable",
       "namespace": "icms\\controllers\\models",
-      "filePath": "/source/system/traits/controllers/models/fieldable.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/models/fieldable.php",
       "methods": [
         {
           "name": "getDefaultContentFieldOptions",
@@ -321,7 +321,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "transactable",
       "namespace": "icms\\controllers\\models",
-      "filePath": "/source/system/traits/controllers/models/transactable.php",
+      "filePath": "/.cache/icms2/system/traits/controllers/models/transactable.php",
       "methods": [
         {
           "name": "processTransaction",
@@ -370,7 +370,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "corePropertyLoadable",
       "namespace": "icms",
-      "filePath": "/source/system/traits/corePropertyLoadable.php",
+      "filePath": "/.cache/icms2/system/traits/corePropertyLoadable.php",
       "methods": [
         {
           "name": "callIfExists",
@@ -428,7 +428,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "eventDispatcher",
       "namespace": "icms",
-      "filePath": "/source/system/traits/eventDispatcher.php",
+      "filePath": "/.cache/icms2/system/traits/eventDispatcher.php",
       "methods": [
         {
           "name": "dispatchEvent",
@@ -451,7 +451,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "oneable",
       "namespace": "icms",
-      "filePath": "/source/system/traits/oneable.php",
+      "filePath": "/.cache/icms2/system/traits/oneable.php",
       "methods": [
         {
           "name": "getOnce",
@@ -480,7 +480,7 @@ export const traitsMap: TraitsMap = {
     {
       "name": "fieldsParseable",
       "namespace": "icms\\services",
-      "filePath": "/source/system/traits/services/fieldsParseable.php",
+      "filePath": "/.cache/icms2/system/traits/services/fieldsParseable.php",
       "methods": [
         {
           "name": "parseContentFields",
@@ -516,7 +516,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "deleteItem",
         "namespace": "icms\\controllers\\actions",
-        "filePath": "/source/system/traits/controllers/actions/deleteItem.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/actions/deleteItem.php",
         "methods": [
           {
             "name": "run",
@@ -530,7 +530,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "formFieldItem",
         "namespace": "icms\\controllers\\actions",
-        "filePath": "/source/system/traits/controllers/actions/formFieldItem.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/actions/formFieldItem.php",
         "methods": [
           {
             "name": "run",
@@ -546,7 +546,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "formItem",
         "namespace": "icms\\controllers\\actions",
-        "filePath": "/source/system/traits/controllers/actions/formItem.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/actions/formItem.php",
         "methods": [
           {
             "name": "run",
@@ -566,7 +566,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "listgrid",
         "namespace": "icms\\controllers\\actions",
-        "filePath": "/source/system/traits/controllers/actions/listgrid.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/actions/listgrid.php",
         "methods": [
           {
             "name": "prepareRun",
@@ -631,7 +631,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "fieldable",
         "namespace": "icms\\controllers\\models",
-        "filePath": "/source/system/traits/controllers/models/fieldable.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/models/fieldable.php",
         "methods": [
           {
             "name": "getDefaultContentFieldOptions",
@@ -811,7 +811,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "transactable",
         "namespace": "icms\\controllers\\models",
-        "filePath": "/source/system/traits/controllers/models/transactable.php",
+        "filePath": "/.cache/icms2/system/traits/controllers/models/transactable.php",
         "methods": [
           {
             "name": "processTransaction",
@@ -862,7 +862,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "corePropertyLoadable",
         "namespace": "icms",
-        "filePath": "/source/system/traits/corePropertyLoadable.php",
+        "filePath": "/.cache/icms2/system/traits/corePropertyLoadable.php",
         "methods": [
           {
             "name": "callIfExists",
@@ -920,7 +920,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "eventDispatcher",
         "namespace": "icms",
-        "filePath": "/source/system/traits/eventDispatcher.php",
+        "filePath": "/.cache/icms2/system/traits/eventDispatcher.php",
         "methods": [
           {
             "name": "dispatchEvent",
@@ -943,7 +943,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "oneable",
         "namespace": "icms",
-        "filePath": "/source/system/traits/oneable.php",
+        "filePath": "/.cache/icms2/system/traits/oneable.php",
         "methods": [
           {
             "name": "getOnce",
@@ -974,7 +974,7 @@ export const traitsMap: TraitsMap = {
       {
         "name": "fieldsParseable",
         "namespace": "icms\\services",
-        "filePath": "/source/system/traits/services/fieldsParseable.php",
+        "filePath": "/.cache/icms2/system/traits/services/fieldsParseable.php",
         "methods": [
           {
             "name": "parseContentFields",
@@ -1007,7 +1007,7 @@ export const traitsMap: TraitsMap = {
     ]
   },
   "methodCount": 56,
-  "generatedAt": "2026-03-21T13:33:13.046Z"
+  "generatedAt": "2026-06-04T12:03:09+03:00"
 };
 
 export function getTrait(name: string): TraitInfo | undefined {

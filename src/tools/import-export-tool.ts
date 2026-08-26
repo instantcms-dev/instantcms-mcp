@@ -9,7 +9,7 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * Available field types for import/export
  */
-const FieldTypeEnum = z.enum([
+export const FieldTypeEnum = z.enum([
   'string',
   'text',
   'number',

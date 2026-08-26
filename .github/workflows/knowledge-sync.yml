@@ -1,0 +1,38 @@
+name: Sync InstantCMS knowledge
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: InstantCMS tag or branch
+        required: false
+        default: latest
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Update generated knowledge
+        run: npm run knowledge:update -- --ref "${{ inputs.ref || 'latest' }}"
+      - run: npm run check
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/instantcms-knowledge
+          delete-branch: true
+          commit-message: 'chore: sync InstantCMS knowledge'
+          title: 'chore: sync InstantCMS knowledge'
+          body: |
+            Automated refresh from the official `instantsoft/icms2` repository.
+            The pinned ref and commit are recorded in `knowledge/upstream.json`.

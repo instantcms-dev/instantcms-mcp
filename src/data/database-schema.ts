@@ -643,7 +643,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_content_relations_bind",
-      "comment": "Связи типов контента",
       "fields": [
         {
           "name": "id",
@@ -1026,7 +1025,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages",
-      "comment": "Страницы типов контента",
       "fields": [
         {
           "name": "id",
@@ -1278,7 +1276,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_cats",
-      "comment": "Категории типов контента",
       "fields": [
         {
           "name": "id",
@@ -1431,7 +1428,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_cats_bind",
-      "comment": "Привязка контента к категориям",
       "fields": [
         {
           "name": "item_id",
@@ -1463,7 +1459,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_fields",
-      "comment": "Дополнительные поля для типов контента",
       "fields": [
         {
           "name": "id",
@@ -1610,7 +1605,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_props",
-      "comment": "Свойства типов контента",
       "fields": [
         {
           "name": "id",
@@ -1670,7 +1664,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_props_bind",
-      "comment": "Привязка свойств к типам контента",
       "fields": [
         {
           "name": "id",
@@ -1721,7 +1714,6 @@ export const databaseSchema: DatabaseSchema = {
     },
     {
       "name": "cms_con_pages_props_values",
-      "comment": "Значения свойств контента",
       "fields": [
         {
           "name": "prop_id",
@@ -4578,7 +4570,7 @@ export const databaseSchema: DatabaseSchema = {
     }
   ],
   "tableCount": 50,
-  "generatedAt": "2026-03-21T13:33:02.438Z",
+  "generatedAt": "2026-06-04T12:03:09+03:00",
   "sourceFile": "base.sql"
 };
 

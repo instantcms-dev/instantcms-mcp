@@ -2,8 +2,12 @@
 export const knowledgeCatalog = {
   "schema_version": 1,
   "instantcms": {
-    "tested_version": "2.18.1",
+    "tested_version": "2.18.2",
     "minimum_version": "2.16"
+  },
+  "upstream": {
+    "repository": "https://github.com/instantsoft/icms2.git",
+    "state_file": "knowledge/upstream.json"
   },
   "sources": [
     {
@@ -24,6 +28,55 @@ export const knowledgeCatalog = {
       "id": "runtime-schemas",
       "runtime_file": "src/data/schemas.ts",
       "domain": "schemas",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-database",
+      "runtime_file": "src/data/database-schema.ts",
+      "domain": "database",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-events",
+      "runtime_file": "src/data/events-map.ts",
+      "domain": "events",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-controllers",
+      "runtime_file": "src/data/controllers-map.ts",
+      "domain": "controllers",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-widgets",
+      "runtime_file": "src/data/widgets-map.ts",
+      "domain": "widgets",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-traits",
+      "runtime_file": "src/data/traits-map.ts",
+      "domain": "traits",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-fields",
+      "runtime_file": "src/data/fields-map.ts",
+      "domain": "fields",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-core-api",
+      "runtime_file": "src/data/core-api.ts",
+      "domain": "core",
       "confidence": "verified",
       "verified_at": "2026-08-26"
     }

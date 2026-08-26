@@ -1,8 +1,8 @@
 instantcms:
   major_version: 2
-  tested_version: "2.18.1"
+  tested_version: '2.18.2'
 knowledge:
-  verified_at: "2026-08-26"
+  verified_at: '2026-08-26'
   default_confidence: legacy
   runtime_location: src/data
   target_location: knowledge

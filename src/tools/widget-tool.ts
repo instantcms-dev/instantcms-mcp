@@ -9,7 +9,14 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * Widget option field types
  */
-const WidgetFieldTypeEnum = z.enum(['text', 'number', 'select', 'checkbox', 'textarea', 'image']);
+export const WidgetFieldTypeEnum = z.enum([
+  'text',
+  'number',
+  'select',
+  'checkbox',
+  'textarea',
+  'image',
+]);
 
 type WidgetFieldType = z.infer<typeof WidgetFieldTypeEnum>;
 

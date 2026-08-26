@@ -9,7 +9,7 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * Available permission types in InstantCMS
  */
-const PermissionTypeEnum = z.enum([
+export const PermissionTypeEnum = z.enum([
   'view',
   'add',
   'edit',
@@ -49,7 +49,7 @@ const PERMISSION_RULES: PermissionRule[] = [
 /**
  * Zod schema for permission tool input validation
  */
-const permissionSchema = z.object({
+export const permissionSchema = z.object({
   /** System name (lowercase, snake_case) */
   name: z
     .string()

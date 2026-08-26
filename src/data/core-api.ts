@@ -1,5 +1,5 @@
 // Auto-generated from system/core/*.php
-// Generated at: 2026-03-21T15:50:07.594Z
+// Generated at: 2026-06-04T12:03:09+03:00
 
 export interface CoreClass {
   name: string;
@@ -14,7 +14,7 @@ export interface CoreClass {
 export const coreClasses: CoreClass[] = [
   {
     name: "cmsAction",
-    description: "Базовый класс экшенов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+    description: "Базовый класс экшенов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
     file: "action.php",
     methods: 3,
     properties: 0,
@@ -31,7 +31,7 @@ export const coreClasses: CoreClass[] = [
   {
     name: "cmsBackend",
     extends: "cmsController",
-    description: "@property \cmsModel $model",
+    description: "@property \\cmsModel $model",
     file: "backend.php",
     methods: 8,
     properties: 0,
@@ -96,7 +96,7 @@ export const coreClasses: CoreClass[] = [
   },
   {
     name: "cmsController",
-    description: "Основной класс всех контроллеров * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+    description: "Основной класс всех контроллеров * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
     file: "controller.php",
     methods: 46,
     properties: 0,
@@ -179,9 +179,9 @@ export const coreClasses: CoreClass[] = [
     name: "cmsInstaller",
     description: "Установщик дополнений InstantCMS",
     file: "installer.php",
-    methods: 31,
+    methods: 33,
     properties: 0,
-    constants: 0,
+    constants: 1,
   },
   {
     name: "cmsIp",
@@ -193,7 +193,7 @@ export const coreClasses: CoreClass[] = [
   },
   {
     name: "cmsMailer",
-    description: "Возвращает объект PHPMailer @return \PHPMailer",
+    description: "Возвращает объект PHPMailer @return \\PHPMailer",
     file: "mailer.php",
     methods: 15,
     properties: 0,
@@ -210,7 +210,7 @@ export const coreClasses: CoreClass[] = [
   },
   {
     name: "cmsModel",
-    description: "Объект базы данных @var \cmsDatabase",
+    description: "Объект базы данных @var \\cmsDatabase",
     file: "model.php",
     methods: 62,
     properties: 0,
@@ -297,6 +297,14 @@ export const coreClasses: CoreClass[] = [
     constants: 0,
   },
   {
+    name: "cmsUploadremote",
+    description: "URL для скачивания * @var string",
+    file: "uploadremote.php",
+    methods: 8,
+    properties: 0,
+    constants: 1,
+  },
+  {
     name: "cmsUser",
     description: "@var cmsUser",
     file: "user.php",
@@ -306,7 +314,7 @@ export const coreClasses: CoreClass[] = [
   },
   {
     name: "cmsWidget",
-    description: "Основной класс всех виджетов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user",
+    description: "Основной класс всех виджетов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user",
     file: "widget.php",
     methods: 12,
     properties: 0,
@@ -327,15 +335,15 @@ export const coreAPIMap = {
     name: "cmsAction",
     extends: undefined,
     file: "action.php",
-    description: "Базовый класс экшенов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+    description: "Базовый класс экшенов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
     methods: [
       {
         name: "__construct",
         visibility: "public",
         signature: "function __construct(cmsController $controller, $params = []): void",
         returnType: "void",
-        params: [{name: "controller", type: "cmsController"}, {name: "params = []", type: "mixed"}],
-        description: "Базовый класс экшенов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+        params: [{"name":"controller","type":"cmsController","description":""},{"name":"params = []","type":"mixed","description":""}],
+        description: "Базовый класс экшенов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
       },
       {
         name: "before",
@@ -386,7 +394,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function register(string $namespace, string $directory): void",
         returnType: "void",
-        params: [{name: "namespace", type: "string"}, {name: "directory", type: "string"}],
+        params: [{"name":"namespace","type":"string","description":""},{"name":"directory","type":"string","description":""}],
         description: "",
       },
       {
@@ -394,7 +402,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function registerList(array $list): void",
         returnType: "void",
-        params: [{name: "list", type: "array"}],
+        params: [{"name":"list","type":"array","description":""}],
         description: "",
       },
       {
@@ -402,7 +410,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function load(string $class): bool",
         returnType: "bool",
-        params: [{name: "class", type: "string"}],
+        params: [{"name":"class","type":"string","description":""}],
         description: "",
       },
       {
@@ -410,7 +418,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function loadCoreClass(string $_class_name): bool",
         returnType: "bool",
-        params: [{name: "_class_name", type: "string"}],
+        params: [{"name":"_class_name","type":"string","description":""}],
         description: "",
       },
       {
@@ -418,7 +426,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function includeFile($rel_path, $throw = false): bool",
         returnType: "bool",
-        params: [{name: "rel_path", type: "mixed"}, {name: "throw = false", type: "mixed"}],
+        params: [{"name":"rel_path","type":"mixed","description":""},{"name":"throw = false","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -431,22 +439,22 @@ export const coreAPIMap = {
     name: "cmsBackend",
     extends: "cmsController",
     file: "backend.php",
-    description: "@property \cmsModel $model",
+    description: "@property \\cmsModel $model",
     methods: [
       {
         name: "__construct",
         visibility: "public",
         signature: "function __construct(cmsRequest $request): void",
         returnType: "void",
-        params: [{name: "request", type: "cmsRequest"}],
-        description: "@property \cmsModel $model",
+        params: [{"name":"request","type":"cmsRequest","description":""}],
+        description: "@property \\cmsModel $model",
       },
       {
         name: "actionToggleItem",
         visibility: "public",
         signature: "function actionToggleItem($item_id = 0, $table = '', $field = 'is_pub', $zero_as_null = false, $flag_on = null): void",
         returnType: "void",
-        params: [{name: "item_id = 0", type: "mixed"}, {name: "table = ''", type: "mixed"}, {name: "field = 'is_pub'", type: "mixed"}, {name: "zero_as_null = false", type: "mixed"}, {name: "flag_on = null", type: "mixed"}],
+        params: [{"name":"item_id = 0","type":"mixed","description":""},{"name":"table = ''","type":"mixed","description":""},{"name":"field = 'is_pub'","type":"mixed","description":""},{"name":"zero_as_null = false","type":"mixed","description":""},{"name":"flag_on = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -462,7 +470,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function actionPerms($subject = ''): string",
         returnType: "string",
-        params: [{name: "subject = ''", type: "mixed"}],
+        params: [{"name":"subject = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -470,7 +478,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function actionPermsSave($subject = ''): redirect",
         returnType: "redirect",
-        params: [{name: "subject = ''", type: "mixed"}],
+        params: [{"name":"subject = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -520,9 +528,9 @@ export const coreAPIMap = {
       {
         name: "getCacher",
         visibility: "static",
-        signature: "function getCacher(cmsConfigs $config): \cmsCache",
-        returnType: "\cmsCache",
-        params: [{name: "config", type: "cmsConfigs"}],
+        signature: "function getCacher(cmsConfigs $config): \\cmsCache",
+        returnType: "\\cmsCache",
+        params: [{"name":"config","type":"cmsConfigs","description":""}],
         description: "",
       },
       {
@@ -654,7 +662,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setData(array $data): bool",
         returnType: "bool",
-        params: [{name: "data", type: "array"}],
+        params: [{"name":"data","type":"array","description":""}],
         description: "",
       },
       {
@@ -691,7 +699,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($cfg_file): void",
         returnType: "void",
-        params: [{name: "cfg_file", type: "mixed"}],
+        params: [{"name":"cfg_file","type":"mixed","description":""}],
         description: "Класс для работы с конфигурациями из директории константы ICMS_CONFIG_DIR",
       },
       {
@@ -739,7 +747,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function set($key, $value): $this",
         returnType: "$this",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -747,7 +755,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isChangedKey($key): boolean",
         returnType: "boolean",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -755,7 +763,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isDynamicKey($key): boolean",
         returnType: "boolean",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -771,7 +779,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setData(array $data): $this",
         returnType: "$this",
-        params: [{name: "data", type: "array"}],
+        params: [{"name":"data","type":"array","description":""}],
         description: "",
       },
       {
@@ -779,7 +787,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getConfig($key = null): mixed",
         returnType: "mixed",
-        params: [{name: "key = null", type: "mixed"}],
+        params: [{"name":"key = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -787,7 +795,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function save($values): boolean",
         returnType: "boolean",
-        params: [{name: "values", type: "mixed"}],
+        params: [{"name":"values","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -795,7 +803,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function saveFileData($dump): bool",
         returnType: "bool",
-        params: [{name: "dump", type: "mixed"}],
+        params: [{"name":"dump","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -803,7 +811,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function update($key, $value): boolean",
         returnType: "boolean",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -816,15 +824,15 @@ export const coreAPIMap = {
     name: "cmsController",
     extends: undefined,
     file: "controller.php",
-    description: "Основной класс всех контроллеров * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+    description: "Основной класс всех контроллеров * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
     methods: [
       {
         name: "__construct",
         visibility: "public",
         signature: "function __construct(cmsRequest $request): void",
         returnType: "void",
-        params: [{name: "request", type: "cmsRequest"}],
-        description: "Основной класс всех контроллеров * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user @property \cmsRequest $request",
+        params: [{"name":"request","type":"cmsRequest","description":""}],
+        description: "Основной класс всех контроллеров * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user @property \\cmsRequest $request",
       },
       {
         name: "getOptions",
@@ -839,15 +847,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOption($key, $val): $this",
         returnType: "$this",
-        params: [{name: "key", type: "mixed"}, {name: "val", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"val","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "getOption",
         visibility: "public",
-        signature: "function getOption($key): mixed",
+        signature: "function getOption($key, $default = null): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"default = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -863,7 +871,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isControllerInstalled($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -879,7 +887,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isControllerEnabled($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -887,7 +895,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function enabled($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -911,7 +919,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadOptions($controller_name): array",
         returnType: "array",
-        params: [{name: "controller_name", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -919,7 +927,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function saveOptions($controller_name, $options): boolean",
         returnType: "boolean",
-        params: [{name: "controller_name", type: "mixed"}, {name: "options", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""},{"name":"options","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -927,7 +935,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function before($action_name): void",
         returnType: "void",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -935,7 +943,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function after($action_name): void",
         returnType: "void",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -943,7 +951,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function beforeHook($event_name): void",
         returnType: "void",
-        params: [{name: "event_name", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -951,7 +959,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function afterHook($event_name): void",
         returnType: "void",
-        params: [{name: "event_name", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -959,7 +967,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isActionExists($action_name): boolean",
         returnType: "boolean",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -967,7 +975,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runAction($action_name, $params = []): mixed",
         returnType: "mixed",
-        params: [{name: "action_name", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -975,7 +983,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function executeAction($action_name, $params = []): mixed",
         returnType: "mixed",
-        params: [{name: "action_name", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -983,7 +991,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function validateParamsCount($class, $method_name, $params): bool",
         returnType: "bool",
-        params: [{name: "class", type: "mixed"}, {name: "method_name", type: "mixed"}, {name: "params", type: "mixed"}],
+        params: [{"name":"class","type":"mixed","description":""},{"name":"method_name","type":"mixed","description":""},{"name":"params","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -991,7 +999,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getExternalActionPath($action_name): string",
         returnType: "string",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -999,7 +1007,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setCurrentAction($action_name): $this",
         returnType: "$this",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1007,7 +1015,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runExternalActionIfExists($action_name, $params = [], $return_result = false): mixed",
         returnType: "mixed",
-        params: [{name: "action_name", type: "mixed"}, {name: "params = []", type: "mixed"}, {name: "return_result = false", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""},{"name":"return_result = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1015,7 +1023,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runExternalAction($action_name, $params = []): mixed",
         returnType: "mixed",
-        params: [{name: "action_name", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1023,7 +1031,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function validateRequestParams($action_object): false|array",
         returnType: "false|array",
-        params: [{name: "action_object", type: "mixed"}],
+        params: [{"name":"action_object","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1031,7 +1039,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runHook($event_name, $params = [], $default = null): mixed",
         returnType: "mixed",
-        params: [{name: "event_name", type: "mixed"}, {name: "params = []", type: "mixed"}, {name: "default = null", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""},{"name":"default = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1039,7 +1047,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runExternalHook($event_name, $params = []): mixed",
         returnType: "mixed",
-        params: [{name: "event_name", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1047,23 +1055,23 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function makeForm(callable $callback): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "callback", type: "callable"}],
+        params: [{"name":"callback","type":"callable","description":""}],
         description: "",
       },
       {
         name: "getForm",
         visibility: "public",
-        signature: "function getForm($form_name, $params = false, $path_prefix = ''): \cmsForm",
-        returnType: "\cmsForm",
-        params: [{name: "form_name", type: "mixed"}, {name: "params = false", type: "mixed"}, {name: "path_prefix = ''", type: "mixed"}],
+        signature: "function getForm($form_name, $params = false, $path_prefix = ''): \\cmsForm",
+        returnType: "\\cmsForm",
+        params: [{"name":"form_name","type":"mixed","description":""},{"name":"params = false","type":"mixed","description":""},{"name":"path_prefix = ''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "getControllerForm",
         visibility: "public",
-        signature: "function getControllerForm($controller_name, $form_name, $params = false, $path_prefix = ''): \cmsForm",
-        returnType: "\cmsForm",
-        params: [{name: "controller_name", type: "mixed"}, {name: "form_name", type: "mixed"}, {name: "params = false", type: "mixed"}, {name: "path_prefix = ''", type: "mixed"}],
+        signature: "function getControllerForm($controller_name, $form_name, $params = false, $path_prefix = ''): \\cmsForm",
+        returnType: "\\cmsForm",
+        params: [{"name":"controller_name","type":"mixed","description":""},{"name":"form_name","type":"mixed","description":""},{"name":"params = false","type":"mixed","description":""},{"name":"path_prefix = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1071,7 +1079,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function loadDataGrid($grid_name, $params = null, $ups_key = ''): cmsGrid",
         returnType: "cmsGrid",
-        params: [{name: "grid_name", type: "mixed"}, {name: "params = null", type: "mixed"}, {name: "ups_key = ''", type: "mixed"}],
+        params: [{"name":"grid_name","type":"mixed","description":""},{"name":"params = null","type":"mixed","description":""},{"name":"ups_key = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1087,7 +1095,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function routeAction($action_name): string",
         returnType: "string",
-        params: [{name: "action_name", type: "mixed"}],
+        params: [{"name":"action_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1095,7 +1103,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parseRoute($uri): string|false",
         returnType: "string|false",
-        params: [{name: "uri", type: "mixed"}],
+        params: [{"name":"uri","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1103,7 +1111,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function redirect($url, $code = 303): void",
         returnType: "void",
-        params: [{name: "url", type: "mixed"}, {name: "code = 303", type: "mixed"}],
+        params: [{"name":"url","type":"mixed","description":""},{"name":"code = 303","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1111,7 +1119,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function redirectToLogin(string $back_url = ''): void",
         returnType: "void",
-        params: [{name: "back_url = ''", type: "string"}],
+        params: [{"name":"back_url = ''","type":"string","description":""}],
         description: "",
       },
       {
@@ -1127,7 +1135,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function redirectTo($controller, $action = '', $params = [], $query = [], $code = 303): void",
         returnType: "void",
-        params: [{name: "controller", type: "mixed"}, {name: "action = ''", type: "mixed"}, {name: "params = []", type: "mixed"}, {name: "query = []", type: "mixed"}, {name: "code = 303", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"action = ''","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""},{"name":"query = []","type":"mixed","description":""},{"name":"code = 303","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1135,7 +1143,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function redirectToAction($action = '', $params = [], $query = []): void",
         returnType: "void",
-        params: [{name: "action = ''", type: "mixed"}, {name: "params = []", type: "mixed"}, {name: "query = []", type: "mixed"}],
+        params: [{"name":"action = ''","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""},{"name":"query = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1151,7 +1159,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRequestBackUrl($default = ''): string",
         returnType: "string",
-        params: [{name: "default = ''", type: "mixed"}],
+        params: [{"name":"default = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1175,7 +1183,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function validate_minfloat($min, $value): boolean",
         returnType: "boolean",
-        params: [{name: "min", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"min","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1183,7 +1191,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function validate_maxfloat($max, $value): boolean",
         returnType: "boolean",
-        params: [{name: "max", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"max","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -1211,7 +1219,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runHttp($request_uri): void",
         returnType: "void",
-        params: [{name: "request_uri", type: "mixed"}],
+        params: [{"name":"request_uri","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1219,7 +1227,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getVersion($show_date = false): string",
         returnType: "string",
-        params: [{name: "show_date = false", type: "mixed"}],
+        params: [{"name":"show_date = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1235,7 +1243,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function isWritable($path, $is_force_mkdir = true): boolean",
         returnType: "boolean",
-        params: [{name: "path", type: "mixed"}, {name: "is_force_mkdir = true", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"is_force_mkdir = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1243,7 +1251,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function includeFile($file): mixed",
         returnType: "mixed",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1251,7 +1259,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function requireFile($file): mixed",
         returnType: "mixed",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1259,7 +1267,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function includeAndCall($file, $function_name, $params = []): mixed",
         returnType: "mixed",
-        params: [{name: "file", type: "mixed"}, {name: "function_name", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"function_name","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1267,7 +1275,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadLib($library, $class = false): void",
         returnType: "void",
-        params: [{name: "library", type: "mixed"}, {name: "class = false", type: "mixed"}],
+        params: [{"name":"library","type":"mixed","description":""},{"name":"class = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1275,7 +1283,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function isModelExists($controller): bool",
         returnType: "bool",
-        params: [{name: "controller", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1283,7 +1291,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getModel($controller, $delimitter = '_', $display_error = true): ?cmsModel",
         returnType: "?cmsModel",
-        params: [{name: "controller", type: "mixed"}, {name: "delimitter = '_'", type: "mixed"}, {name: "display_error = true", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"delimitter = '_'","type":"mixed","description":""},{"name":"display_error = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1291,7 +1299,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function includeModel($controllers, $quiet = false): void",
         returnType: "void",
-        params: [{name: "controllers", type: "mixed"}, {name: "quiet = false", type: "mixed"}],
+        params: [{"name":"controllers","type":"mixed","description":""},{"name":"quiet = false","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -1300,7 +1308,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function isControllerExists($controller_name): bool",
         returnType: "bool",
-        params: [{name: "controller_name", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1308,7 +1316,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getController($controller_name, $request = null, $display_error = true): void|cmsController",
         returnType: "void|cmsController",
-        params: [{name: "controller_name", type: "mixed"}, {name: "request = null", type: "mixed"}, {name: "display_error = true", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""},{"name":"display_error = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1316,7 +1324,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getControllerInstance($controller_name, $request = null): cmsController",
         returnType: "cmsController",
-        params: [{name: "controller_name", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1324,7 +1332,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getControllerNameByAlias($controller_alias): string|false",
         returnType: "string|false",
-        params: [{name: "controller_alias", type: "mixed"}],
+        params: [{"name":"controller_alias","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1332,7 +1340,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getControllerAliasByName($controller_name): bool|string",
         returnType: "bool|string",
-        params: [{name: "controller_name", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1340,7 +1348,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getControllersEvents($is_enabled = true): array",
         returnType: "array",
-        params: [{name: "is_enabled = true", type: "mixed"}],
+        params: [{"name":"is_enabled = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1380,7 +1388,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function changeLanguage($new_lang): void",
         returnType: "void",
-        params: [{name: "new_lang", type: "mixed"}],
+        params: [{"name":"new_lang","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1388,7 +1396,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadLanguage($file = null, $default = 'ru'): boolean|array",
         returnType: "boolean|array",
-        params: [{name: "file = null", type: "mixed"}, {name: "default = 'ru'", type: "mixed"}],
+        params: [{"name":"file = null","type":"mixed","description":""},{"name":"default = 'ru'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1396,7 +1404,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getLanguageTextFile($file): string",
         returnType: "string",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1404,7 +1412,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getLanguageTextFileExistsPath($file): bool|string",
         returnType: "bool|string",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1412,7 +1420,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function isLanguageTextFileExists($file): bool",
         returnType: "bool",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1420,7 +1428,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadControllerLanguage($controller_name): boolean",
         returnType: "boolean",
-        params: [{name: "controller_name", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1428,7 +1436,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadFieldLanguage($field_name): boolean",
         returnType: "boolean",
-        params: [{name: "field_name", type: "mixed"}],
+        params: [{"name":"field_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1436,7 +1444,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadWidgetLanguage($widget_name, $controller_name = null): boolean",
         returnType: "boolean",
-        params: [{name: "widget_name", type: "mixed"}, {name: "controller_name = null", type: "mixed"}],
+        params: [{"name":"widget_name","type":"mixed","description":""},{"name":"controller_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1444,7 +1452,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loadTemplateLanguage($template_names): boolean",
         returnType: "boolean",
-        params: [{name: "template_names", type: "mixed"}],
+        params: [{"name":"template_names","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1476,7 +1484,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function route(string $uri): void",
         returnType: "void",
-        params: [{name: "uri", type: "string"}],
+        params: [{"name":"uri","type":"string","description":""}],
         description: "",
       },
       {
@@ -1506,8 +1514,8 @@ export const coreAPIMap = {
       {
         name: "loadMatchedPages",
         visibility: "public",
-        signature: "function loadMatchedPages(): \cmsCore",
-        returnType: "\cmsCore",
+        signature: "function loadMatchedPages(): \\cmsCore",
+        returnType: "\\cmsCore",
         params: [],
         description: "",
       },
@@ -1540,7 +1548,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setMatchedPages($matched_pages): $this",
         returnType: "$this",
-        params: [{name: "matched_pages", type: "mixed"}],
+        params: [{"name":"matched_pages","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1556,7 +1564,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getWidgetPath($widget_name, $controller_name = null): string",
         returnType: "string",
-        params: [{name: "widget_name", type: "mixed"}, {name: "controller_name = null", type: "mixed"}],
+        params: [{"name":"widget_name","type":"mixed","description":""},{"name":"controller_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1564,7 +1572,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getWidgetObject($widget): cmsWidget",
         returnType: "cmsWidget",
-        params: [{name: "widget", type: "mixed"}],
+        params: [{"name":"widget","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1572,7 +1580,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function runWidget($widget): cmsTemplate",
         returnType: "cmsTemplate",
-        params: [{name: "widget", type: "mixed"}],
+        params: [{"name":"widget","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1580,7 +1588,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function detectMatchedWidgetPages($pages, $uri = null): array",
         returnType: "array",
-        params: [{name: "pages", type: "mixed"}, {name: "uri = null", type: "mixed"}],
+        params: [{"name":"pages","type":"mixed","description":""},{"name":"uri = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1588,7 +1596,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function error($message, $details = ''): void",
         returnType: "void",
-        params: [{name: "message", type: "mixed"}, {name: "details = ''", type: "mixed"}],
+        params: [{"name":"message","type":"mixed","description":""},{"name":"details = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1596,7 +1604,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function errorForbidden($message = '', $show_login_link = false): void",
         returnType: "void",
-        params: [{name: "message = ''", type: "mixed"}, {name: "show_login_link = false", type: "mixed"}],
+        params: [{"name":"message = ''","type":"mixed","description":""},{"name":"show_login_link = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1620,7 +1628,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function displayError(int $http_code, string $html, $hook_name = null): void",
         returnType: "void",
-        params: [{name: "http_code", type: "int"}, {name: "html", type: "string"}, {name: "hook_name = null", type: "mixed"}],
+        params: [{"name":"http_code","type":"int","description":""},{"name":"html","type":"string","description":""},{"name":"hook_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1652,7 +1660,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getDirsList($root_dir, $asc_sort = false): array",
         returnType: "array",
-        params: [{name: "root_dir", type: "mixed"}, {name: "asc_sort = false", type: "mixed"}],
+        params: [{"name":"root_dir","type":"mixed","description":""},{"name":"asc_sort = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1660,7 +1668,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getFilesList($root_dir, $pattern = '*.*', $is_strip_ext = false, $is_include = false): array",
         returnType: "array",
-        params: [{name: "root_dir", type: "mixed"}, {name: "pattern = '*.*'", type: "mixed"}, {name: "is_strip_ext = false", type: "mixed"}, {name: "is_include = false", type: "mixed"}],
+        params: [{"name":"root_dir","type":"mixed","description":""},{"name":"pattern = '*.*'","type":"mixed","description":""},{"name":"is_strip_ext = false","type":"mixed","description":""},{"name":"is_include = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1676,7 +1684,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function __callStatic($name, $arguments): void",
         returnType: "void",
-        params: [{name: "name", type: "mixed"}, {name: "arguments", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"arguments","type":"mixed","description":""}],
         description: "В случае, если отладка отключена, не загружаем файл класса",
       },
     ],
@@ -1704,7 +1712,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOptions($options): void",
         returnType: "void",
-        params: [{name: "options", type: "mixed"}],
+        params: [{"name":"options","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1712,7 +1720,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOption($key, $value): void",
         returnType: "void",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1728,7 +1736,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setCharset($charset): boolean",
         returnType: "boolean",
-        params: [{name: "charset", type: "mixed"}],
+        params: [{"name":"charset","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1736,7 +1744,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function changeDb($db_name): boolean",
         returnType: "boolean",
-        params: [{name: "db_name", type: "mixed"}],
+        params: [{"name":"db_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1744,7 +1752,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setDbPrefix($db_prefix): boolean",
         returnType: "boolean",
-        params: [{name: "db_prefix", type: "mixed"}],
+        params: [{"name":"db_prefix","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1768,7 +1776,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function reconnect($is_force = false): boolean",
         returnType: "boolean",
-        params: [{name: "is_force = false", type: "mixed"}],
+        params: [{"name":"is_force = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1816,7 +1824,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getSqlVariableValue($value): mixed",
         returnType: "mixed",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1872,7 +1880,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function escape($string): string|array",
         returnType: "string|array",
-        params: [{name: "string", type: "mixed"}],
+        params: [{"name":"string","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1880,7 +1888,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function replacePrefix($sql): string",
         returnType: "string",
-        params: [{name: "sql", type: "mixed"}],
+        params: [{"name":"sql","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1888,7 +1896,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function query($sql, $params = false, $quiet = false): boolean",
         returnType: "boolean",
-        params: [{name: "sql", type: "mixed"}, {name: "params = false", type: "mixed"}, {name: "quiet = false", type: "mixed"}],
+        params: [{"name":"sql","type":"mixed","description":""},{"name":"params = false","type":"mixed","description":""},{"name":"quiet = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1896,7 +1904,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function prepareValue($field, $value, $array_as_json = false): string",
         returnType: "string",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}, {name: "array_as_json = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""},{"name":"array_as_json = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1904,7 +1912,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function update($table, $where, $data, $skip_check_fields = false, $array_as_json = false): boolean",
         returnType: "boolean",
-        params: [{name: "table", type: "mixed"}, {name: "where", type: "mixed"}, {name: "data", type: "mixed"}, {name: "skip_check_fields = false", type: "mixed"}, {name: "array_as_json = false", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"where","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"skip_check_fields = false","type":"mixed","description":""},{"name":"array_as_json = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1912,7 +1920,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function insert($table, $data, $skip_check_fields = false, $array_as_json = false, $ignore = false): boolean|integer",
         returnType: "boolean|integer",
-        params: [{name: "table", type: "mixed"}, {name: "data", type: "mixed"}, {name: "skip_check_fields = false", type: "mixed"}, {name: "array_as_json = false", type: "mixed"}, {name: "ignore = false", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"skip_check_fields = false","type":"mixed","description":""},{"name":"array_as_json = false","type":"mixed","description":""},{"name":"ignore = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1920,7 +1928,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function insertOrUpdate(string $table, array $data, $update_data = null, $array_as_json = false): boolean|integer",
         returnType: "boolean|integer",
-        params: [{name: "table", type: "string"}, {name: "data", type: "array"}, {name: "update_data = null", type: "mixed"}, {name: "array_as_json = false", type: "mixed"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"data","type":"array","description":""},{"name":"update_data = null","type":"mixed","description":""},{"name":"array_as_json = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1928,7 +1936,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function delete($table_name, $where): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "where", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"where","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1936,7 +1944,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRows($table_name, $where = '1', $fields = '*', $order = 'id ASC', $quiet = false): boolean|array",
         returnType: "boolean|array",
-        params: [{name: "table_name", type: "mixed"}, {name: "where = '1'", type: "mixed"}, {name: "fields = '*'", type: "mixed"}, {name: "order = 'id ASC'", type: "mixed"}, {name: "quiet = false", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"where = '1'","type":"mixed","description":""},{"name":"fields = '*'","type":"mixed","description":""},{"name":"order = 'id ASC'","type":"mixed","description":""},{"name":"quiet = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1944,7 +1952,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRow($table, $where = '1', $fields = '*', $order = ''): boolean|array",
         returnType: "boolean|array",
-        params: [{name: "table", type: "mixed"}, {name: "where = '1'", type: "mixed"}, {name: "fields = '*'", type: "mixed"}, {name: "order = ''", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"where = '1'","type":"mixed","description":""},{"name":"fields = '*'","type":"mixed","description":""},{"name":"order = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1952,7 +1960,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getField($table, $where, $field, $order = ''): mixed",
         returnType: "mixed",
-        params: [{name: "table", type: "mixed"}, {name: "where", type: "mixed"}, {name: "field", type: "mixed"}, {name: "order = ''", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"where","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"order = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1960,7 +1968,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRowsCount($table, $where = '1', $limit = false): boolean|integer",
         returnType: "boolean|integer",
-        params: [{name: "table", type: "mixed"}, {name: "where = '1'", type: "mixed"}, {name: "limit = false", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"where = '1'","type":"mixed","description":""},{"name":"limit = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1968,7 +1976,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function reorderNS($table): void",
         returnType: "void",
-        params: [{name: "table", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1976,7 +1984,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function createCategoriesTable($table_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1984,7 +1992,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTableFields($table_name, $use_cache = true): array",
         returnType: "array",
-        params: [{name: "table_name", type: "mixed"}, {name: "use_cache = true", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"use_cache = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -1992,7 +2000,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTableFieldsTypes($table_name): array",
         returnType: "array",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2000,7 +2008,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renameTable($table_name_from, $table_name_to, $overwrite = false): boolean",
         returnType: "boolean",
-        params: [{name: "table_name_from", type: "mixed"}, {name: "table_name_to", type: "mixed"}, {name: "overwrite = false", type: "mixed"}],
+        params: [{"name":"table_name_from","type":"mixed","description":""},{"name":"table_name_to","type":"mixed","description":""},{"name":"overwrite = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2008,7 +2016,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function dropTable($table_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2016,7 +2024,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function truncateTable($table_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2024,7 +2032,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isTableExists($table_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2032,7 +2040,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function dropTableField($table_name, $field_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "field_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2040,7 +2048,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTableField($table_name, $field_name, $sql): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "sql", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"sql","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2048,7 +2056,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isFieldUnique($table_name, $field_name, $value, $exclude_row_id = false): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "value", type: "mixed"}, {name: "exclude_row_id = false", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""},{"name":"exclude_row_id = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2056,7 +2064,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isFieldExists($table_name, $field_name, $use_cache = true): bool",
         returnType: "bool",
-        params: [{name: "table_name", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "use_cache = true", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"use_cache = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2064,7 +2072,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getIndex(string $table, string $index_name): array|boolean",
         returnType: "array|boolean",
-        params: [{name: "table", type: "string"}, {name: "index_name", type: "string"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"index_name","type":"string","description":""}],
         description: "",
       },
       {
@@ -2072,7 +2080,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTableIndexes(string $table, $index_type = null): array",
         returnType: "array",
-        params: [{name: "table", type: "string"}, {name: "index_type = null", type: "mixed"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"index_type = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2080,7 +2088,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isIndexExists(string $table, string $index_name): boolean",
         returnType: "boolean",
-        params: [{name: "table", type: "string"}, {name: "index_name", type: "string"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"index_name","type":"string","description":""}],
         description: "",
       },
       {
@@ -2088,7 +2096,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function dropIndex(string $table, string $index_name): boolean",
         returnType: "boolean",
-        params: [{name: "table", type: "string"}, {name: "index_name", type: "string"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"index_name","type":"string","description":""}],
         description: "",
       },
       {
@@ -2096,7 +2104,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function dropFieldFromIndex(string $table, string $field_name, $index_type = null): void",
         returnType: "void",
-        params: [{name: "table", type: "string"}, {name: "field_name", type: "string"}, {name: "index_type = null", type: "mixed"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"field_name","type":"string","description":""},{"name":"index_type = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2104,7 +2112,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addIndex(string $table, $fields, $index_name = '', $index_type = 'INDEX', $force = false): bool",
         returnType: "bool",
-        params: [{name: "table", type: "string"}, {name: "fields", type: "mixed"}, {name: "index_name = ''", type: "mixed"}, {name: "index_type = 'INDEX'", type: "mixed"}, {name: "force = false", type: "mixed"}],
+        params: [{"name":"table","type":"string","description":""},{"name":"fields","type":"mixed","description":""},{"name":"index_name = ''","type":"mixed","description":""},{"name":"index_type = 'INDEX'","type":"mixed","description":""},{"name":"force = false","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -2123,7 +2131,7 @@ export const coreAPIMap = {
     properties: [
     ],
     constants: [
-      { name: "DECIMALS", value: "5" },
+      {"name":"DECIMALS","value":"5","description":""},
     ],
   },
   cmsEventsManager: {
@@ -2137,7 +2145,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function hook($event_name, $data = false, $default_return = null, $_request = null): void",
         returnType: "void",
-        params: [{name: "event_name", type: "mixed"}, {name: "data = false", type: "mixed"}, {name: "default_return = null", type: "mixed"}, {name: "_request = null", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""},{"name":"data = false","type":"mixed","description":""},{"name":"default_return = null","type":"mixed","description":""},{"name":"_request = null","type":"mixed","description":""}],
         description: "Класс управления событиями @doc https://docs.instantcms.ru/dev/controllers/hooks",
       },
       {
@@ -2145,7 +2153,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function hookAll($event_name, $data = false, $default_return = null, $_request = null): array",
         returnType: "array",
-        params: [{name: "event_name", type: "mixed"}, {name: "data = false", type: "mixed"}, {name: "default_return = null", type: "mixed"}, {name: "_request = null", type: "mixed"}],
+        params: [{"name":"event_name","type":"mixed","description":""},{"name":"data = false","type":"mixed","description":""},{"name":"default_return = null","type":"mixed","description":""},{"name":"_request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2153,7 +2161,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function runHook($listener, $event_name, $data = false, $request = null, $debug_type = 'hook'): mixed",
         returnType: "mixed",
-        params: [{name: "listener", type: "mixed"}, {name: "event_name", type: "mixed"}, {name: "data = false", type: "mixed"}, {name: "request = null", type: "mixed"}, {name: "debug_type = 'hook'", type: "mixed"}],
+        params: [{"name":"listener","type":"mixed","description":""},{"name":"event_name","type":"mixed","description":""},{"name":"data = false","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""},{"name":"debug_type = 'hook'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2161,7 +2169,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getEventListeners(string $event_name): array",
         returnType: "array",
-        params: [{name: "event_name", type: "string"}],
+        params: [{"name":"event_name","type":"string","description":""}],
         description: "",
       },
       {
@@ -2205,7 +2213,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setParams($params = []): void",
         returnType: "void",
-        params: [{name: "params = []", type: "mixed"}],
+        params: [{"name":"params = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2219,9 +2227,9 @@ export const coreAPIMap = {
       {
         name: "setData",
         visibility: "public",
-        signature: "function setData($key, $value): \cmsForm",
-        returnType: "\cmsForm",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        signature: "function setData($key, $value): \\cmsForm",
+        returnType: "\\cmsForm",
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2229,15 +2237,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getData($key): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setContext",
         visibility: "public",
-        signature: "function setContext($controller_obj): \cmsForm",
-        returnType: "\cmsForm",
-        params: [{name: "controller_obj", type: "mixed"}],
+        signature: "function setContext($controller_obj): \\cmsForm",
+        returnType: "\\cmsForm",
+        params: [{"name":"controller_obj","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2253,15 +2261,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function mergeForm(cmsForm $form): void",
         returnType: "void",
-        params: [{name: "form", type: "cmsForm"}],
+        params: [{"name":"form","type":"cmsForm","description":""}],
         description: "",
       },
       {
         name: "setStructure",
         visibility: "public",
-        signature: "function setStructure($structure = []): \cmsForm",
-        returnType: "\cmsForm",
-        params: [{name: "structure = []", type: "mixed"}],
+        signature: "function setStructure($structure = []): \\cmsForm",
+        returnType: "\\cmsForm",
+        params: [{"name":"structure = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2277,7 +2285,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getFormStructure($item = null): array",
         returnType: "array",
-        params: [{name: "item = null", type: "mixed"}],
+        params: [{"name":"item = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2285,7 +2293,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getField($name, $fieldset_id = null): cmsFormField|null",
         returnType: "cmsFormField|null",
-        params: [{name: "name", type: "mixed"}, {name: "fieldset_id = null", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"fieldset_id = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2293,7 +2301,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasField($name, $fieldset_id = null): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}, {name: "fieldset_id = null", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"fieldset_id = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2301,7 +2309,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isFieldsetExists($id): boolean",
         returnType: "boolean",
-        params: [{name: "id", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2317,7 +2325,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function addStructure($id, $structure, $is_overwrite = false): string",
         returnType: "string",
-        params: [{name: "id", type: "mixed"}, {name: "structure", type: "mixed"}, {name: "is_overwrite = false", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""},{"name":"structure","type":"mixed","description":""},{"name":"is_overwrite = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2325,7 +2333,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function addStructureToBeginning($id, $structure): string",
         returnType: "string",
-        params: [{name: "id", type: "mixed"}, {name: "structure", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""},{"name":"structure","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2333,7 +2341,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function addStructureAfter($after_id, $id, $structure): string|null",
         returnType: "string|null",
-        params: [{name: "after_id", type: "mixed"}, {name: "id", type: "mixed"}, {name: "structure", type: "mixed"}],
+        params: [{"name":"after_id","type":"mixed","description":""},{"name":"id","type":"mixed","description":""},{"name":"structure","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2341,7 +2349,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function clearFieldset($fieldset_id): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2349,7 +2357,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function removeFieldset($fieldset_id): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2357,7 +2365,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function removeField($fieldset_id, $field_name): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field_name", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2365,7 +2373,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function disableField($field_name): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "field_name", type: "mixed"}],
+        params: [{"name":"field_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2373,7 +2381,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addHtmlBlock($id, $content = null): string",
         returnType: "string",
-        params: [{name: "id", type: "mixed"}, {name: "content = null", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""},{"name":"content = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2381,7 +2389,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addHtmlBlockToBeginning($id, $content = null): string",
         returnType: "string",
-        params: [{name: "id", type: "mixed"}, {name: "content = null", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""},{"name":"content = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2389,7 +2397,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addHtmlBlockAfter($after_id, $id, $content = null): string",
         returnType: "string",
-        params: [{name: "after_id", type: "mixed"}, {name: "id", type: "mixed"}, {name: "content = null", type: "mixed"}],
+        params: [{"name":"after_id","type":"mixed","description":""},{"name":"id","type":"mixed","description":""},{"name":"content = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2397,7 +2405,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFieldset($title = '', $id = null, $options = []): string",
         returnType: "string",
-        params: [{name: "title = ''", type: "mixed"}, {name: "id = null", type: "mixed"}, {name: "options = []", type: "mixed"}],
+        params: [{"name":"title = ''","type":"mixed","description":""},{"name":"id = null","type":"mixed","description":""},{"name":"options = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2405,7 +2413,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFieldsetToBeginning($title = '', $id = null, $options = []): string",
         returnType: "string",
-        params: [{name: "title = ''", type: "mixed"}, {name: "id = null", type: "mixed"}, {name: "options = []", type: "mixed"}],
+        params: [{"name":"title = ''","type":"mixed","description":""},{"name":"id = null","type":"mixed","description":""},{"name":"options = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2413,7 +2421,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFieldsetAfter($after_id, $title = '', $id = null, $options = []): string",
         returnType: "string",
-        params: [{name: "after_id", type: "mixed"}, {name: "title = ''", type: "mixed"}, {name: "id = null", type: "mixed"}, {name: "options = []", type: "mixed"}],
+        params: [{"name":"after_id","type":"mixed","description":""},{"name":"title = ''","type":"mixed","description":""},{"name":"id = null","type":"mixed","description":""},{"name":"options = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2421,7 +2429,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addField($fieldset_id, $field): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2429,7 +2437,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFieldToBeginning($fieldset_id, $field): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2437,7 +2445,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFieldAfter($after_id, $fieldset_id, $field): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "after_id", type: "mixed"}, {name: "fieldset_id", type: "mixed"}, {name: "field", type: "mixed"}],
+        params: [{"name":"after_id","type":"mixed","description":""},{"name":"fieldset_id","type":"mixed","description":""},{"name":"field","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2445,7 +2453,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFieldsetAttribute($fieldset_id, $attr_name, $value): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "attr_name", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"attr_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2453,7 +2461,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFieldAttribute($fieldset_id, $field_name, $attr_name, $value): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "attr_name", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"attr_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2461,7 +2469,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFieldAttributeByName($field_name, $attr_name, $value): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "field_name", type: "mixed"}, {name: "attr_name", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field_name","type":"mixed","description":""},{"name":"attr_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2469,7 +2477,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFieldProperty($fieldset_id, $field_name, $attr_name, $value): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "attr_name", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"attr_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2477,7 +2485,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hideFieldset($fieldset_id): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2485,7 +2493,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hideField($fieldset_id, $field_name = ''): cmsForm",
         returnType: "cmsForm",
-        params: [{name: "fieldset_id", type: "mixed"}, {name: "field_name = ''", type: "mixed"}],
+        params: [{"name":"fieldset_id","type":"mixed","description":""},{"name":"field_name = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2493,7 +2501,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parse($request, $is_submitted = false, $item = null): array",
         returnType: "array",
-        params: [{name: "request", type: "mixed"}, {name: "is_submitted = false", type: "mixed"}, {name: "item = null", type: "mixed"}],
+        params: [{"name":"request","type":"mixed","description":""},{"name":"is_submitted = false","type":"mixed","description":""},{"name":"item = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2501,7 +2509,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function validate($controller, $data, $is_check_csrf = true): boolean|array",
         returnType: "boolean|array",
-        params: [{name: "controller", type: "mixed"}, {name: "data", type: "mixed"}, {name: "is_check_csrf = true", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"is_check_csrf = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2525,7 +2533,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function validateCSRFToken($csrf_token): boolean",
         returnType: "boolean",
-        params: [{name: "csrf_token", type: "mixed"}],
+        params: [{"name":"csrf_token","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2533,7 +2541,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function mapFieldsToFieldsets($fields, $callback = null, $values = null): array",
         returnType: "array",
-        params: [{name: "fields", type: "mixed"}, {name: "callback = null", type: "mixed"}, {name: "values = null", type: "mixed"}],
+        params: [{"name":"fields","type":"mixed","description":""},{"name":"callback = null","type":"mixed","description":""},{"name":"values = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2541,7 +2549,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getAvailableFormFields($only_public = true, $controller = false): array",
         returnType: "array",
-        params: [{name: "only_public = true", type: "mixed"}, {name: "controller = false", type: "mixed"}],
+        params: [{"name":"only_public = true","type":"mixed","description":""},{"name":"controller = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2549,7 +2557,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getForm($form_file, $form_name, $params = false, $controller = null): boolean|string|form_class",
         returnType: "boolean|string|form_class",
-        params: [{name: "form_file", type: "mixed"}, {name: "form_name", type: "mixed"}, {name: "params = false", type: "mixed"}, {name: "controller = null", type: "mixed"}],
+        params: [{"name":"form_file","type":"mixed","description":""},{"name":"form_name","type":"mixed","description":""},{"name":"params = false","type":"mixed","description":""},{"name":"controller = null","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -2569,7 +2577,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($name, $options = false): void",
         returnType: "void",
-        params: [{name: "name", type: "mixed"}, {name: "options = false", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"options = false","type":"mixed","description":""}],
         description: "Базовый класс для работы всех полей форм CMS",
       },
       {
@@ -2585,7 +2593,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setError($last_error): $last_error",
         returnType: "$last_error",
-        params: [{name: "last_error", type: "mixed"}],
+        params: [{"name":"last_error","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2593,7 +2601,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getProperty($key): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2601,7 +2609,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setProperty($key, $value): $this",
         returnType: "$this",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2617,7 +2625,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getOption($key, $default = null): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "mixed"}, {name: "default = null", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"default = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2625,7 +2633,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOptions($options): void",
         returnType: "void",
-        params: [{name: "options", type: "mixed"}],
+        params: [{"name":"options","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2633,7 +2641,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOption($key, $value): $this",
         returnType: "$this",
-        params: [{name: "key", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2665,7 +2673,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setName($name): $this",
         returnType: "$this",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2681,7 +2689,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setItem($item): $this",
         returnType: "$this",
-        params: [{name: "item", type: "mixed"}],
+        params: [{"name":"item","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2689,7 +2697,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setItemList($item): $this",
         returnType: "$this",
-        params: [{name: "item", type: "mixed"}],
+        params: [{"name":"item","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2737,7 +2745,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getDefaultVarType($is_filter = false): string|null",
         returnType: "string|null",
-        params: [{name: "is_filter = false", type: "mixed"}],
+        params: [{"name":"is_filter = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2745,7 +2753,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getInput($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2753,7 +2761,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getFilterInput($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2761,7 +2769,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parse($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2769,7 +2777,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parseTeaser($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2777,7 +2785,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function afterParse($value, $item): mixed",
         returnType: "mixed",
-        params: [{name: "value", type: "mixed"}, {name: "item", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""},{"name":"item","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2785,7 +2793,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hookItem($item, $fields): array",
         returnType: "array",
-        params: [{name: "item", type: "mixed"}, {name: "fields", type: "mixed"}],
+        params: [{"name":"item","type":"mixed","description":""},{"name":"fields","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2793,7 +2801,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getStringValue($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2801,7 +2809,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function applyFilter($model, $value): boolean",
         returnType: "boolean",
-        params: [{name: "model", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"model","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2809,7 +2817,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getFiles($value): boolean",
         returnType: "boolean",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2817,7 +2825,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function store($value, $is_submitted, $old_value = null): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}, {name: "is_submitted", type: "mixed"}, {name: "old_value = null", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""},{"name":"is_submitted","type":"mixed","description":""},{"name":"old_value = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2825,7 +2833,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function storeFilter($value): mixed",
         returnType: "mixed",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2833,7 +2841,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function storeCachedValue($value): string",
         returnType: "string",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2841,7 +2849,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function afterStore($item, $model, $action): void",
         returnType: "void",
-        params: [{name: "item", type: "mixed"}, {name: "model", type: "mixed"}, {name: "action", type: "mixed"}],
+        params: [{"name":"item","type":"mixed","description":""},{"name":"model","type":"mixed","description":""},{"name":"action","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2849,7 +2857,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function delete($value): boolean",
         returnType: "boolean",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2857,7 +2865,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hookAfterAdd($content_table_name, $field, $model): $this",
         returnType: "$this",
-        params: [{name: "content_table_name", type: "mixed"}, {name: "field", type: "mixed"}, {name: "model", type: "mixed"}],
+        params: [{"name":"content_table_name","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"model","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2865,7 +2873,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hookAfterUpdate($content_table_name, $field, $field_old, $model): $this",
         returnType: "$this",
-        params: [{name: "content_table_name", type: "mixed"}, {name: "field", type: "mixed"}, {name: "field_old", type: "mixed"}, {name: "model", type: "mixed"}],
+        params: [{"name":"content_table_name","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"field_old","type":"mixed","description":""},{"name":"model","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2873,14 +2881,14 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hookAfterRemove($content_table_name, $field, $model): $this",
         returnType: "$this",
-        params: [{name: "content_table_name", type: "mixed"}, {name: "field", type: "mixed"}, {name: "model", type: "mixed"}],
+        params: [{"name":"content_table_name","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"model","type":"mixed","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
-      { name: "FIELD_CACHE_POSTFIX", value: "'_cache'" },
+      {"name":"FIELD_CACHE_POSTFIX","value":"'_cache'","description":""},
     ],
   },
   cmsFrontend: {
@@ -2906,7 +2914,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($controller, $grid_name, $grid_params = null): void",
         returnType: "void",
-        params: [{name: "controller", type: "mixed"}, {name: "grid_name", type: "mixed"}, {name: "grid_params = null", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"grid_name","type":"mixed","description":""},{"name":"grid_params = null","type":"mixed","description":""}],
         description: "Класс для работы с гридам (таблицами данных)",
       },
       {
@@ -2946,7 +2954,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getGridValue($path): mixed",
         returnType: "mixed",
-        params: [{name: "path", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2970,7 +2978,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function validateColumnValue($field_name, $value): boolean",
         returnType: "boolean",
-        params: [{name: "field_name", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field_name","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -2994,7 +3002,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function disableColumn($name): void",
         returnType: "void",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3002,7 +3010,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function enableColumn($name): void",
         returnType: "void",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3018,7 +3026,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addToFilter($filter): void",
         returnType: "void",
-        params: [{name: "filter", type: "mixed"}],
+        params: [{"name":"filter","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3026,7 +3034,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function applyGridFilter(cmsModel $model, $filter, $table_name): cmsModel",
         returnType: "cmsModel",
-        params: [{name: "model", type: "cmsModel"}, {name: "filter", type: "mixed"}, {name: "table_name", type: "mixed"}],
+        params: [{"name":"model","type":"cmsModel","description":""},{"name":"filter","type":"mixed","description":""},{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3034,7 +3042,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function makeGridRows($dataset = false, $total = 0): array",
         returnType: "array",
-        params: [{name: "dataset = false", type: "mixed"}, {name: "total = 0", type: "mixed"}],
+        params: [{"name":"dataset = false","type":"mixed","description":""},{"name":"total = 0","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3042,7 +3050,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function makeRowColumns($row): array",
         returnType: "array",
-        params: [{name: "row", type: "mixed"}],
+        params: [{"name":"row","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3070,23 +3078,23 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setDestinationDir($dest_dir): void",
         returnType: "void",
-        params: [{name: "dest_dir", type: "mixed"}],
+        params: [{"name":"dest_dir","type":"mixed","description":""}],
         description: "This library is maintained by Gumlet https://github.com/gumlet/php-image-resize modifed for InstantCMS",
       },
       {
         name: "createFromString",
         visibility: "static",
-        signature: "function createFromString($image_data): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "image_data", type: "mixed"}],
+        signature: "function createFromString($image_data): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"image_data","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resizeByPreset",
         visibility: "public",
-        signature: "function resizeByPreset($preset, $file_name = null, $user_id = null): string",
-        returnType: "string",
-        params: [{name: "preset", type: "mixed"}, {name: "file_name = null", type: "mixed"}, {name: "user_id = null", type: "mixed"}],
+        signature: "function resizeByPreset($preset, $file_name = null, $user_id = null): ?string",
+        returnType: "?string",
+        params: [{"name":"preset","type":"mixed","description":""},{"name":"file_name = null","type":"mixed","description":""},{"name":"user_id = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3102,7 +3110,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addFilter(callable $filter): $this",
         returnType: "$this",
-        params: [{name: "filter", type: "callable"}],
+        params: [{"name":"filter","type":"callable","description":""}],
         description: "",
       },
       {
@@ -3110,7 +3118,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function applyFilter($image): void",
         returnType: "void",
-        params: [{name: "image", type: "mixed"}],
+        params: [{"name":"image","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3118,15 +3126,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($filename): void",
         returnType: "void",
-        params: [{name: "filename", type: "mixed"}],
+        params: [{"name":"filename","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "save",
         visibility: "public",
-        signature: "function save($filename, $image_type = null, $quality = null, $permissions = null, $exact_size = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "filename", type: "mixed"}, {name: "image_type = null", type: "mixed"}, {name: "quality = null", type: "mixed"}, {name: "permissions = null", type: "mixed"}, {name: "exact_size = false", type: "mixed"}],
+        signature: "function save($filename, $image_type = null, $quality = null, $permissions = null, $exact_size = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"filename","type":"mixed","description":""},{"name":"image_type = null","type":"mixed","description":""},{"name":"quality = null","type":"mixed","description":""},{"name":"permissions = null","type":"mixed","description":""},{"name":"exact_size = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3134,7 +3142,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getImageAsString($image_type = null, $quality = null): string",
         returnType: "string",
-        params: [{name: "image_type = null", type: "mixed"}, {name: "quality = null", type: "mixed"}],
+        params: [{"name":"image_type = null","type":"mixed","description":""},{"name":"quality = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3148,73 +3156,73 @@ export const coreAPIMap = {
       {
         name: "resizeToShortSide",
         visibility: "public",
-        signature: "function resizeToShortSide($max_short, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "max_short", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resizeToShortSide($max_short, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"max_short","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resizeToLongSide",
         visibility: "public",
-        signature: "function resizeToLongSide($max_long, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "max_long", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resizeToLongSide($max_long, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"max_long","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resizeToHeight",
         visibility: "public",
-        signature: "function resizeToHeight($height, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "height", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resizeToHeight($height, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"height","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resizeToWidth",
         visibility: "public",
-        signature: "function resizeToWidth($width, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "width", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resizeToWidth($width, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"width","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resizeToBestFit",
         visibility: "public",
-        signature: "function resizeToBestFit($max_width, $max_height, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "max_width", type: "mixed"}, {name: "max_height", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resizeToBestFit($max_width, $max_height, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"max_width","type":"mixed","description":""},{"name":"max_height","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "scale",
         visibility: "public",
-        signature: "function scale($scale): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "scale", type: "mixed"}],
+        signature: "function scale($scale): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"scale","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "resize",
         visibility: "public",
-        signature: "function resize($width, $height, $allow_enlarge = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "width", type: "mixed"}, {name: "height", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}],
+        signature: "function resize($width, $height, $allow_enlarge = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"width","type":"mixed","description":""},{"name":"height","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "crop",
         visibility: "public",
-        signature: "function crop($width, $height, $allow_enlarge = false, $position = self::CROPCENTER): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "width", type: "mixed"}, {name: "height", type: "mixed"}, {name: "allow_enlarge = false", type: "mixed"}, {name: "position = self::CROPCENTER", type: "mixed"}],
+        signature: "function crop($width, $height, $allow_enlarge = false, $position = self::CROPCENTER): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"width","type":"mixed","description":""},{"name":"height","type":"mixed","description":""},{"name":"allow_enlarge = false","type":"mixed","description":""},{"name":"position = self::CROPCENTER","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "freecrop",
         visibility: "public",
-        signature: "function freecrop($width, $height, $x = false, $y = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "width", type: "mixed"}, {name: "height", type: "mixed"}, {name: "x = false", type: "mixed"}, {name: "y = false", type: "mixed"}],
+        signature: "function freecrop($width, $height, $x = false, $y = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"width","type":"mixed","description":""},{"name":"height","type":"mixed","description":""},{"name":"x = false","type":"mixed","description":""},{"name":"y = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3254,28 +3262,28 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function getCropPosition($expected_size, $position = self::CROPCENTER): float|integer",
         returnType: "float|integer",
-        params: [{name: "expected_size", type: "mixed"}, {name: "position = self::CROPCENTER", type: "mixed"}],
+        params: [{"name":"expected_size","type":"mixed","description":""},{"name":"position = self::CROPCENTER","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "gamma",
         visibility: "public",
-        signature: "function gamma($enable = false): \cmsImages",
-        returnType: "\cmsImages",
-        params: [{name: "enable = false", type: "mixed"}],
+        signature: "function gamma($enable = false): \\cmsImages",
+        returnType: "\\cmsImages",
+        params: [{"name":"enable = false","type":"mixed","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
-      { name: "CROPTOP", value: "1" },
-      { name: "CROPCENTRE", value: "2" },
-      { name: "CROPCENTER", value: "2" },
-      { name: "CROPBOTTOM", value: "3" },
-      { name: "CROPLEFT", value: "4" },
-      { name: "CROPRIGHT", value: "5" },
-      { name: "CROPTOPCENTER", value: "6" },
+      {"name":"CROPTOP","value":"1","description":""},
+      {"name":"CROPCENTRE","value":"2","description":""},
+      {"name":"CROPCENTER","value":"2","description":""},
+      {"name":"CROPBOTTOM","value":"3","description":""},
+      {"name":"CROPLEFT","value":"4","description":""},
+      {"name":"CROPRIGHT","value":"5","description":""},
+      {"name":"CROPTOPCENTER","value":"6","description":""},
     ],
   },
   cmsInstaller: {
@@ -3289,7 +3297,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct(string $package_path, admin $admin_controller): void",
         returnType: "void",
-        params: [{name: "package_path", type: "string"}, {name: "admin_controller", type: "admin"}],
+        params: [{"name":"package_path","type":"string","description":""},{"name":"admin_controller","type":"admin","description":""}],
         description: "Установщик дополнений InstantCMS",
       },
       {
@@ -3337,14 +3345,22 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setManifestAddonId($addon_id): void",
         returnType: "void",
-        params: [{name: "addon_id", type: "mixed"}],
+        params: [{"name":"addon_id","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "install",
         visibility: "public",
-        signature: "function install(): null|string",
+        signature: "function install(array $install_options = []): null|string",
         returnType: "null|string",
+        params: [{"name":"install_options = []","type":"array","description":""}],
+        description: "",
+      },
+      {
+        name: "getPackageOptionsForm",
+        visibility: "public",
+        signature: "function getPackageOptionsForm(): ?cmsForm",
+        returnType: "?cmsForm",
         params: [],
         description: "",
       },
@@ -3439,9 +3455,9 @@ export const coreAPIMap = {
       {
         name: "runPackageInstaller",
         visibility: "private",
-        signature: "function runPackageInstaller(): bool",
+        signature: "function runPackageInstaller(array $install_options): bool",
         returnType: "bool",
-        params: [],
+        params: [{"name":"install_options","type":"array","description":""}],
         description: "",
       },
       {
@@ -3449,15 +3465,15 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function setNamespace(string $file): void",
         returnType: "void",
-        params: [{name: "file", type: "string"}],
+        params: [{"name":"file","type":"string","description":""}],
         description: "",
       },
       {
         name: "callInstallFunc",
         visibility: "private",
-        signature: "function callInstallFunc(string $name): bool",
+        signature: "function callInstallFunc(string $name, array $args = []): bool",
         returnType: "bool",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""},{"name":"args = []","type":"array","description":""}],
         description: "",
       },
       {
@@ -3477,11 +3493,19 @@ export const coreAPIMap = {
         description: "",
       },
       {
+        name: "getImageParams",
+        visibility: "private",
+        signature: "function getImageParams(string $image_file_name, bool $return_path = true): null|string",
+        returnType: "null|string",
+        params: [{"name":"image_file_name","type":"string","description":""},{"name":"return_path = true","type":"bool","description":""}],
+        description: "",
+      },
+      {
         name: "checkSystemFiles",
         visibility: "private",
         signature: "function checkSystemFiles(array &$manifest): void",
         returnType: "void",
-        params: [{name: "manifest", type: "array &"}],
+        params: [{"name":"manifest","type":"array &","description":""}],
         description: "",
       },
       {
@@ -3497,7 +3521,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function componentInstalled($manifest_package): array",
         returnType: "array",
-        params: [{name: "manifest_package", type: "mixed"}],
+        params: [{"name":"manifest_package","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3505,7 +3529,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function widgetInstalled(array $manifest_package): array",
         returnType: "array",
-        params: [{name: "manifest_package", type: "array"}],
+        params: [{"name":"manifest_package","type":"array","description":""}],
         description: "",
       },
       {
@@ -3529,13 +3553,14 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function updateEvents(string $controller_name = ''): bool",
         returnType: "bool",
-        params: [{name: "controller_name = ''", type: "string"}],
+        params: [{"name":"controller_name = ''","type":"string","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
+      {"name":"PACKAGE_DIR_NAME","value":"'package'","description":""},
     ],
   },
   cmsIp: {
@@ -3549,7 +3574,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($trusted): void",
         returnType: "void",
-        params: [{name: "trusted", type: "mixed"}],
+        params: [{"name":"trusted","type":"mixed","description":""}],
         description: "Класс для проверки IP адреса",
       },
       {
@@ -3557,7 +3582,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isIPTrusted(string $ip): bool",
         returnType: "bool",
-        params: [{name: "ip", type: "string"}],
+        params: [{"name":"ip","type":"string","description":""}],
         description: "",
       },
       {
@@ -3565,7 +3590,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function isValidIP(string $ip): bool",
         returnType: "bool",
-        params: [{name: "ip", type: "string"}],
+        params: [{"name":"ip","type":"string","description":""}],
         description: "",
       },
       {
@@ -3573,7 +3598,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function ipMatchesRange(string $ip, $range): bool",
         returnType: "bool",
-        params: [{name: "ip", type: "string"}, {name: "range", type: "mixed"}],
+        params: [{"name":"ip","type":"string","description":""},{"name":"range","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3581,7 +3606,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function ipInRangeBounds(string $ip, string $start, string $end): bool",
         returnType: "bool",
-        params: [{name: "ip", type: "string"}, {name: "start", type: "string"}, {name: "end", type: "string"}],
+        params: [{"name":"ip","type":"string","description":""},{"name":"start","type":"string","description":""},{"name":"end","type":"string","description":""}],
         description: "",
       },
       {
@@ -3589,7 +3614,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function ipInCidr(string $ip, string $cidr): bool",
         returnType: "bool",
-        params: [{name: "ip", type: "string"}, {name: "cidr", type: "string"}],
+        params: [{"name":"ip","type":"string","description":""},{"name":"cidr","type":"string","description":""}],
         description: "",
       },
     ],
@@ -3602,78 +3627,78 @@ export const coreAPIMap = {
     name: "cmsMailer",
     extends: undefined,
     file: "mailer.php",
-    description: "Возвращает объект PHPMailer @return \PHPMailer",
+    description: "Возвращает объект PHPMailer @return \\PHPMailer",
     methods: [
       {
         name: "callMailer",
         visibility: "public",
-        signature: "function callMailer(): \PHPMailer",
-        returnType: "\PHPMailer",
+        signature: "function callMailer(): \\PHPMailer",
+        returnType: "\\PHPMailer",
         params: [],
         description: "",
       },
       {
         name: "initTransport",
         visibility: "public",
-        signature: "function initTransport($config): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "config", type: "mixed"}],
+        signature: "function initTransport($config): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"config","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "addCustomHeader",
         visibility: "public",
-        signature: "function addCustomHeader($name, $value = null): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "name", type: "mixed"}, {name: "value = null", type: "mixed"}],
+        signature: "function addCustomHeader($name, $value = null): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"name","type":"mixed","description":""},{"name":"value = null","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setFrom",
         visibility: "public",
-        signature: "function setFrom($email, $name=''): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "email", type: "mixed"}, {name: "name=''", type: "mixed"}],
+        signature: "function setFrom($email, $name=''): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"email","type":"mixed","description":""},{"name":"name=''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setReplyTo",
         visibility: "public",
-        signature: "function setReplyTo($email, $name=''): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "email", type: "mixed"}, {name: "name=''", type: "mixed"}],
+        signature: "function setReplyTo($email, $name=''): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"email","type":"mixed","description":""},{"name":"name=''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "addTo",
         visibility: "public",
-        signature: "function addTo($email, $name=''): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "email", type: "mixed"}, {name: "name=''", type: "mixed"}],
+        signature: "function addTo($email, $name=''): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"email","type":"mixed","description":""},{"name":"name=''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setSubject",
         visibility: "public",
-        signature: "function setSubject($subject): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "subject", type: "mixed"}],
+        signature: "function setSubject($subject): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"subject","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setBodyHTML",
         visibility: "public",
-        signature: "function setBodyHTML($message, $is_auto_alt = true): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "message", type: "mixed"}, {name: "is_auto_alt = true", type: "mixed"}],
+        signature: "function setBodyHTML($message, $is_auto_alt = true): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"message","type":"mixed","description":""},{"name":"is_auto_alt = true","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "setBodyText",
         visibility: "public",
-        signature: "function setBodyText($message): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "message", type: "mixed"}],
+        signature: "function setBodyText($message): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"message","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3681,7 +3706,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parseSubject($letter_text): string",
         returnType: "string",
-        params: [{name: "letter_text", type: "mixed"}],
+        params: [{"name":"letter_text","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3689,30 +3714,30 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function parseAttachments($letter_text): string",
         returnType: "string",
-        params: [{name: "letter_text", type: "mixed"}],
+        params: [{"name":"letter_text","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "addAttachment",
         visibility: "public",
-        signature: "function addAttachment($file, $name = ''): \cmsMailer",
-        returnType: "\cmsMailer",
-        params: [{name: "file", type: "mixed"}, {name: "name = ''", type: "mixed"}],
+        signature: "function addAttachment($file, $name = ''): \\cmsMailer",
+        returnType: "\\cmsMailer",
+        params: [{"name":"file","type":"mixed","description":""},{"name":"name = ''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "clearTo",
         visibility: "public",
-        signature: "function clearTo(): \cmsMailer",
-        returnType: "\cmsMailer",
+        signature: "function clearTo(): \\cmsMailer",
+        returnType: "\\cmsMailer",
         params: [],
         description: "",
       },
       {
         name: "clearAttachments",
         visibility: "public",
-        signature: "function clearAttachments(): \cmsMailer",
-        returnType: "\cmsMailer",
+        signature: "function clearAttachments(): \\cmsMailer",
+        returnType: "\\cmsMailer",
         params: [],
         description: "",
       },
@@ -3741,7 +3766,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($cfg_file = 'mimetypes.php'): void",
         returnType: "void",
-        params: [{name: "cfg_file = 'mimetypes.php'", type: "mixed"}],
+        params: [{"name":"cfg_file = 'mimetypes.php'","type":"mixed","description":""}],
         description: "Управление типами MIME и расширениями файлов",
       },
       {
@@ -3749,7 +3774,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getExtensions(string $mime_type): ?array",
         returnType: "?array",
-        params: [{name: "mime_type", type: "string"}],
+        params: [{"name":"mime_type","type":"string","description":""}],
         description: "",
       },
       {
@@ -3757,7 +3782,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getMimeTypes(string $ext): ?array",
         returnType: "?array",
-        params: [{name: "ext", type: "string"}],
+        params: [{"name":"ext","type":"string","description":""}],
         description: "",
       },
       {
@@ -3773,7 +3798,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function save($mimetypes): boolean",
         returnType: "boolean",
-        params: [{name: "mimetypes", type: "mixed"}],
+        params: [{"name":"mimetypes","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -3786,14 +3811,14 @@ export const coreAPIMap = {
     name: "cmsModel",
     extends: undefined,
     file: "model.php",
-    description: "Объект базы данных @var \cmsDatabase",
+    description: "Объект базы данных @var \\cmsDatabase",
     methods: [
       {
         name: "__construct",
         visibility: "public",
         signature: "function __construct($db = null): void",
         returnType: "void",
-        params: [{name: "db = null", type: "mixed"}],
+        params: [{"name":"db = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3801,7 +3826,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getContentTypeTableName(...$names): string",
         returnType: "string",
-        params: [{name: "names", type: "..."}],
+        params: [{"name":"names","type":"...","description":""}],
         description: "",
       },
       {
@@ -3809,7 +3834,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addCategory($ctype_name, $category, $first_level_slug = false): array",
         returnType: "array",
-        params: [{name: "ctype_name", type: "mixed"}, {name: "category", type: "mixed"}, {name: "first_level_slug = false", type: "mixed"}],
+        params: [{"name":"ctype_name","type":"mixed","description":""},{"name":"category","type":"mixed","description":""},{"name":"first_level_slug = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3817,7 +3842,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function updateCategory($ctype_name, $id, $category, $first_level_slug = false): array",
         returnType: "array",
-        params: [{name: "ctype_name", type: "mixed"}, {name: "id", type: "mixed"}, {name: "category", type: "mixed"}, {name: "first_level_slug = false", type: "mixed"}],
+        params: [{"name":"ctype_name","type":"mixed","description":""},{"name":"id","type":"mixed","description":""},{"name":"category","type":"mixed","description":""},{"name":"first_level_slug = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3825,7 +3850,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function updateCategoryTreeNodeSlugs($ctype_name, $tree, $first_level_slug = false): array",
         returnType: "array",
-        params: [{name: "ctype_name", type: "mixed"}, {name: "tree", type: "mixed"}, {name: "first_level_slug = false", type: "mixed"}],
+        params: [{"name":"ctype_name","type":"mixed","description":""},{"name":"tree","type":"mixed","description":""},{"name":"first_level_slug = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3833,7 +3858,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function filterGt($field, $value): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3841,7 +3866,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function filterLt($field, $value): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3849,7 +3874,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function filterGtEqual($field, $value): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3857,7 +3882,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function filterLtEqual($field, $value): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3865,7 +3890,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function filterRelated($field, $value, $lang = false): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "value", type: "mixed"}, {name: "lang = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"value","type":"mixed","description":""},{"name":"lang = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3873,7 +3898,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function applyDatasetFilters($dataset, $only_filters = false, $allowed_fields = [], $table_name = ''): boolean",
         returnType: "boolean",
-        params: [{name: "dataset", type: "mixed"}, {name: "only_filters = false", type: "mixed"}, {name: "allowed_fields = []", type: "mixed"}, {name: "table_name = ''", type: "mixed"}],
+        params: [{"name":"dataset","type":"mixed","description":""},{"name":"only_filters = false","type":"mixed","description":""},{"name":"allowed_fields = []","type":"mixed","description":""},{"name":"table_name = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3881,7 +3906,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function selectList($fields, $is_this_only = false, $translated_table = false): $this",
         returnType: "$this",
-        params: [{name: "fields", type: "mixed"}, {name: "is_this_only = false", type: "mixed"}, {name: "translated_table = false", type: "mixed"}],
+        params: [{"name":"fields","type":"mixed","description":""},{"name":"is_this_only = false","type":"mixed","description":""},{"name":"translated_table = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3889,7 +3914,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function selectAesDecrypt($field, $as = false, $key = ''): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "as = false", type: "mixed"}, {name: "key = ''", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"as = false","type":"mixed","description":""},{"name":"key = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3897,7 +3922,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function select($field, $as = false): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "as = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"as = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3905,7 +3930,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function selectTranslatedField($field, $table, $as = false): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "table", type: "mixed"}, {name: "as = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"table","type":"mixed","description":""},{"name":"as = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3913,7 +3938,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function selectOnly($field, $as = false): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "as = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"as = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3921,7 +3946,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTranslatedFieldName($field, $table = ''): string",
         returnType: "string",
-        params: [{name: "field", type: "mixed"}, {name: "table = ''", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"table = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -3929,95 +3954,95 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isJoined($table_name, $as): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinQuery",
         visibility: "public",
-        signature: "function joinQuery($query, $as, $on, $join_type = self::INNER_JOIN): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "query", type: "mixed"}, {name: "as", type: "mixed"}, {name: "on", type: "mixed"}, {name: "join_type = self::INNER_JOIN", type: "mixed"}],
+        signature: "function joinQuery($query, $as, $on, $join_type = self::INNER_JOIN): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"query","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"on","type":"mixed","description":""},{"name":"join_type = self::INNER_JOIN","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "join",
         visibility: "public",
-        signature: "function join($table_name, $as, $on): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "on", type: "mixed"}],
+        signature: "function join($table_name, $as, $on): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"on","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinInner",
         visibility: "public",
-        signature: "function joinInner($table_name, $as, $on): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "on", type: "mixed"}],
+        signature: "function joinInner($table_name, $as, $on): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"on","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinLeft",
         visibility: "public",
-        signature: "function joinLeft($table_name, $as, $on): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "on", type: "mixed"}],
+        signature: "function joinLeft($table_name, $as, $on): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"on","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinExcludingLeft",
         visibility: "public",
-        signature: "function joinExcludingLeft($table_name, $as, $right_key, $left_key, $join_where = ''): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "right_key", type: "mixed"}, {name: "left_key", type: "mixed"}, {name: "join_where = ''", type: "mixed"}],
+        signature: "function joinExcludingLeft($table_name, $as, $right_key, $left_key, $join_where = ''): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"right_key","type":"mixed","description":""},{"name":"left_key","type":"mixed","description":""},{"name":"join_where = ''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinRight",
         visibility: "public",
-        signature: "function joinRight($table_name, $as, $on): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "on", type: "mixed"}],
+        signature: "function joinRight($table_name, $as, $on): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"on","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinExcludingRight",
         visibility: "public",
-        signature: "function joinExcludingRight($table_name, $as, $right_key, $left_key, $join_where = ''): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "table_name", type: "mixed"}, {name: "as", type: "mixed"}, {name: "right_key", type: "mixed"}, {name: "left_key", type: "mixed"}, {name: "join_where = ''", type: "mixed"}],
+        signature: "function joinExcludingRight($table_name, $as, $right_key, $left_key, $join_where = ''): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"as","type":"mixed","description":""},{"name":"right_key","type":"mixed","description":""},{"name":"left_key","type":"mixed","description":""},{"name":"join_where = ''","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinUser",
         visibility: "public",
-        signature: "function joinUser($on_field = 'user_id', $user_fields = [], $join_direction = false, $as = 'u'): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "on_field = 'user_id'", type: "mixed"}, {name: "user_fields = []", type: "mixed"}, {name: "join_direction = false", type: "mixed"}, {name: "as = 'u'", type: "mixed"}],
+        signature: "function joinUser($on_field = 'user_id', $user_fields = [], $join_direction = false, $as = 'u'): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"on_field = 'user_id'","type":"mixed","description":""},{"name":"user_fields = []","type":"mixed","description":""},{"name":"join_direction = false","type":"mixed","description":""},{"name":"as = 'u'","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinUserLeft",
         visibility: "public",
-        signature: "function joinUserLeft($on_field = 'user_id', $user_fields = []): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "on_field = 'user_id'", type: "mixed"}, {name: "user_fields = []", type: "mixed"}],
+        signature: "function joinUserLeft($on_field = 'user_id', $user_fields = []): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"on_field = 'user_id'","type":"mixed","description":""},{"name":"user_fields = []","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinUserRight",
         visibility: "public",
-        signature: "function joinUserRight($on_field = 'user_id', $user_fields = []): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "on_field = 'user_id'", type: "mixed"}, {name: "user_fields = []", type: "mixed"}],
+        signature: "function joinUserRight($on_field = 'user_id', $user_fields = []): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"on_field = 'user_id'","type":"mixed","description":""},{"name":"user_fields = []","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "joinSessionsOnline",
         visibility: "public",
-        signature: "function joinSessionsOnline($as = 'u'): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "as = 'u'", type: "mixed"}],
+        signature: "function joinSessionsOnline($as = 'u'): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"as = 'u'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4025,7 +4050,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function groupBy($field): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4033,7 +4058,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function havingRaw($condition): $this",
         returnType: "$this",
-        params: [{name: "condition", type: "mixed"}],
+        params: [{"name":"condition","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4041,15 +4066,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function having($field, $operator, $value): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "operator", type: "mixed"}, {name: "value", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"operator","type":"mixed","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "indexHint",
         visibility: "protected",
-        signature: "function indexHint($index_name, $action, $for=''): \cmsModel",
-        returnType: "\cmsModel",
-        params: [{name: "index_name", type: "mixed"}, {name: "action", type: "mixed"}, {name: "for=''", type: "mixed"}],
+        signature: "function indexHint($index_name, $action, $for=''): \\cmsModel",
+        returnType: "\\cmsModel",
+        params: [{"name":"index_name","type":"mixed","description":""},{"name":"action","type":"mixed","description":""},{"name":"for=''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4057,7 +4082,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function orderByTranslatedField($field, $direction = 'asc', $table = ''): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "direction = 'asc'", type: "mixed"}, {name: "table = ''", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"direction = 'asc'","type":"mixed","description":""},{"name":"table = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4065,7 +4090,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function orderByRaw($order_by, $is_append = false): $this",
         returnType: "$this",
-        params: [{name: "order_by", type: "mixed"}, {name: "is_append = false", type: "mixed"}],
+        params: [{"name":"order_by","type":"mixed","description":""},{"name":"is_append = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4073,7 +4098,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function prepareOrderBy($field, $direction = '', $strict_field_name = false): string",
         returnType: "string",
-        params: [{name: "field", type: "mixed"}, {name: "direction = ''", type: "mixed"}, {name: "strict_field_name = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"direction = ''","type":"mixed","description":""},{"name":"strict_field_name = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4081,7 +4106,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function orderBy($field, $direction = '', $is_force_index_by_field = false): $this",
         returnType: "$this",
-        params: [{name: "field", type: "mixed"}, {name: "direction = ''", type: "mixed"}, {name: "is_force_index_by_field = false", type: "mixed"}],
+        params: [{"name":"field","type":"mixed","description":""},{"name":"direction = ''","type":"mixed","description":""},{"name":"is_force_index_by_field = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4089,7 +4114,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function orderByList(array $list): $this",
         returnType: "$this",
-        params: [{name: "list", type: "array"}],
+        params: [{"name":"list","type":"array","description":""}],
         description: "",
       },
       {
@@ -4097,7 +4122,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function makeItem($item, $item_callback, $encoded_fields = null): type",
         returnType: "type",
-        params: [{name: "item", type: "mixed"}, {name: "item_callback", type: "mixed"}, {name: "encoded_fields = null", type: "mixed"}],
+        params: [{"name":"item","type":"mixed","description":""},{"name":"item_callback","type":"mixed","description":""},{"name":"encoded_fields = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4105,7 +4130,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getItem($table_name, $item_callback = null): bool",
         returnType: "bool",
-        params: [{name: "table_name", type: "mixed"}, {name: "item_callback = null", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"item_callback = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4113,7 +4138,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getItemById($table_name, $id, $item_callback = null): type",
         returnType: "type",
-        params: [{name: "table_name", type: "mixed"}, {name: "id", type: "mixed"}, {name: "item_callback = null", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"id","type":"mixed","description":""},{"name":"item_callback = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4121,7 +4146,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getItemByField($table_name, $field_name, $field_value, $item_callback = null): type",
         returnType: "type",
-        params: [{name: "table_name", type: "mixed"}, {name: "field_name", type: "mixed"}, {name: "field_value", type: "mixed"}, {name: "item_callback = null", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"field_name","type":"mixed","description":""},{"name":"field_value","type":"mixed","description":""},{"name":"item_callback = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4129,7 +4154,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getCount($table_name, $by_field = 'id', $reset = false): integer",
         returnType: "integer",
-        params: [{name: "table_name", type: "mixed"}, {name: "by_field = 'id'", type: "mixed"}, {name: "reset = false", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"by_field = 'id'","type":"mixed","description":""},{"name":"reset = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4137,7 +4162,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function get($table_name, $item_callback = null, $key_field = 'id'): array",
         returnType: "array",
-        params: [{name: "table_name", type: "mixed"}, {name: "item_callback = null", type: "mixed"}, {name: "key_field = 'id'", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"item_callback = null","type":"mixed","description":""},{"name":"key_field = 'id'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4145,7 +4170,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getSQL($custom_select = null): string",
         returnType: "string",
-        params: [{name: "custom_select = null", type: "mixed"}],
+        params: [{"name":"custom_select = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4153,7 +4178,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getMax($table, $field, $default = 0, $dir = 'MAX'): integer",
         returnType: "integer",
-        params: [{name: "table", type: "mixed"}, {name: "field", type: "mixed"}, {name: "default = 0", type: "mixed"}, {name: "dir = 'MAX'", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"default = 0","type":"mixed","description":""},{"name":"dir = 'MAX'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4161,7 +4186,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getMaxOrdering($table): int",
         returnType: "int",
-        params: [{name: "table", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4169,7 +4194,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getNextOrdering($table): int",
         returnType: "int",
-        params: [{name: "table", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4177,7 +4202,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function reorder($table_name): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4185,7 +4210,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function reorderByList($table_name, $list, $additional_fields = [], $field_name = 'ordering'): boolean",
         returnType: "boolean",
-        params: [{name: "table_name", type: "mixed"}, {name: "list", type: "mixed"}, {name: "additional_fields = []", type: "mixed"}, {name: "field_name = 'ordering'", type: "mixed"}],
+        params: [{"name":"table_name","type":"mixed","description":""},{"name":"list","type":"mixed","description":""},{"name":"additional_fields = []","type":"mixed","description":""},{"name":"field_name = 'ordering'","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4193,7 +4218,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function applyGridFilter(cmsGrid $grid, $filter, $table_name = ''): $this",
         returnType: "$this",
-        params: [{name: "grid", type: "cmsGrid"}, {name: "filter", type: "mixed"}, {name: "table_name = ''", type: "mixed"}],
+        params: [{"name":"grid","type":"cmsGrid","description":""},{"name":"filter","type":"mixed","description":""},{"name":"table_name = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4201,7 +4226,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function increment($table, $field, $step = 1): boolean",
         returnType: "boolean",
-        params: [{name: "table", type: "mixed"}, {name: "field", type: "mixed"}, {name: "step = 1", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"step = 1","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4209,7 +4234,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function decrement($table, $field, $step = 1): boolean",
         returnType: "boolean",
-        params: [{name: "table", type: "mixed"}, {name: "field", type: "mixed"}, {name: "step = 1", type: "mixed"}],
+        params: [{"name":"table","type":"mixed","description":""},{"name":"field","type":"mixed","description":""},{"name":"step = 1","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4217,7 +4242,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function deleteController($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4225,7 +4250,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getDraftCounts($user_id): integer",
         returnType: "integer",
-        params: [{name: "user_id", type: "mixed"}],
+        params: [{"name":"user_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4233,7 +4258,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function buildTreeRecursive($items, &$result_tree, $parent_id = 0, $level = 1): void",
         returnType: "void",
-        params: [{name: "items", type: "mixed"}, {name: "result_tree", type: "&"}, {name: "parent_id = 0", type: "mixed"}, {name: "level = 1", type: "mixed"}],
+        params: [{"name":"items","type":"mixed","description":""},{"name":"result_tree","type":"&","description":""},{"name":"parent_id = 0","type":"mixed","description":""},{"name":"level = 1","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4241,7 +4266,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function buildTreeFlat(&$grouped, &$result_tree, $parent_id, $level): void",
         returnType: "void",
-        params: [{name: "grouped", type: "&"}, {name: "result_tree", type: "&"}, {name: "parent_id", type: "mixed"}, {name: "level", type: "mixed"}],
+        params: [{"name":"grouped","type":"&","description":""},{"name":"result_tree","type":"&","description":""},{"name":"parent_id","type":"mixed","description":""},{"name":"level","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4249,7 +4274,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function arrayToYaml($input_array, $indent = 2, $word_wrap = 40): string",
         returnType: "string",
-        params: [{name: "input_array", type: "mixed"}, {name: "indent = 2", type: "mixed"}, {name: "word_wrap = 40", type: "mixed"}],
+        params: [{"name":"input_array","type":"mixed","description":""},{"name":"indent = 2","type":"mixed","description":""},{"name":"word_wrap = 40","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4257,7 +4282,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function yamlToArray($yaml): array",
         returnType: "array",
-        params: [{name: "yaml", type: "mixed"}],
+        params: [{"name":"yaml","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4265,7 +4290,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function arrayToString($input_array): string",
         returnType: "string",
-        params: [{name: "input_array", type: "mixed"}],
+        params: [{"name":"input_array","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4273,7 +4298,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function stringToArray($string): array",
         returnType: "array",
-        params: [{name: "string", type: "mixed"}],
+        params: [{"name":"string","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4281,26 +4306,26 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function cacheResult($key, $data): void",
         returnType: "void",
-        params: [{name: "key", type: "mixed"}, {name: "data", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"data","type":"mixed","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
-      { name: "LEFT_JOIN", value: "'LEFT JOIN'" },
-      { name: "RIGHT_JOIN", value: "'RIGHT JOIN'" },
-      { name: "INNER_JOIN", value: "'INNER JOIN'" },
-      { name: "STRAIGHT_JOIN", value: "'STRAIGHT_JOIN'" },
-      { name: "NATURAL_LEFT_JOIN", value: "'NATURAL LEFT JOIN'" },
-      { name: "NATURAL_RIGHT_JOIN", value: "'NATURAL RIGHT JOIN'" },
-      { name: "READ_UNCOMMITTED", value: "'READ UNCOMMITTED'" },
-      { name: "READ_COMMITTED", value: "'READ COMMITTED'" },
-      { name: "REPEATABLE_READ", value: "'REPEATABLE READ'" },
-      { name: "SERIALIZABLE", value: "'SERIALIZABLE'" },
-      { name: "SPECIAL_CHARS", value: "['+', '-', '>','<', '(', ')', '~', '*', '\"', '@']" },
-      { name: "DEFAULT_TABLE_PREFIX", value: "'con_'" },
-      { name: "DEFAULT_TABLE_CATEGORY_POSTFIX", value: "'_cats'" },
+      {"name":"LEFT_JOIN","value":"'LEFT JOIN'","description":""},
+      {"name":"RIGHT_JOIN","value":"'RIGHT JOIN'","description":""},
+      {"name":"INNER_JOIN","value":"'INNER JOIN'","description":""},
+      {"name":"STRAIGHT_JOIN","value":"'STRAIGHT_JOIN'","description":""},
+      {"name":"NATURAL_LEFT_JOIN","value":"'NATURAL LEFT JOIN'","description":""},
+      {"name":"NATURAL_RIGHT_JOIN","value":"'NATURAL RIGHT JOIN'","description":""},
+      {"name":"READ_UNCOMMITTED","value":"'READ UNCOMMITTED'","description":""},
+      {"name":"READ_COMMITTED","value":"'READ COMMITTED'","description":""},
+      {"name":"REPEATABLE_READ","value":"'REPEATABLE READ'","description":""},
+      {"name":"SERIALIZABLE","value":"'SERIALIZABLE'","description":""},
+      {"name":"SPECIAL_CHARS","value":"['+', '-', '>','<', '(', ')', '~', '*', '\"', '@']","description":""},
+      {"name":"DEFAULT_TABLE_PREFIX","value":"'con_'","description":""},
+      {"name":"DEFAULT_TABLE_CATEGORY_POSTFIX","value":"'_cats'","description":""},
     ],
   },
   cmsNestedsets: {
@@ -4326,7 +4351,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($total, $perpage, $current_page, $base_uri, $query = []): void",
         returnType: "void",
-        params: [{name: "total", type: "mixed"}, {name: "perpage", type: "mixed"}, {name: "current_page", type: "mixed"}, {name: "base_uri", type: "mixed"}, {name: "query = []", type: "mixed"}],
+        params: [{"name":"total","type":"mixed","description":""},{"name":"perpage","type":"mixed","description":""},{"name":"current_page","type":"mixed","description":""},{"name":"base_uri","type":"mixed","description":""},{"name":"query = []","type":"mixed","description":""}],
         description: "Класс пагинации * идея @jasongrimes/php-paginator",
       },
     ],
@@ -4346,7 +4371,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getPermissionValue(string $subject, string $permission): mixed",
         returnType: "mixed",
-        params: [{name: "subject", type: "string"}, {name: "permission", type: "string"}],
+        params: [{"name":"subject","type":"string","description":""},{"name":"permission","type":"string","description":""}],
         description: "",
       },
       {
@@ -4354,7 +4379,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isDenied($subject, $permission, $value = true, $is_admin_strict = false): bool",
         returnType: "bool",
-        params: [{name: "subject", type: "mixed"}, {name: "permission", type: "mixed"}, {name: "value = true", type: "mixed"}, {name: "is_admin_strict = false", type: "mixed"}],
+        params: [{"name":"subject","type":"mixed","description":""},{"name":"permission","type":"mixed","description":""},{"name":"value = true","type":"mixed","description":""},{"name":"is_admin_strict = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4362,7 +4387,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isAllowed(string $subject, string $permission, $value = true, $is_admin_strict = false): bool",
         returnType: "bool",
-        params: [{name: "subject", type: "string"}, {name: "permission", type: "string"}, {name: "value = true", type: "mixed"}, {name: "is_admin_strict = false", type: "mixed"}],
+        params: [{"name":"subject","type":"string","description":""},{"name":"permission","type":"string","description":""},{"name":"value = true","type":"mixed","description":""},{"name":"is_admin_strict = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4370,7 +4395,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isPermittedLimitReached(string $subject, string $permission, $current_value = 0, $is_admin_strict = false): bool",
         returnType: "bool",
-        params: [{name: "subject", type: "string"}, {name: "permission", type: "string"}, {name: "current_value = 0", type: "mixed"}, {name: "is_admin_strict = false", type: "mixed"}],
+        params: [{"name":"subject","type":"string","description":""},{"name":"permission","type":"string","description":""},{"name":"current_value = 0","type":"mixed","description":""},{"name":"is_admin_strict = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4378,15 +4403,15 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isPermittedLimitHigher(string $subject, string $permission, $current_value = 0, $is_admin_strict = false): bool",
         returnType: "bool",
-        params: [{name: "subject", type: "string"}, {name: "permission", type: "string"}, {name: "current_value = 0", type: "mixed"}, {name: "is_admin_strict = false", type: "mixed"}],
+        params: [{"name":"subject","type":"string","description":""},{"name":"permission","type":"string","description":""},{"name":"current_value = 0","type":"mixed","description":""},{"name":"is_admin_strict = false","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "addRule",
         visibility: "static",
-        signature: "function addRule(string $controller, array $rule): integer|false",
-        returnType: "integer|false",
-        params: [{name: "controller", type: "string"}, {name: "rule", type: "array"}],
+        signature: "function addRule(string $controller, array $rule): int|false",
+        returnType: "int|false",
+        params: [{"name":"controller","type":"string","description":""},{"name":"rule","type":"array","description":""}],
         description: "",
       },
       {
@@ -4394,7 +4419,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getRulesList(string $controller): array",
         returnType: "array",
-        params: [{name: "controller", type: "string"}],
+        params: [{"name":"controller","type":"string","description":""}],
         description: "",
       },
       {
@@ -4402,7 +4427,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getPermissions($subject = false): array",
         returnType: "array",
-        params: [{name: "subject = false", type: "mixed"}],
+        params: [{"name":"subject = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4410,7 +4435,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getUserPermissions($user_groups): array",
         returnType: "array",
-        params: [{name: "user_groups", type: "mixed"}],
+        params: [{"name":"user_groups","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4426,7 +4451,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function savePermissions($subject, $perms): void",
         returnType: "void",
-        params: [{name: "subject", type: "mixed"}, {name: "perms", type: "mixed"}],
+        params: [{"name":"subject","type":"mixed","description":""},{"name":"perms","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4434,7 +4459,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getRulesGroupMembers($controller, $name, $value = false, $subject = false): array",
         returnType: "array",
-        params: [{name: "controller", type: "mixed"}, {name: "name", type: "mixed"}, {name: "value = false", type: "mixed"}, {name: "subject = false", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"name","type":"mixed","description":""},{"name":"value = false","type":"mixed","description":""},{"name":"subject = false","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -4454,7 +4479,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function pushOn($queue, $data, $priority = 1): integer",
         returnType: "integer",
-        params: [{name: "queue", type: "mixed"}, {name: "data", type: "mixed"}, {name: "priority = 1", type: "mixed"}],
+        params: [{"name":"queue","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"priority = 1","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4462,7 +4487,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function pushOnLater($date, $queue, $data, $priority = 1): integer",
         returnType: "integer",
-        params: [{name: "date", type: "mixed"}, {name: "queue", type: "mixed"}, {name: "data", type: "mixed"}, {name: "priority = 1", type: "mixed"}],
+        params: [{"name":"date","type":"mixed","description":""},{"name":"queue","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"priority = 1","type":"mixed","description":""}],
         description: "",
       },
     ],
@@ -4482,7 +4507,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct(array $data, int $context = self::CTX_AUTO_DETECT, array $server = [], $content = null): void",
         returnType: "void",
-        params: [{name: "data", type: "array"}, {name: "context = self::CTX_AUTO_DETECT", type: "int"}, {name: "server = []", type: "array"}, {name: "content = null", type: "mixed"}],
+        params: [{"name":"data","type":"array","description":""},{"name":"context = self::CTX_AUTO_DETECT","type":"int","description":""},{"name":"server = []","type":"array","description":""},{"name":"content = null","type":"mixed","description":""}],
         description: "Класс для работы с запросами/параметрами, передаваемыеми в контроллеры * @method bool hasHeader(string $key) Проверяет наличие заголовка запроса @method bool hasServer(string $key) Проверяет наличие з",
       },
       {
@@ -4490,7 +4515,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __call($name, $arguments): mixed",
         returnType: "mixed",
-        params: [{name: "name", type: "mixed"}, {name: "arguments", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"arguments","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4514,7 +4539,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setContext($context): $this",
         returnType: "$this",
-        params: [{name: "context", type: "mixed"}],
+        params: [{"name":"context","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4570,7 +4595,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function has(string $var): boolean",
         returnType: "boolean",
-        params: [{name: "var", type: "string"}],
+        params: [{"name":"var","type":"string","description":""}],
         description: "",
       },
       {
@@ -4586,7 +4611,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasInQuery(string $var): boolean",
         returnType: "boolean",
-        params: [{name: "var", type: "string"}],
+        params: [{"name":"var","type":"string","description":""}],
         description: "",
       },
       {
@@ -4594,7 +4619,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function get(string $var, $default = false, $var_type = null): mixed",
         returnType: "mixed",
-        params: [{name: "var", type: "string"}, {name: "default = false", type: "mixed"}, {name: "var_type = null", type: "mixed"}],
+        params: [{"name":"var","type":"string","description":""},{"name":"default = false","type":"mixed","description":""},{"name":"var_type = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4626,7 +4651,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setData(array $data): void",
         returnType: "void",
-        params: [{name: "data", type: "array"}],
+        params: [{"name":"data","type":"array","description":""}],
         description: "",
       },
       {
@@ -4634,7 +4659,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function set(string $name, $value): $this",
         returnType: "$this",
-        params: [{name: "name", type: "string"}, {name: "value", type: "mixed"}],
+        params: [{"name":"name","type":"string","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4642,7 +4667,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function getProperty(string $prop, string $key, $default = null): mixed",
         returnType: "mixed",
-        params: [{name: "prop", type: "string"}, {name: "key", type: "string"}, {name: "default = null", type: "mixed"}],
+        params: [{"name":"prop","type":"string","description":""},{"name":"key","type":"string","description":""},{"name":"default = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4650,7 +4675,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function setProperty(string $prop, string $key, $value): void",
         returnType: "void",
-        params: [{name: "prop", type: "string"}, {name: "key", type: "string"}, {name: "value", type: "mixed"}],
+        params: [{"name":"prop","type":"string","description":""},{"name":"key","type":"string","description":""},{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4658,7 +4683,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function hasProperty(string $prop, string $key): bool",
         returnType: "bool",
-        params: [{name: "prop", type: "string"}, {name: "key", type: "string"}],
+        params: [{"name":"prop","type":"string","description":""},{"name":"key","type":"string","description":""}],
         description: "",
       },
       {
@@ -4666,7 +4691,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setServerData(array $server): void",
         returnType: "void",
-        params: [{name: "server", type: "array"}],
+        params: [{"name":"server","type":"array","description":""}],
         description: "",
       },
       {
@@ -4674,7 +4699,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isMethod(string $method): void",
         returnType: "void",
-        params: [{name: "method", type: "string"}],
+        params: [{"name":"method","type":"string","description":""}],
         description: "",
       },
       {
@@ -4745,13 +4770,13 @@ export const coreAPIMap = {
     properties: [
     ],
     constants: [
-      { name: "CTX_AUTO_DETECT", value: "0" },
-      { name: "CTX_STANDARD", value: "1" },
-      { name: "CTX_INTERNAL", value: "2" },
-      { name: "CTX_AJAX", value: "3" },
-      { name: "CTX_TYPE_STANDARD", value: "0" },
-      { name: "CTX_TYPE_MODAL", value: "1" },
-      { name: "CTX_TYPE_API", value: "2" },
+      {"name":"CTX_AUTO_DETECT","value":"0","description":""},
+      {"name":"CTX_STANDARD","value":"1","description":""},
+      {"name":"CTX_INTERNAL","value":"2","description":""},
+      {"name":"CTX_AJAX","value":"3","description":""},
+      {"name":"CTX_TYPE_STANDARD","value":"0","description":""},
+      {"name":"CTX_TYPE_MODAL","value":"1","description":""},
+      {"name":"CTX_TYPE_API","value":"2","description":""},
     ],
   },
   cmsResponse: {
@@ -4765,7 +4790,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($content = '', int $status = 200): void",
         returnType: "void",
-        params: [{name: "content = ''", type: "mixed"}, {name: "status = 200", type: "int"}],
+        params: [{"name":"content = ''","type":"mixed","description":""},{"name":"status = 200","type":"int","description":""}],
         description: "Класс HTTP ответа",
       },
       {
@@ -4781,7 +4806,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function send($exit = true): void",
         returnType: "void",
-        params: [{name: "exit = true", type: "mixed"}],
+        params: [{"name":"exit = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4813,7 +4838,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function sendFile(string $file_path, array $headers = []): type",
         returnType: "type",
-        params: [{name: "file_path", type: "string"}, {name: "headers = []", type: "array"}],
+        params: [{"name":"file_path","type":"string","description":""},{"name":"headers = []","type":"array","description":""}],
         description: "",
       },
       {
@@ -4821,7 +4846,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function sendDownloadFile(string $file_path, $file_name = null): type",
         returnType: "type",
-        params: [{name: "file_path", type: "string"}, {name: "file_name = null", type: "mixed"}],
+        params: [{"name":"file_path","type":"string","description":""},{"name":"file_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4829,7 +4854,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function redirect($url, $status = 302): void",
         returnType: "void",
-        params: [{name: "url", type: "mixed"}, {name: "status = 302", type: "mixed"}],
+        params: [{"name":"url","type":"mixed","description":""},{"name":"status = 302","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4837,7 +4862,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isNotModified(cmsRequest $request): bool",
         returnType: "bool",
-        params: [{name: "request", type: "cmsRequest"}],
+        params: [{"name":"request","type":"cmsRequest","description":""}],
         description: "",
       },
       {
@@ -4853,7 +4878,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setLastModified($date): $this",
         returnType: "$this",
-        params: [{name: "date", type: "mixed"}],
+        params: [{"name":"date","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4861,7 +4886,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setStatusCode(int $code): $this",
         returnType: "$this",
-        params: [{name: "code", type: "int"}],
+        params: [{"name":"code","type":"int","description":""}],
         description: "",
       },
       {
@@ -4877,7 +4902,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setContent($content): $this",
         returnType: "$this",
-        params: [{name: "content", type: "mixed"}],
+        params: [{"name":"content","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4885,7 +4910,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setHeader(string $key, $values, bool $replace = true): $this",
         returnType: "$this",
-        params: [{name: "key", type: "string"}, {name: "values", type: "mixed"}, {name: "replace = true", type: "bool"}],
+        params: [{"name":"key","type":"string","description":""},{"name":"values","type":"mixed","description":""},{"name":"replace = true","type":"bool","description":""}],
         description: "",
       },
       {
@@ -4893,7 +4918,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getHeaders($key = null): array",
         returnType: "array",
-        params: [{name: "key = null", type: "mixed"}],
+        params: [{"name":"key = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4901,7 +4926,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getHeader(string $key, $default = null): ?string",
         returnType: "?string",
-        params: [{name: "key", type: "string"}, {name: "default = null", type: "mixed"}],
+        params: [{"name":"key","type":"string","description":""},{"name":"default = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -4909,7 +4934,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function replaceHeaders(array $headers = []): void",
         returnType: "void",
-        params: [{name: "headers = []", type: "array"}],
+        params: [{"name":"headers = []","type":"array","description":""}],
         description: "",
       },
       {
@@ -4917,7 +4942,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addHeaders(array $headers): void",
         returnType: "void",
-        params: [{name: "headers", type: "array"}],
+        params: [{"name":"headers","type":"array","description":""}],
         description: "",
       },
       {
@@ -4925,7 +4950,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasHeader(string $key): bool",
         returnType: "bool",
-        params: [{name: "key", type: "string"}],
+        params: [{"name":"key","type":"string","description":""}],
         description: "",
       },
       {
@@ -4933,7 +4958,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function containsHeader(string $key, string $value): bool",
         returnType: "bool",
-        params: [{name: "key", type: "string"}, {name: "value", type: "string"}],
+        params: [{"name":"key","type":"string","description":""},{"name":"value","type":"string","description":""}],
         description: "",
       },
       {
@@ -4941,7 +4966,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function removeHeader(string $key): void",
         returnType: "void",
-        params: [{name: "key", type: "string"}],
+        params: [{"name":"key","type":"string","description":""}],
         description: "",
       },
       {
@@ -4957,15 +4982,15 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function normalizeHeaderName(string $key): string",
         returnType: "string",
-        params: [{name: "key", type: "string"}],
+        params: [{"name":"key","type":"string","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
-      { name: "UPPER", value: "'_ABCDEFGHIJKLMNOPQRSTUVWXYZ'" },
-      { name: "LOWER", value: "'-abcdefghijklmnopqrstuvwxyz'" },
+      {"name":"UPPER","value":"'_ABCDEFGHIJKLMNOPQRSTUVWXYZ'","description":""},
+      {"name":"LOWER","value":"'-abcdefghijklmnopqrstuvwxyz'","description":""},
     ],
   },
   cmsTemplate: {
@@ -5019,7 +5044,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addOutput($html): void",
         returnType: "void",
-        params: [{name: "html", type: "mixed"}],
+        params: [{"name":"html","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5027,7 +5052,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setOutput($html): void",
         returnType: "void",
-        params: [{name: "html", type: "mixed"}],
+        params: [{"name":"html","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5035,7 +5060,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addToBlock($position, $html, $begining = false): void",
         returnType: "void",
-        params: [{name: "position", type: "mixed"}, {name: "html", type: "mixed"}, {name: "begining = false", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""},{"name":"html","type":"mixed","description":""},{"name":"begining = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5043,7 +5068,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function block($position): void",
         returnType: "void",
-        params: [{name: "position", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5051,7 +5076,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasBlock(...$positions): boolean",
         returnType: "boolean",
-        params: [{name: "positions", type: "..."}],
+        params: [{"name":"positions","type":"...","description":""}],
         description: "",
       },
       {
@@ -5059,7 +5084,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getMetaHandled(string $key): string",
         returnType: "string",
-        params: [{name: "key", type: "string"}],
+        params: [{"name":"key","type":"string","description":""}],
         description: "",
       },
       {
@@ -5067,7 +5092,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function head($is_seo_meta = true, $print_js = true, $print_css = true): $this",
         returnType: "$this",
-        params: [{name: "is_seo_meta = true", type: "mixed"}, {name: "print_js = true", type: "mixed"}, {name: "print_css = true", type: "mixed"}],
+        params: [{"name":"is_seo_meta = true","type":"mixed","description":""},{"name":"print_js = true","type":"mixed","description":""},{"name":"print_css = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5115,7 +5140,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function toolbar(string $template_name = 'menu'): void",
         returnType: "void",
-        params: [{name: "template_name = 'menu'", type: "string"}],
+        params: [{"name":"template_name = 'menu'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5123,7 +5148,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function actionsToolbar($menu_title): void",
         returnType: "void",
-        params: [{name: "menu_title", type: "mixed"}],
+        params: [{"name":"menu_title","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5131,7 +5156,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function widgets($position, $is_titles = true, $wrapper = ''): boolean",
         returnType: "boolean",
-        params: [{name: "position", type: "mixed"}, {name: "is_titles = true", type: "mixed"}, {name: "wrapper = ''", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""},{"name":"is_titles = true","type":"mixed","description":""},{"name":"wrapper = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5139,7 +5164,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function widgetsInHtml($position, $wrapper_html): void",
         returnType: "void",
-        params: [{name: "position", type: "mixed"}, {name: "wrapper_html", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""},{"name":"wrapper_html","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5147,7 +5172,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasWidgetsOn(...$positions): bool",
         returnType: "bool",
-        params: [{name: "positions", type: "..."}],
+        params: [{"name":"positions","type":"...","description":""}],
         description: "",
       },
       {
@@ -5155,7 +5180,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function hasMenu($menu_name): boolean",
         returnType: "boolean",
-        params: [{name: "menu_name", type: "mixed"}],
+        params: [{"name":"menu_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5163,7 +5188,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function href_to($action, $params = false, $query = []): string",
         returnType: "string",
-        params: [{name: "action", type: "mixed"}, {name: "params = false", type: "mixed"}, {name: "query = []", type: "mixed"}],
+        params: [{"name":"action","type":"mixed","description":""},{"name":"params = false","type":"mixed","description":""},{"name":"query = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5195,7 +5220,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageH1($title): $this",
         returnType: "$this",
-        params: [{name: "title", type: "mixed"}],
+        params: [{"name":"title","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5203,7 +5228,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addToPageH1($title, $separator = ', '): $this",
         returnType: "$this",
-        params: [{name: "title", type: "mixed"}, {name: "separator = '", type: "mixed"}],
+        params: [{"name":"title","type":"mixed","description":""},{"name":"separator = '","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5211,7 +5236,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageH1Item(array $item): void",
         returnType: "void",
-        params: [{name: "item", type: "array"}],
+        params: [{"name":"item","type":"array","description":""}],
         description: "",
       },
       {
@@ -5219,7 +5244,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPagePatternH1(array $item, string $default = 'title', string $key = 'tag_h1'): $this",
         returnType: "$this",
-        params: [{name: "item", type: "array"}, {name: "default = 'title'", type: "string"}, {name: "key = 'tag_h1'", type: "string"}],
+        params: [{"name":"item","type":"array","description":""},{"name":"default = 'title'","type":"string","description":""},{"name":"key = 'tag_h1'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5227,7 +5252,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageTitle(...$pagetitle): void",
         returnType: "void",
-        params: [{name: "pagetitle", type: "..."}],
+        params: [{"name":"pagetitle","type":"...","description":""}],
         description: "",
       },
       {
@@ -5235,7 +5260,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addToPageTitle(string $title, string $separator = ' '): $this",
         returnType: "$this",
-        params: [{name: "title", type: "string"}, {name: "separator = ' '", type: "string"}],
+        params: [{"name":"title","type":"string","description":""},{"name":"separator = ' '","type":"string","description":""}],
         description: "",
       },
       {
@@ -5243,7 +5268,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageTitleItem(array $item): void",
         returnType: "void",
-        params: [{name: "item", type: "array"}],
+        params: [{"name":"item","type":"array","description":""}],
         description: "",
       },
       {
@@ -5251,7 +5276,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFrontPageTitle($pagetitle): $this",
         returnType: "$this",
-        params: [{name: "pagetitle", type: "mixed"}],
+        params: [{"name":"pagetitle","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -5260,7 +5285,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPagePatternTitle(array $item, string $default = 'title', string $key = 'tag_title'): $this",
         returnType: "$this",
-        params: [{name: "item", type: "array"}, {name: "default = 'title'", type: "string"}, {name: "key = 'tag_title'", type: "string"}],
+        params: [{"name":"item","type":"array","description":""},{"name":"default = 'title'","type":"string","description":""},{"name":"key = 'tag_title'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5268,7 +5293,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setMeta($keywords, $description): void",
         returnType: "void",
-        params: [{name: "keywords", type: "mixed"}, {name: "description", type: "mixed"}],
+        params: [{"name":"keywords","type":"mixed","description":""},{"name":"description","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5276,7 +5301,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageKeywords($keywords): void",
         returnType: "void",
-        params: [{name: "keywords", type: "mixed"}],
+        params: [{"name":"keywords","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5284,7 +5309,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageKeywordsItem(array $item): void",
         returnType: "void",
-        params: [{name: "item", type: "array"}],
+        params: [{"name":"item","type":"array","description":""}],
         description: "",
       },
       {
@@ -5292,7 +5317,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPagePatternKeywords(array $item, string $default = 'keys', string $key = 'tag_keys'): $this",
         returnType: "$this",
-        params: [{name: "item", type: "array"}, {name: "default = 'keys'", type: "string"}, {name: "key = 'tag_keys'", type: "string"}],
+        params: [{"name":"item","type":"array","description":""},{"name":"default = 'keys'","type":"string","description":""},{"name":"key = 'tag_keys'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5300,7 +5325,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageDescription($description): void",
         returnType: "void",
-        params: [{name: "description", type: "mixed"}],
+        params: [{"name":"description","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5308,7 +5333,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageDescriptionItem(array $item): void",
         returnType: "void",
-        params: [{name: "item", type: "array"}],
+        params: [{"name":"item","type":"array","description":""}],
         description: "",
       },
       {
@@ -5316,7 +5341,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPagePatternDescription(array $item, string $default = 'description', string $key = 'tag_desc'): $this",
         returnType: "$this",
-        params: [{name: "item", type: "array"}, {name: "default = 'description'", type: "string"}, {name: "key = 'tag_desc'", type: "string"}],
+        params: [{"name":"item","type":"array","description":""},{"name":"default = 'description'","type":"string","description":""},{"name":"key = 'tag_desc'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5324,7 +5349,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function setPagePatternSeo(string $meta_key, array $item, string $default = 'description', string $key = 'tag_desc'): $this",
         returnType: "$this",
-        params: [{name: "meta_key", type: "string"}, {name: "item", type: "array"}, {name: "default = 'description'", type: "string"}, {name: "key = 'tag_desc'", type: "string"}],
+        params: [{"name":"meta_key","type":"string","description":""},{"name":"item","type":"array","description":""},{"name":"default = 'description'","type":"string","description":""},{"name":"key = 'tag_desc'","type":"string","description":""}],
         description: "",
       },
       {
@@ -5332,23 +5357,23 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setPageAllItem(array $item): $this",
         returnType: "$this",
-        params: [{name: "item", type: "array"}],
+        params: [{"name":"item","type":"array","description":""}],
         description: "",
       },
       {
         name: "addToolButton",
         visibility: "public",
-        signature: "function addToolButton($button): \cmsTemplate",
-        returnType: "\cmsTemplate",
-        params: [{name: "button", type: "mixed"}],
+        signature: "function addToolButton($button): \\cmsTemplate",
+        returnType: "\\cmsTemplate",
+        params: [{"name":"button","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "addToolButtons",
         visibility: "public",
-        signature: "function addToolButtons($buttons): \cmsTemplate",
-        returnType: "\cmsTemplate",
-        params: [{name: "buttons", type: "mixed"}],
+        signature: "function addToolButtons($buttons): \\cmsTemplate",
+        returnType: "\\cmsTemplate",
+        params: [{"name":"buttons","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5364,7 +5389,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMenuItem($menu_name, $item): void",
         returnType: "void",
-        params: [{name: "menu_name", type: "mixed"}, {name: "item", type: "mixed"}],
+        params: [{"name":"menu_name","type":"mixed","description":""},{"name":"item","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5372,7 +5397,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMenuItems($menu_name, $items): void",
         returnType: "void",
-        params: [{name: "menu_name", type: "mixed"}, {name: "items", type: "mixed"}],
+        params: [{"name":"menu_name","type":"mixed","description":""},{"name":"items","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5380,7 +5405,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setMenuItems($menu_name, $items): type",
         returnType: "type",
-        params: [{name: "menu_name", type: "mixed"}, {name: "items", type: "mixed"}],
+        params: [{"name":"menu_name","type":"mixed","description":""},{"name":"items","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5388,7 +5413,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addBreadcrumb($title, $href = ''): void",
         returnType: "void",
-        params: [{name: "title", type: "mixed"}, {name: "href = ''", type: "mixed"}],
+        params: [{"name":"title","type":"mixed","description":""},{"name":"href = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5404,7 +5429,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function breadcrumbs($options = []): void",
         returnType: "void",
-        params: [{name: "options = []", type: "mixed"}],
+        params: [{"name":"options = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5412,7 +5437,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addHead($tag, $is_include_once = true): void",
         returnType: "void",
-        params: [{name: "tag", type: "mixed"}, {name: "is_include_once = true", type: "mixed"}],
+        params: [{"name":"tag","type":"mixed","description":""},{"name":"is_include_once = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5428,7 +5453,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function removeHeadByKey($key): $this",
         returnType: "$this",
-        params: [{name: "key", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5436,7 +5461,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addBottom($tag, $request = null, $at_begin = false): $this",
         returnType: "$this",
-        params: [{name: "tag", type: "mixed"}, {name: "request = null", type: "mixed"}, {name: "at_begin = false", type: "mixed"}],
+        params: [{"name":"tag","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""},{"name":"at_begin = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5444,7 +5469,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTemplateFilePath($path, $with_inheritance = false): type",
         returnType: "type",
-        params: [{name: "path", type: "mixed"}, {name: "with_inheritance = false", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"with_inheritance = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5452,7 +5477,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getHeadFilePath(string $file): string",
         returnType: "string",
-        params: [{name: "file", type: "string"}],
+        params: [{"name":"file","type":"string","description":""}],
         description: "",
       },
       {
@@ -5460,7 +5485,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getCSSTag(string $file): string",
         returnType: "string",
-        params: [{name: "file", type: "string"}],
+        params: [{"name":"file","type":"string","description":""}],
         description: "",
       },
       {
@@ -5468,7 +5493,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getJSTag(string $file, $comment = '', $params = []): string",
         returnType: "string",
-        params: [{name: "file", type: "string"}, {name: "comment = ''", type: "mixed"}, {name: "params = []", type: "mixed"}],
+        params: [{"name":"file","type":"string","description":""},{"name":"comment = ''","type":"mixed","description":""},{"name":"params = []","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -5477,7 +5502,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMainCSS($file): boolean",
         returnType: "boolean",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5485,7 +5510,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addCSS($file, $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "file", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5493,7 +5518,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMainJS($file, $at_begin = false): boolean",
         returnType: "boolean",
-        params: [{name: "file", type: "mixed"}, {name: "at_begin = false", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"at_begin = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5501,7 +5526,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addJS($file, $comment = '', $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "file", type: "mixed"}, {name: "comment = ''", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"comment = ''","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5509,7 +5534,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addControllerJS($path, $cname = '', $comment = '', $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "path", type: "mixed"}, {name: "cname = ''", type: "mixed"}, {name: "comment = ''", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"cname = ''","type":"mixed","description":""},{"name":"comment = ''","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5517,7 +5542,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addControllerJSFromContext($path, $cname = '', $request = null): bool",
         returnType: "bool",
-        params: [{name: "path", type: "mixed"}, {name: "cname = ''", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"cname = ''","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5525,7 +5550,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addControllerCSS($path, $cname = '', $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "path", type: "mixed"}, {name: "cname = ''", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"cname = ''","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5533,7 +5558,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addControllerCSSFromContext($path, $cname = '', $request = null): bool",
         returnType: "bool",
-        params: [{name: "path", type: "mixed"}, {name: "cname = ''", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"cname = ''","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5541,7 +5566,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplJS($path, $comment = '', $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "path", type: "mixed"}, {name: "comment = ''", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"comment = ''","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5549,7 +5574,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplJSFromContext($path, $request = null): bool",
         returnType: "bool",
-        params: [{name: "path", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5557,7 +5582,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplCSS($path, $allow_merge = true): boolean",
         returnType: "boolean",
-        params: [{name: "path", type: "mixed"}, {name: "allow_merge = true", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"allow_merge = true","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5565,7 +5590,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplCSSFromContext($path, $request = null): bool",
         returnType: "bool",
-        params: [{name: "path", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5573,7 +5598,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplJSName($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5581,7 +5606,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplJSNameFromContext($name, $request = null): bool",
         returnType: "bool",
-        params: [{name: "name", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5589,7 +5614,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMainTplJSName($name, $at_begin = false): bool",
         returnType: "bool",
-        params: [{name: "name", type: "mixed"}, {name: "at_begin = false", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"at_begin = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5597,7 +5622,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function onDemandTplName($name, $type): $this",
         returnType: "$this",
-        params: [{name: "name", type: "mixed"}, {name: "type", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"type","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5605,7 +5630,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function onDemandTplCSSName($name): $this",
         returnType: "$this",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5613,7 +5638,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function onDemandTplJSName($name): $this",
         returnType: "$this",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5629,7 +5654,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplCSSName($name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5637,7 +5662,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addTplCSSNameFromContext($name, $request = null): bool",
         returnType: "bool",
-        params: [{name: "name", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5645,7 +5670,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addMainTplCSSName($name): bool",
         returnType: "bool",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5653,7 +5678,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function insertJS($file, $comment = ''): bool",
         returnType: "bool",
-        params: [{name: "file", type: "mixed"}, {name: "comment = ''", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"comment = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5661,7 +5686,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function insertCSS($file): bool",
         returnType: "bool",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5669,7 +5694,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addJSFromContext($file, $comment = '', $request = null): bool",
         returnType: "bool",
-        params: [{name: "file", type: "mixed"}, {name: "comment = ''", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"comment = ''","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5677,7 +5702,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addCSSFromContext($file, $request = null): bool",
         returnType: "bool",
-        params: [{name: "file", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5685,7 +5710,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getJS($file): string",
         returnType: "string",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5693,7 +5718,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getCSS($file): string",
         returnType: "string",
-        params: [{name: "file", type: "mixed"}],
+        params: [{"name":"file","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5701,7 +5726,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getLangJS(...$phrases): type",
         returnType: "type",
-        params: [{name: "phrases", type: "..."}],
+        params: [{"name":"phrases","type":"...","description":""}],
         description: "",
       },
       {
@@ -5725,7 +5750,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function convertCSSUrlsToAbsolute(string $css, string $css_file): string",
         returnType: "string",
-        params: [{name: "css", type: "string"}, {name: "css_file", type: "string"}],
+        params: [{"name":"css","type":"string","description":""},{"name":"css_file","type":"string","description":""}],
         description: "",
       },
       {
@@ -5733,7 +5758,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setLayout($layout): $this",
         returnType: "$this",
-        params: [{name: "layout", type: "mixed"}],
+        params: [{"name":"layout","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5741,7 +5766,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setLayoutParams(array $layout_params): $this",
         returnType: "$this",
-        params: [{name: "layout_params", type: "array"}],
+        params: [{"name":"layout_params","type":"array","description":""}],
         description: "",
       },
       {
@@ -5749,7 +5774,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function addLayoutParams(array $layout_params): $this",
         returnType: "$this",
-        params: [{name: "layout_params", type: "array"}],
+        params: [{"name":"layout_params","type":"array","description":""}],
         description: "",
       },
       {
@@ -5765,7 +5790,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getSchemeHTML(string $name = ''): boolean|string",
         returnType: "boolean|string",
-        params: [{name: "name = ''", type: "string"}],
+        params: [{"name":"name = ''","type":"string","description":""}],
         description: "",
       },
       {
@@ -5773,7 +5798,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getSchemeHTMLFile(string $name = ''): boolean|string",
         returnType: "boolean|string",
-        params: [{name: "name = ''", type: "string"}],
+        params: [{"name":"name = ''","type":"string","description":""}],
         description: "",
       },
       {
@@ -5781,7 +5806,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setBaseTemplate($name): $this",
         returnType: "$this",
-        params: [{name: "name", type: "mixed"}],
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5795,9 +5820,9 @@ export const coreAPIMap = {
       {
         name: "setName",
         visibility: "public",
-        signature: "function setName($name): \cmsTemplate",
-        returnType: "\cmsTemplate",
-        params: [{name: "name", type: "mixed"}],
+        signature: "function setName($name): \\cmsTemplate",
+        returnType: "\\cmsTemplate",
+        params: [{"name":"name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5811,9 +5836,9 @@ export const coreAPIMap = {
       {
         name: "setInheritNames",
         visibility: "public",
-        signature: "function setInheritNames($names = []): \cmsTemplate",
-        returnType: "\cmsTemplate",
-        params: [{name: "names = []", type: "mixed"}],
+        signature: "function setInheritNames($names = []): \\cmsTemplate",
+        returnType: "\\cmsTemplate",
+        params: [{"name":"names = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5829,7 +5854,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTplFilePath($relative_path, $return_abs_path = true, $return_current_name = false): string|array|boolean",
         returnType: "string|array|boolean",
-        params: [{name: "relative_path", type: "mixed"}, {name: "return_abs_path = true", type: "mixed"}, {name: "return_current_name = false", type: "mixed"}],
+        params: [{"name":"relative_path","type":"mixed","description":""},{"name":"return_abs_path = true","type":"mixed","description":""},{"name":"return_current_name = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5837,7 +5862,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setContext($controller_obj): void",
         returnType: "void",
-        params: [{name: "controller_obj", type: "mixed"}],
+        params: [{"name":"controller_obj","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5861,7 +5886,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTemplateFileName($filename, $is_check = false): string",
         returnType: "string",
-        params: [{name: "filename", type: "mixed"}, {name: "is_check = false", type: "mixed"}],
+        params: [{"name":"filename","type":"mixed","description":""},{"name":"is_check = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5869,7 +5894,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getStylesFileName($controller_name = '', $subfolder = ''): string",
         returnType: "string",
-        params: [{name: "controller_name = ''", type: "mixed"}, {name: "subfolder = ''", type: "mixed"}],
+        params: [{"name":"controller_name = ''","type":"mixed","description":""},{"name":"subfolder = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5877,7 +5902,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getJavascriptFileName($filename): string|array",
         returnType: "string|array",
-        params: [{name: "filename", type: "mixed"}],
+        params: [{"name":"filename","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5885,7 +5910,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getTemplateStylesFileName($filename): string",
         returnType: "string",
-        params: [{name: "filename", type: "mixed"}],
+        params: [{"name":"filename","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5893,7 +5918,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderText($text): void",
         returnType: "void",
-        params: [{name: "text", type: "mixed"}],
+        params: [{"name":"text","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -5902,7 +5927,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderJSON($data, $with_header = false): void",
         returnType: "void",
-        params: [{name: "data", type: "mixed"}, {name: "with_header = false", type: "mixed"}],
+        params: [{"name":"data","type":"mixed","description":""},{"name":"with_header = false","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -5911,7 +5936,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderBlock($position, $tpl_file, $data = []): $this",
         returnType: "$this",
-        params: [{name: "position", type: "mixed"}, {name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""},{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5919,7 +5944,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderInternal($controller, $tpl_file, $data = []): string",
         returnType: "string",
-        params: [{name: "controller", type: "mixed"}, {name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"controller","type":"mixed","description":""},{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5927,7 +5952,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function render($tpl_file, $data = [], $request = false): string",
         returnType: "string",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = false", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5935,7 +5960,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderPlain($tpl_file, $data = []): void",
         returnType: "void",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5943,7 +5968,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function processRender($tpl_file, $data = [], $request = false, $add_controller_css = false): mixed",
         returnType: "mixed",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = false", type: "mixed"}, {name: "add_controller_css = false", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = false","type":"mixed","description":""},{"name":"add_controller_css = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5951,7 +5976,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderChild($tpl_file, $data = []): void",
         returnType: "void",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5959,7 +5984,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderControllerChild($controller_name, $tpl_file, $data = [], $request = false): void",
         returnType: "void",
-        params: [{name: "controller_name", type: "mixed"}, {name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = false", type: "mixed"}],
+        params: [{"name":"controller_name","type":"mixed","description":""},{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5967,7 +5992,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRenderedChild($tpl_file, $data = []): string",
         returnType: "string",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5975,7 +6000,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderForm($form, $data, $attributes = [], $errors = false): void",
         returnType: "void",
-        params: [{name: "form", type: "mixed"}, {name: "data", type: "mixed"}, {name: "attributes = []", type: "mixed"}, {name: "errors = false", type: "mixed"}],
+        params: [{"name":"form","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"attributes = []","type":"mixed","description":""},{"name":"errors = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -5983,7 +6008,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderGrid($source_url, cmsGrid $grid): void",
         returnType: "void",
-        params: [{name: "source_url", type: "mixed"}, {name: "grid", type: "cmsGrid"}],
+        params: [{"name":"source_url","type":"mixed","description":""},{"name":"grid","type":"cmsGrid","description":""}],
         description: "",
       },
       {
@@ -5991,7 +6016,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderGridRowsJSON(cmsGrid $grid, $dataset, $total = 0, $pages_count = 1): void",
         returnType: "void",
-        params: [{name: "grid", type: "cmsGrid"}, {name: "dataset", type: "mixed"}, {name: "total = 0", type: "mixed"}, {name: "pages_count = 1", type: "mixed"}],
+        params: [{"name":"grid","type":"cmsGrid","description":""},{"name":"dataset","type":"mixed","description":""},{"name":"total = 0","type":"mixed","description":""},{"name":"pages_count = 1","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -6000,7 +6025,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderPermissionsGrid($rules, $groups, $values, $submit_url): void",
         returnType: "void",
-        params: [{name: "rules", type: "mixed"}, {name: "groups", type: "mixed"}, {name: "values", type: "mixed"}, {name: "submit_url", type: "mixed"}],
+        params: [{"name":"rules","type":"mixed","description":""},{"name":"groups","type":"mixed","description":""},{"name":"values","type":"mixed","description":""},{"name":"submit_url","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6008,7 +6033,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderMenu($menu, $active_ids = [], $css_class = 'menu', $max_items = 0, $template = 'menu', $menu_title = ''): void",
         returnType: "void",
-        params: [{name: "menu", type: "mixed"}, {name: "active_ids = []", type: "mixed"}, {name: "css_class = 'menu'", type: "mixed"}, {name: "max_items = 0", type: "mixed"}, {name: "template = 'menu'", type: "mixed"}, {name: "menu_title = ''", type: "mixed"}],
+        params: [{"name":"menu","type":"mixed","description":""},{"name":"active_ids = []","type":"mixed","description":""},{"name":"css_class = 'menu'","type":"mixed","description":""},{"name":"max_items = 0","type":"mixed","description":""},{"name":"template = 'menu'","type":"mixed","description":""},{"name":"menu_title = ''","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6016,7 +6041,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderAsset($tpl_file, $data = [], $request = null): void",
         returnType: "void",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6024,7 +6049,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getRenderedAsset($tpl_file, $data = [], $request = null, $min_html = false): string",
         returnType: "string",
-        params: [{name: "tpl_file", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = null", type: "mixed"}, {name: "min_html = false", type: "mixed"}],
+        params: [{"name":"tpl_file","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""},{"name":"min_html = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6032,7 +6057,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderFormField($field_type, $data = []): string",
         returnType: "string",
-        params: [{name: "field_type", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"field_type","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6040,7 +6065,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getAvailableTemplatesFiles($path, $pattern = '*.*', $template_name = false, $excluded = []): array",
         returnType: "array",
-        params: [{name: "path", type: "mixed"}, {name: "pattern = '*.*'", type: "mixed"}, {name: "template_name = false", type: "mixed"}, {name: "excluded = []", type: "mixed"}],
+        params: [{"name":"path","type":"mixed","description":""},{"name":"pattern = '*.*'","type":"mixed","description":""},{"name":"template_name = false","type":"mixed","description":""},{"name":"excluded = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6056,7 +6081,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getAvailableContentItemStyles($ctype_name): array",
         returnType: "array",
-        params: [{name: "ctype_name", type: "mixed"}],
+        params: [{"name":"ctype_name","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6064,7 +6089,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderContentList($ctype, $data = [], $request = null): string",
         returnType: "string",
-        params: [{name: "ctype", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"ctype","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6072,7 +6097,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderContentItem($ctype_name, $data = [], $request = null): string",
         returnType: "string",
-        params: [{name: "ctype_name", type: "mixed"}, {name: "data = []", type: "mixed"}, {name: "request = null", type: "mixed"}],
+        params: [{"name":"ctype_name","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""},{"name":"request = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6080,7 +6105,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderLayoutChild($child, $data = []): void",
         returnType: "void",
-        params: [{name: "child", type: "mixed"}, {name: "data = []", type: "mixed"}],
+        params: [{"name":"child","type":"mixed","description":""},{"name":"data = []","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6105,7 +6130,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function renderWidgetHtml($position, $html): $this",
         returnType: "$this",
-        params: [{name: "position", type: "mixed"}, {name: "html", type: "mixed"}],
+        params: [{"name":"position","type":"mixed","description":""},{"name":"html","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6120,8 +6145,8 @@ export const coreAPIMap = {
     properties: [
     ],
     constants: [
-      { name: "TEMPLATE_BASE_PATH", value: "'templates/'" },
-      { name: "TEMPLATE_BASE_NAME", value: "'default'" },
+      {"name":"TEMPLATE_BASE_PATH","value":"'templates/'","description":""},
+      {"name":"TEMPLATE_BASE_NAME","value":"'default'","description":""},
     ],
   },
   cmsUpdater: {
@@ -6134,11 +6159,11 @@ export const coreAPIMap = {
     properties: [
     ],
     constants: [
-      { name: "UPDATE_CHECK_ERROR", value: "0" },
-      { name: "UPDATE_DOWNLOAD_ERROR", value: "1" },
-      { name: "UPDATE_NOT_AVAILABLE", value: "2" },
-      { name: "UPDATE_AVAILABLE", value: "3" },
-      { name: "UPDATE_SUCCESS", value: "4" },
+      {"name":"UPDATE_CHECK_ERROR","value":"0","description":""},
+      {"name":"UPDATE_DOWNLOAD_ERROR","value":"1","description":""},
+      {"name":"UPDATE_NOT_AVAILABLE","value":"2","description":""},
+      {"name":"UPDATE_AVAILABLE","value":"3","description":""},
+      {"name":"UPDATE_SUCCESS","value":"4","description":""},
     ],
   },
   cmsUploader: {
@@ -6152,7 +6177,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function __construct($user_id = null): void",
         returnType: "void",
-        params: [{name: "user_id = null", type: "mixed"}],
+        params: [{"name":"user_id = null","type":"mixed","description":""}],
         description: "Класс загрузки файлов",
       },
       {
@@ -6160,7 +6185,7 @@ export const coreAPIMap = {
         visibility: "protected",
         signature: "function fixPhpFilesArray(array $data): array",
         returnType: "array",
-        params: [{name: "data", type: "array"}],
+        params: [{"name":"data","type":"array","description":""}],
         description: "",
       },
       {
@@ -6168,7 +6193,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setAllowedMime(array $types): $this",
         returnType: "$this",
-        params: [{name: "types", type: "array"}],
+        params: [{"name":"types","type":"array","description":""}],
         description: "",
       },
       {
@@ -6176,7 +6201,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setAllowedExtensions($allowed_ext): $this",
         returnType: "$this",
-        params: [{name: "allowed_ext", type: "mixed"}],
+        params: [{"name":"allowed_ext","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6184,7 +6209,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setFileName(string $name): $this",
         returnType: "$this",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""}],
         description: "",
       },
       {
@@ -6192,7 +6217,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setUserId($id): $this",
         returnType: "$this",
-        params: [{name: "id", type: "mixed"}],
+        params: [{"name":"id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6216,7 +6241,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function getFiles(string $name): array",
         returnType: "array",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""}],
         description: "",
       },
       {
@@ -6224,7 +6249,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isUploaded(string $name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""}],
         description: "",
       },
       {
@@ -6232,7 +6257,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isUploadedXHR(string $name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""}],
         description: "",
       },
       {
@@ -6240,7 +6265,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isUploadedFromLink(string $name): boolean",
         returnType: "boolean",
-        params: [{name: "name", type: "string"}],
+        params: [{"name":"name","type":"string","description":""}],
         description: "",
       },
       {
@@ -6264,7 +6289,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function getFileName(string $path, string $file_ext, $file_name = null): string",
         returnType: "string",
-        params: [{name: "path", type: "string"}, {name: "file_ext", type: "string"}, {name: "file_name = null", type: "mixed"}],
+        params: [{"name":"path","type":"string","description":""},{"name":"file_ext","type":"string","description":""},{"name":"file_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6272,7 +6297,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function upload(string $filename, $allowed_ext = false, $allowed_size = 0, $destination = false): array",
         returnType: "array",
-        params: [{name: "filename", type: "string"}, {name: "allowed_ext = false", type: "mixed"}, {name: "allowed_size = 0", type: "mixed"}, {name: "destination = false", type: "mixed"}],
+        params: [{"name":"filename","type":"string","description":""},{"name":"allowed_ext = false","type":"mixed","description":""},{"name":"allowed_size = 0","type":"mixed","description":""},{"name":"destination = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6280,7 +6305,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function uploadForm(string $filename, $allowed_size = 0, $destination = false): array",
         returnType: "array",
-        params: [{name: "filename", type: "string"}, {name: "allowed_size = 0", type: "mixed"}, {name: "destination = false", type: "mixed"}],
+        params: [{"name":"filename","type":"string","description":""},{"name":"allowed_size = 0","type":"mixed","description":""},{"name":"destination = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6288,7 +6313,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function uploadFromLink(string $post_filename, $allowed_size = 0, $destination = false): array",
         returnType: "array",
-        params: [{name: "post_filename", type: "string"}, {name: "allowed_size = 0", type: "mixed"}, {name: "destination = false", type: "mixed"}],
+        params: [{"name":"post_filename","type":"string","description":""},{"name":"allowed_size = 0","type":"mixed","description":""},{"name":"destination = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6296,7 +6321,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function uploadXHR(string $filename, $allowed_size = 0, $destination = false): array",
         returnType: "array",
-        params: [{name: "filename", type: "string"}, {name: "allowed_size = 0", type: "mixed"}, {name: "destination = false", type: "mixed"}],
+        params: [{"name":"filename","type":"string","description":""},{"name":"allowed_size = 0","type":"mixed","description":""},{"name":"destination = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6304,7 +6329,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function saveFileFromString($file_bin, $allowed_size = 0, $destination = null, $dest_name = null): array",
         returnType: "array",
-        params: [{name: "file_bin", type: "mixed"}, {name: "allowed_size = 0", type: "mixed"}, {name: "destination = null", type: "mixed"}, {name: "dest_name = null", type: "mixed"}],
+        params: [{"name":"file_bin","type":"mixed","description":""},{"name":"allowed_size = 0","type":"mixed","description":""},{"name":"destination = null","type":"mixed","description":""},{"name":"dest_name = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6312,7 +6337,7 @@ export const coreAPIMap = {
         visibility: "private",
         signature: "function moveUploadedFile($source, $destination, $errorCode, $orig_name = '', $orig_size = 0): array",
         returnType: "array",
-        params: [{name: "source", type: "mixed"}, {name: "destination", type: "mixed"}, {name: "errorCode", type: "mixed"}, {name: "orig_name = ''", type: "mixed"}, {name: "orig_size = 0", type: "mixed"}],
+        params: [{"name":"source","type":"mixed","description":""},{"name":"destination","type":"mixed","description":""},{"name":"errorCode","type":"mixed","description":""},{"name":"orig_name = ''","type":"mixed","description":""},{"name":"orig_size = 0","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6320,7 +6345,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function remove(string $file_path): boolean",
         returnType: "boolean",
-        params: [{name: "file_path", type: "string"}],
+        params: [{"name":"file_path","type":"string","description":""}],
         description: "",
       },
       {
@@ -6335,7 +6360,7 @@ export const coreAPIMap = {
     properties: [
     ],
     constants: [
-      { name: "FILE_KEYS", value: "['error', 'full_path', 'name', 'size', 'tmp_name', 'type']" },
+      {"name":"FILE_KEYS","value":"['error', 'full_path', 'name', 'size', 'tmp_name', 'type']","description":""},
     ],
   },
   cmsUploadfile: {
@@ -6349,15 +6374,15 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function fromPath($file_path, $allowed_mime = null, $allowed_exts = null): void",
         returnType: "void",
-        params: [{name: "file_path", type: "mixed"}, {name: "allowed_mime = null", type: "mixed"}, {name: "allowed_exts = null", type: "mixed"}],
+        params: [{"name":"file_path","type":"mixed","description":""},{"name":"allowed_mime = null","type":"mixed","description":""},{"name":"allowed_exts = null","type":"mixed","description":""}],
         description: "",
       },
       {
         name: "fromString",
         visibility: "static",
-        signature: "function fromString($file_str, $allowed_mime = null, $allowed_exts = null): \self",
-        returnType: "\self",
-        params: [{name: "file_str", type: "mixed"}, {name: "allowed_mime = null", type: "mixed"}, {name: "allowed_exts = null", type: "mixed"}],
+        signature: "function fromString($file_str, $allowed_mime = null, $allowed_exts = null): \\self",
+        returnType: "\\self",
+        params: [{"name":"file_str","type":"mixed","description":""},{"name":"allowed_mime = null","type":"mixed","description":""},{"name":"allowed_exts = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6365,7 +6390,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setAllowedMime(array $allowed_mime): $this",
         returnType: "$this",
-        params: [{name: "allowed_mime", type: "array"}],
+        params: [{"name":"allowed_mime","type":"array","description":""}],
         description: "",
       },
       {
@@ -6373,7 +6398,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setAllowedExtensions($allowed_ext): $this",
         returnType: "$this",
-        params: [{name: "allowed_ext", type: "mixed"}],
+        params: [{"name":"allowed_ext","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6381,7 +6406,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function loadMimeFromPath($file_path): void",
         returnType: "void",
-        params: [{name: "file_path", type: "mixed"}],
+        params: [{"name":"file_path","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6389,7 +6414,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function loadMimeFromString($file_str): void",
         returnType: "void",
-        params: [{name: "file_str", type: "mixed"}],
+        params: [{"name":"file_str","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6446,6 +6471,83 @@ export const coreAPIMap = {
     constants: [
     ],
   },
+  cmsUploadremote: {
+    name: "cmsUploadremote",
+    extends: undefined,
+    file: "uploadremote.php",
+    description: "URL для скачивания * @var string",
+    methods: [
+      {
+        name: "download",
+        visibility: "public",
+        signature: "function download(): array",
+        returnType: "array",
+        params: [],
+        description: "",
+      },
+      {
+        name: "validateUrl",
+        visibility: "private",
+        signature: "function validateUrl(string $url): bool|array",
+        returnType: "bool|array",
+        params: [{"name":"url","type":"string","description":""}],
+        description: "",
+      },
+      {
+        name: "resolveHost",
+        visibility: "private",
+        signature: "function resolveHost(string $host): array",
+        returnType: "array",
+        params: [{"name":"host","type":"string","description":""}],
+        description: "",
+      },
+      {
+        name: "isAllowedIp",
+        visibility: "private",
+        signature: "function isAllowedIp(string $ip): bool",
+        returnType: "bool",
+        params: [{"name":"ip","type":"string","description":""}],
+        description: "",
+      },
+      {
+        name: "buildCurlResolve",
+        visibility: "private",
+        signature: "function buildCurlResolve(string $host, int $port, array $ips): array",
+        returnType: "array",
+        params: [{"name":"host","type":"string","description":""},{"name":"port","type":"int","description":""},{"name":"ips","type":"array","description":""}],
+        description: "",
+      },
+      {
+        name: "buildRedirectUrl",
+        visibility: "private",
+        signature: "function buildRedirectUrl(string $base_url, string $location): string",
+        returnType: "string",
+        params: [{"name":"base_url","type":"string","description":""},{"name":"location","type":"string","description":""}],
+        description: "",
+      },
+      {
+        name: "extractFileName",
+        visibility: "private",
+        signature: "function extractFileName(string $url, array $headers): string",
+        returnType: "string",
+        params: [{"name":"url","type":"string","description":""},{"name":"headers","type":"array","description":""}],
+        description: "",
+      },
+      {
+        name: "error",
+        visibility: "private",
+        signature: "function error(string $message): array",
+        returnType: "array",
+        params: [{"name":"message","type":"string","description":""}],
+        description: "",
+      },
+    ],
+    properties: [
+    ],
+    constants: [
+      {"name":"REDIRECT_CODES","value":"[\n        301, 302, 303, 307, 308\n    ]","description":""},
+    ],
+  },
   cmsUser: {
     name: "cmsUser",
     extends: undefined,
@@ -6465,7 +6567,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function checkSpoofingSession($strict = false): boolean",
         returnType: "boolean",
-        params: [{name: "strict = false", type: "mixed"}],
+        params: [{"name":"strict = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6473,7 +6575,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function loadAuthUser($user_id): array",
         returnType: "array",
-        params: [{name: "user_id", type: "mixed"}],
+        params: [{"name":"user_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6481,7 +6583,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function autoLogin($auth_token): void",
         returnType: "void",
-        params: [{name: "auth_token", type: "mixed"}],
+        params: [{"name":"auth_token","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6489,7 +6591,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function login($email, $password, $remember = false, $complete_login = true, $model = null): int|array",
         returnType: "int|array",
-        params: [{name: "email", type: "mixed"}, {name: "password", type: "mixed"}, {name: "remember = false", type: "mixed"}, {name: "complete_login = true", type: "mixed"}, {name: "model = null", type: "mixed"}],
+        params: [{"name":"email","type":"mixed","description":""},{"name":"password","type":"mixed","description":""},{"name":"remember = false","type":"mixed","description":""},{"name":"complete_login = true","type":"mixed","description":""},{"name":"model = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6497,7 +6599,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function loginComplete($user, $remember = false): boolean",
         returnType: "boolean",
-        params: [{name: "user", type: "mixed"}, {name: "remember = false", type: "mixed"}],
+        params: [{"name":"user","type":"mixed","description":""},{"name":"remember = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6513,7 +6615,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function goLogin($back_url = ''): void",
         returnType: "void",
-        params: [{name: "back_url = ''", type: "mixed"}],
+        params: [{"name":"back_url = ''","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -6522,7 +6624,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function sessionStart(cmsConfig $config): void",
         returnType: "void",
-        params: [{name: "config", type: "cmsConfig"}],
+        params: [{"name":"config","type":"cmsConfig","description":""}],
         description: "",
       },
       {
@@ -6530,7 +6632,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getCookie($key, $var_type = 'string', $callback = false): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "mixed"}, {name: "var_type = 'string'", type: "mixed"}, {name: "callback = false", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"var_type = 'string'","type":"mixed","description":""},{"name":"callback = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6538,7 +6640,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function setUPS($key, $data, $user_id = null): bool",
         returnType: "bool",
-        params: [{name: "key", type: "mixed"}, {name: "data", type: "mixed"}, {name: "user_id = null", type: "mixed"}],
+        params: [{"name":"key","type":"mixed","description":""},{"name":"data","type":"mixed","description":""},{"name":"user_id = null","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6546,7 +6648,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isInGroup($group_id): boolean",
         returnType: "boolean",
-        params: [{name: "group_id", type: "mixed"}],
+        params: [{"name":"group_id","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6554,37 +6656,37 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function isInGroups($groups): boolean",
         returnType: "boolean",
-        params: [{name: "groups", type: "mixed"}],
+        params: [{"name":"groups","type":"mixed","description":""}],
         description: "",
       },
     ],
     properties: [
     ],
     constants: [
-      { name: "USER_ONLINE_INTERVAL", value: "180" },
-      { name: "AUTH_TOKEN_EXPIRATION_INT", value: "8640000" },
+      {"name":"USER_ONLINE_INTERVAL","value":"180","description":""},
+      {"name":"AUTH_TOKEN_EXPIRATION_INT","value":"8640000","description":""},
     ],
   },
   cmsWidget: {
     name: "cmsWidget",
     extends: undefined,
     file: "widget.php",
-    description: "Основной класс всех виджетов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user",
+    description: "Основной класс всех виджетов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user",
     methods: [
       {
         name: "__construct",
         visibility: "public",
         signature: "function __construct(array $widget): void",
         returnType: "void",
-        params: [{name: "widget", type: "array"}],
-        description: "Основной класс всех виджетов * @property \cmsConfig $cms_config @property \cmsCore $cms_core @property \cmsTemplate $cms_template @property \cmsUser $cms_user",
+        params: [{"name":"widget","type":"array","description":""}],
+        description: "Основной класс всех виджетов * @property \\cmsConfig $cms_config @property \\cmsCore $cms_core @property \\cmsTemplate $cms_template @property \\cmsUser $cms_user",
       },
       {
         name: "createPositionData",
         visibility: "public",
         signature: "function createPositionData(string $html): array",
         returnType: "array",
-        params: [{name: "html", type: "string"}],
+        params: [{"name":"html","type":"string","description":""}],
         description: "",
       },
       {
@@ -6592,7 +6694,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function getOption(string $key, $default = false): mixed",
         returnType: "mixed",
-        params: [{name: "key", type: "string"}, {name: "default = false", type: "mixed"}],
+        params: [{"name":"key","type":"string","description":""},{"name":"default = false","type":"mixed","description":""}],
         description: "",
       },
       {
@@ -6608,7 +6710,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setTemplate(string $template): void",
         returnType: "void",
-        params: [{name: "template", type: "string"}],
+        params: [{"name":"template","type":"string","description":""}],
         description: "",
       },
       {
@@ -6624,7 +6726,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function setWrapper(string $template): void",
         returnType: "void",
-        params: [{name: "template", type: "string"}],
+        params: [{"name":"template","type":"string","description":""}],
         description: "",
       },
       {
@@ -6684,7 +6786,7 @@ export const coreAPIMap = {
         visibility: "static",
         signature: "function getEditor(string $name, array $config = []): void",
         returnType: "void",
-        params: [{name: "name", type: "string"}, {name: "config = []", type: "array"}],
+        params: [{"name":"name","type":"string","description":""},{"name":"config = []","type":"array","description":""}],
         description: "Базовый класс wysiwyg редакторов",
       },
       {
@@ -6700,7 +6802,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function displayEditor($field_name, $content = '', $config = []): void",
         returnType: "void",
-        params: [{name: "field_name", type: "mixed"}, {name: "content = ''", type: "mixed"}, {name: "config = []", type: "mixed"}],
+        params: [{"name":"field_name","type":"mixed","description":""},{"name":"content = ''","type":"mixed","description":""},{"name":"config = []","type":"mixed","description":""}],
         description: "",
         deprecated: true,
       },
@@ -6709,7 +6811,7 @@ export const coreAPIMap = {
         visibility: "public",
         signature: "function prepareValue($value): mixed",
         returnType: "mixed",
-        params: [{name: "value", type: "mixed"}],
+        params: [{"name":"value","type":"mixed","description":""}],
         description: "",
       },
       {

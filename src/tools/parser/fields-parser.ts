@@ -262,7 +262,7 @@ function parseFieldFile(filePath: string): FieldInfo | null {
           if (keyMatch) {
             visibleDepend = { [keyMatch[1]]: { [keyMatch[2]]: [keyMatch[3]] } };
           }
-        } catch (e) {
+        } catch {
           // ignore parse errors for visible_depend
         }
       }
@@ -351,7 +351,7 @@ export function generateFieldsMap(sourceDir: string, outputPath: string): void {
     byName,
     systemFields,
     fieldCount: fields.length,
-    generatedAt: new Date().toISOString(),
+    generatedAt: process.env.KNOWLEDGE_GENERATED_AT || new Date().toISOString(),
   };
 
   const typescriptContent = `// AUTO-GENERATED from source/system/fields

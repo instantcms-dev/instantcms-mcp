@@ -1337,7 +1337,7 @@ export const eventsMap: EventsMap = {
     }
   },
   "eventCount": 95,
-  "generatedAt": "2026-03-21T13:33:05.213Z",
+  "generatedAt": "2026-06-04T12:03:09+03:00",
   "sourceFile": "base.sql"
 };
 

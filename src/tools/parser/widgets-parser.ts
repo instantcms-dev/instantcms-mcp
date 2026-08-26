@@ -25,74 +25,47 @@ export interface WidgetsMap {
   generatedAt: string;
 }
 
-function parseWidgetOptionsForm(filePath: string): WidgetOption[] {
-  if (!fs.existsSync(filePath)) return [];
-  
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const options: WidgetOption[] = [];
-  
-  const fieldMatches = content.matchAll(/\$\w+\s*=\s*\$this\s*->\s*addWidth\([^)]+\)/g);
-  for (const match of fieldMatches) {
-    options.push({ name: 'width', type: 'width' });
-  }
-  
-  const optionsMatches = content.matchAll(/\$options\[\s*['"](\w+)['"]\s*\]\s*=/g);
-  for (const match of optionsMatches) {
-    const name = match[1];
-    let type = 'string';
-    if (content.includes(`'${name}'`) && content.includes('dropdown')) type = 'list';
-    else if (content.includes(`'${name}'`) && content.includes('number')) type = 'number';
-    else if (content.includes(`'${name}'`) && content.includes('text')) type = 'text';
-    else if (content.includes(`'${name}'`) && content.includes('image')) type = 'image';
-    options.push({ name, type });
-  }
-  
-  return options;
-}
-
 function scanWidgetsDir(dirPath: string, widgets: WidgetInfo[]): void {
   if (!fs.existsSync(dirPath)) return;
-  
+
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     if (entry.name.startsWith('.')) continue;
-    
+
     const widgetPath = path.join(dirPath, entry.name);
     const widgetFile = path.join(widgetPath, 'widget.php');
     const optionsFormFile = path.join(widgetPath, 'options.form.php');
-    
+
     if (fs.existsSync(widgetFile)) {
       const content = fs.readFileSync(widgetFile, 'utf-8');
-      
+
       const classMatch = content.match(/class\s+(widget\w+)\s+extends\s+(\w+)/);
       if (classMatch) {
         const className = classMatch[1];
-        const extendsClass = classMatch[2];
-        
         let controller: string | undefined;
         const controllerMatch = className.match(/^widget([A-Z]\w+)$/);
         if (controllerMatch) {
           controller = controllerMatch[1].toLowerCase();
         }
-        
+
         let description: string | undefined;
         const docMatch = content.match(/\*\s*([^\n]+)/);
         if (docMatch) {
           description = docMatch[1].trim();
         }
-        
+
         widgets.push({
           name: entry.name,
           className,
           controller,
           filePath: widgetFile.replace(process.cwd(), ''),
           hasOptionsForm: fs.existsSync(optionsFormFile),
-          optionsFormPath: fs.existsSync(optionsFormFile) 
-            ? optionsFormFile.replace(process.cwd(), '') 
+          optionsFormPath: fs.existsSync(optionsFormFile)
+            ? optionsFormFile.replace(process.cwd(), '')
             : undefined,
-          description
+          description,
         });
       }
     }
@@ -102,30 +75,30 @@ function scanWidgetsDir(dirPath: string, widgets: WidgetInfo[]): void {
 export function generateWidgetsMap(sourceDir: string, outputPath: string): void {
   const widgetsDir = path.join(sourceDir, 'system', 'widgets');
   const widgets: WidgetInfo[] = [];
-  
+
   scanWidgetsDir(widgetsDir, widgets);
-  
+
   const byName: Record<string, WidgetInfo> = {};
   const byController: Record<string, WidgetInfo[]> = {};
-  
+
   for (const widget of widgets) {
     byName[widget.name] = widget;
-    
+
     const ctrl = widget.controller || '_system';
     if (!byController[ctrl]) {
       byController[ctrl] = [];
     }
     byController[ctrl].push(widget);
   }
-  
+
   const data: WidgetsMap = {
     widgets,
     byName,
     byController,
     widgetCount: widgets.length,
-    generatedAt: new Date().toISOString()
+    generatedAt: process.env.KNOWLEDGE_GENERATED_AT || new Date().toISOString(),
   };
-  
+
   const typescriptContent = `// AUTO-GENERATED from source/system/widgets
 // Do not edit manually - run 'npm run parse:widgets' to regenerate
 
@@ -167,7 +140,7 @@ export function getSystemWidgets(): WidgetInfo[] {
   return widgetsMap.byController['_system'] || [];
 }
 `;
-  
+
   fs.writeFileSync(outputPath, typescriptContent);
   console.log(`Generated ${data.widgetCount} widgets to ${outputPath}`);
 }

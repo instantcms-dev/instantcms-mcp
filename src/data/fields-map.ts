@@ -53,7 +53,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "age",
       "className": "fieldAge",
-      "filePath": "/source/system/fields/age.php",
+      "filePath": "/.cache/icms2/system/fields/age.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -147,7 +147,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "captcha",
       "className": "fieldCaptcha",
-      "filePath": "/source/system/fields/captcha.php",
+      "filePath": "/.cache/icms2/system/fields/captcha.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -171,7 +171,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "caption",
       "className": "fieldCaption",
-      "filePath": "/source/system/fields/caption.php",
+      "filePath": "/.cache/icms2/system/fields/caption.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -234,7 +234,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "category",
       "className": "fieldCategory",
-      "filePath": "/source/system/fields/category.php",
+      "filePath": "/.cache/icms2/system/fields/category.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -290,7 +290,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "checkbox",
       "className": "fieldCheckbox",
-      "filePath": "/source/system/fields/checkbox.php",
+      "filePath": "/.cache/icms2/system/fields/checkbox.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -331,7 +331,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "child",
       "className": "fieldChild",
-      "filePath": "/source/system/fields/child.php",
+      "filePath": "/.cache/icms2/system/fields/child.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser child",
@@ -347,7 +347,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "city",
       "className": "fieldCity",
-      "filePath": "/source/system/fields/city.php",
+      "filePath": "/.cache/icms2/system/fields/city.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -411,7 +411,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "color",
       "className": "fieldColor",
-      "filePath": "/source/system/fields/color.php",
+      "filePath": "/.cache/icms2/system/fields/color.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -462,7 +462,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "date",
       "className": "fieldDate",
-      "filePath": "/source/system/fields/date.php",
+      "filePath": "/.cache/icms2/system/fields/date.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -503,7 +503,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "fieldsgroup",
       "className": "fieldFieldsgroup",
-      "filePath": "/source/system/fields/fieldsgroup.php",
+      "filePath": "/.cache/icms2/system/fields/fieldsgroup.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser fieldsgroup",
@@ -522,7 +522,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "file",
       "className": "fieldFile",
-      "filePath": "/source/system/fields/file.php",
+      "filePath": "/.cache/icms2/system/fields/file.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -581,7 +581,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "forms",
       "className": "fieldForms",
-      "filePath": "/source/system/fields/forms.php",
+      "filePath": "/.cache/icms2/system/fields/forms.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -651,7 +651,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "hidden",
       "className": "fieldHidden",
-      "filePath": "/source/system/fields/hidden.php",
+      "filePath": "/.cache/icms2/system/fields/hidden.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser hidden",
@@ -667,7 +667,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "html",
       "className": "fieldHtml",
-      "filePath": "/source/system/fields/html.php",
+      "filePath": "/.cache/icms2/system/fields/html.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -776,7 +776,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "htmlcross",
       "className": "fieldHtmlcross",
-      "filePath": "/source/system/fields/htmlcross.php",
+      "filePath": "/.cache/icms2/system/fields/htmlcross.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -814,7 +814,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "htmlhint",
       "className": "fieldHtmlhint",
-      "filePath": "/source/system/fields/htmlhint.php",
+      "filePath": "/.cache/icms2/system/fields/htmlhint.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -836,7 +836,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "image",
       "className": "fieldImage",
-      "filePath": "/source/system/fields/image.php",
+      "filePath": "/.cache/icms2/system/fields/image.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -874,7 +874,8 @@ export const fieldsMap: FieldsMap = {
           "type": "boolean",
           "description": "parser image allow import link",
           "required": false,
-          "extended": false
+          "extended": false,
+          "hint": "parser image allow import link hint"
         },
         {
           "name": "allow_image_cropper",
@@ -946,7 +947,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "images",
       "className": "fieldImages",
-      "filePath": "/source/system/fields/images.php",
+      "filePath": "/.cache/icms2/system/fields/images.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -984,7 +985,8 @@ export const fieldsMap: FieldsMap = {
           "type": "boolean",
           "description": "parser image allow import link",
           "required": false,
-          "extended": false
+          "extended": false,
+          "hint": "parser image allow import link hint"
         },
         {
           "name": "first_image_emphasize",
@@ -1068,7 +1070,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "list",
       "className": "fieldList",
-      "filePath": "/source/system/fields/list.php",
+      "filePath": "/.cache/icms2/system/fields/list.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1190,7 +1192,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "listbitmask",
       "className": "fieldListBitmask",
-      "filePath": "/source/system/fields/listbitmask.php",
+      "filePath": "/.cache/icms2/system/fields/listbitmask.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1245,7 +1247,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "listgroups",
       "className": "fieldListGroups",
-      "filePath": "/source/system/fields/listgroups.php",
+      "filePath": "/.cache/icms2/system/fields/listgroups.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1278,7 +1280,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "listmultiple",
       "className": "fieldListMultiple",
-      "filePath": "/source/system/fields/listmultiple.php",
+      "filePath": "/.cache/icms2/system/fields/listmultiple.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1302,7 +1304,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "number",
       "className": "fieldNumber",
-      "filePath": "/source/system/fields/number.php",
+      "filePath": "/.cache/icms2/system/fields/number.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1485,7 +1487,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "parent",
       "className": "fieldParent",
-      "filePath": "/source/system/fields/parent.php",
+      "filePath": "/.cache/icms2/system/fields/parent.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1519,7 +1521,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "paypal",
       "className": "fieldPaypal",
-      "filePath": "/source/system/fields/paypal.php",
+      "filePath": "/.cache/icms2/system/fields/paypal.php",
       "hasOptions": false,
       "isSystem": false,
       "sqlTemplate": "varchar({max_length}) NULL DEFAULT NULL",
@@ -1532,7 +1534,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "string",
       "className": "fieldString",
-      "filePath": "/source/system/fields/string.php",
+      "filePath": "/.cache/icms2/system/fields/string.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1631,7 +1633,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "text",
       "className": "fieldText",
-      "filePath": "/source/system/fields/text.php",
+      "filePath": "/.cache/icms2/system/fields/text.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1747,7 +1749,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "toolbar",
       "className": "fieldToolbar",
-      "filePath": "/source/system/fields/toolbar.php",
+      "filePath": "/.cache/icms2/system/fields/toolbar.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1771,7 +1773,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "url",
       "className": "fieldUrl",
-      "filePath": "/source/system/fields/url.php",
+      "filePath": "/.cache/icms2/system/fields/url.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1852,7 +1854,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "user",
       "className": "fieldUser",
-      "filePath": "/source/system/fields/user.php",
+      "filePath": "/.cache/icms2/system/fields/user.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser user",
@@ -1871,7 +1873,7 @@ export const fieldsMap: FieldsMap = {
     {
       "name": "users",
       "className": "fieldUsers",
-      "filePath": "/source/system/fields/users.php",
+      "filePath": "/.cache/icms2/system/fields/users.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser users",
@@ -1882,7 +1884,7 @@ export const fieldsMap: FieldsMap = {
     "age": {
       "name": "age",
       "className": "fieldAge",
-      "filePath": "/source/system/fields/age.php",
+      "filePath": "/.cache/icms2/system/fields/age.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -1976,7 +1978,7 @@ export const fieldsMap: FieldsMap = {
     "captcha": {
       "name": "captcha",
       "className": "fieldCaptcha",
-      "filePath": "/source/system/fields/captcha.php",
+      "filePath": "/.cache/icms2/system/fields/captcha.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2000,7 +2002,7 @@ export const fieldsMap: FieldsMap = {
     "caption": {
       "name": "caption",
       "className": "fieldCaption",
-      "filePath": "/source/system/fields/caption.php",
+      "filePath": "/.cache/icms2/system/fields/caption.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2063,7 +2065,7 @@ export const fieldsMap: FieldsMap = {
     "category": {
       "name": "category",
       "className": "fieldCategory",
-      "filePath": "/source/system/fields/category.php",
+      "filePath": "/.cache/icms2/system/fields/category.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2119,7 +2121,7 @@ export const fieldsMap: FieldsMap = {
     "checkbox": {
       "name": "checkbox",
       "className": "fieldCheckbox",
-      "filePath": "/source/system/fields/checkbox.php",
+      "filePath": "/.cache/icms2/system/fields/checkbox.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2160,7 +2162,7 @@ export const fieldsMap: FieldsMap = {
     "child": {
       "name": "child",
       "className": "fieldChild",
-      "filePath": "/source/system/fields/child.php",
+      "filePath": "/.cache/icms2/system/fields/child.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser child",
@@ -2176,7 +2178,7 @@ export const fieldsMap: FieldsMap = {
     "city": {
       "name": "city",
       "className": "fieldCity",
-      "filePath": "/source/system/fields/city.php",
+      "filePath": "/.cache/icms2/system/fields/city.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2240,7 +2242,7 @@ export const fieldsMap: FieldsMap = {
     "color": {
       "name": "color",
       "className": "fieldColor",
-      "filePath": "/source/system/fields/color.php",
+      "filePath": "/.cache/icms2/system/fields/color.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2291,7 +2293,7 @@ export const fieldsMap: FieldsMap = {
     "date": {
       "name": "date",
       "className": "fieldDate",
-      "filePath": "/source/system/fields/date.php",
+      "filePath": "/.cache/icms2/system/fields/date.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2332,7 +2334,7 @@ export const fieldsMap: FieldsMap = {
     "fieldsgroup": {
       "name": "fieldsgroup",
       "className": "fieldFieldsgroup",
-      "filePath": "/source/system/fields/fieldsgroup.php",
+      "filePath": "/.cache/icms2/system/fields/fieldsgroup.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser fieldsgroup",
@@ -2351,7 +2353,7 @@ export const fieldsMap: FieldsMap = {
     "file": {
       "name": "file",
       "className": "fieldFile",
-      "filePath": "/source/system/fields/file.php",
+      "filePath": "/.cache/icms2/system/fields/file.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2410,7 +2412,7 @@ export const fieldsMap: FieldsMap = {
     "forms": {
       "name": "forms",
       "className": "fieldForms",
-      "filePath": "/source/system/fields/forms.php",
+      "filePath": "/.cache/icms2/system/fields/forms.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2480,7 +2482,7 @@ export const fieldsMap: FieldsMap = {
     "hidden": {
       "name": "hidden",
       "className": "fieldHidden",
-      "filePath": "/source/system/fields/hidden.php",
+      "filePath": "/.cache/icms2/system/fields/hidden.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser hidden",
@@ -2496,7 +2498,7 @@ export const fieldsMap: FieldsMap = {
     "html": {
       "name": "html",
       "className": "fieldHtml",
-      "filePath": "/source/system/fields/html.php",
+      "filePath": "/.cache/icms2/system/fields/html.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2605,7 +2607,7 @@ export const fieldsMap: FieldsMap = {
     "htmlcross": {
       "name": "htmlcross",
       "className": "fieldHtmlcross",
-      "filePath": "/source/system/fields/htmlcross.php",
+      "filePath": "/.cache/icms2/system/fields/htmlcross.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2643,7 +2645,7 @@ export const fieldsMap: FieldsMap = {
     "htmlhint": {
       "name": "htmlhint",
       "className": "fieldHtmlhint",
-      "filePath": "/source/system/fields/htmlhint.php",
+      "filePath": "/.cache/icms2/system/fields/htmlhint.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2665,7 +2667,7 @@ export const fieldsMap: FieldsMap = {
     "image": {
       "name": "image",
       "className": "fieldImage",
-      "filePath": "/source/system/fields/image.php",
+      "filePath": "/.cache/icms2/system/fields/image.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2703,7 +2705,8 @@ export const fieldsMap: FieldsMap = {
           "type": "boolean",
           "description": "parser image allow import link",
           "required": false,
-          "extended": false
+          "extended": false,
+          "hint": "parser image allow import link hint"
         },
         {
           "name": "allow_image_cropper",
@@ -2775,7 +2778,7 @@ export const fieldsMap: FieldsMap = {
     "images": {
       "name": "images",
       "className": "fieldImages",
-      "filePath": "/source/system/fields/images.php",
+      "filePath": "/.cache/icms2/system/fields/images.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -2813,7 +2816,8 @@ export const fieldsMap: FieldsMap = {
           "type": "boolean",
           "description": "parser image allow import link",
           "required": false,
-          "extended": false
+          "extended": false,
+          "hint": "parser image allow import link hint"
         },
         {
           "name": "first_image_emphasize",
@@ -2897,7 +2901,7 @@ export const fieldsMap: FieldsMap = {
     "list": {
       "name": "list",
       "className": "fieldList",
-      "filePath": "/source/system/fields/list.php",
+      "filePath": "/.cache/icms2/system/fields/list.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3019,7 +3023,7 @@ export const fieldsMap: FieldsMap = {
     "listbitmask": {
       "name": "listbitmask",
       "className": "fieldListBitmask",
-      "filePath": "/source/system/fields/listbitmask.php",
+      "filePath": "/.cache/icms2/system/fields/listbitmask.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3074,7 +3078,7 @@ export const fieldsMap: FieldsMap = {
     "listgroups": {
       "name": "listgroups",
       "className": "fieldListGroups",
-      "filePath": "/source/system/fields/listgroups.php",
+      "filePath": "/.cache/icms2/system/fields/listgroups.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3107,7 +3111,7 @@ export const fieldsMap: FieldsMap = {
     "listmultiple": {
       "name": "listmultiple",
       "className": "fieldListMultiple",
-      "filePath": "/source/system/fields/listmultiple.php",
+      "filePath": "/.cache/icms2/system/fields/listmultiple.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3131,7 +3135,7 @@ export const fieldsMap: FieldsMap = {
     "number": {
       "name": "number",
       "className": "fieldNumber",
-      "filePath": "/source/system/fields/number.php",
+      "filePath": "/.cache/icms2/system/fields/number.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3314,7 +3318,7 @@ export const fieldsMap: FieldsMap = {
     "parent": {
       "name": "parent",
       "className": "fieldParent",
-      "filePath": "/source/system/fields/parent.php",
+      "filePath": "/.cache/icms2/system/fields/parent.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3348,7 +3352,7 @@ export const fieldsMap: FieldsMap = {
     "paypal": {
       "name": "paypal",
       "className": "fieldPaypal",
-      "filePath": "/source/system/fields/paypal.php",
+      "filePath": "/.cache/icms2/system/fields/paypal.php",
       "hasOptions": false,
       "isSystem": false,
       "sqlTemplate": "varchar({max_length}) NULL DEFAULT NULL",
@@ -3361,7 +3365,7 @@ export const fieldsMap: FieldsMap = {
     "string": {
       "name": "string",
       "className": "fieldString",
-      "filePath": "/source/system/fields/string.php",
+      "filePath": "/.cache/icms2/system/fields/string.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3460,7 +3464,7 @@ export const fieldsMap: FieldsMap = {
     "text": {
       "name": "text",
       "className": "fieldText",
-      "filePath": "/source/system/fields/text.php",
+      "filePath": "/.cache/icms2/system/fields/text.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3576,7 +3580,7 @@ export const fieldsMap: FieldsMap = {
     "toolbar": {
       "name": "toolbar",
       "className": "fieldToolbar",
-      "filePath": "/source/system/fields/toolbar.php",
+      "filePath": "/.cache/icms2/system/fields/toolbar.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3600,7 +3604,7 @@ export const fieldsMap: FieldsMap = {
     "url": {
       "name": "url",
       "className": "fieldUrl",
-      "filePath": "/source/system/fields/url.php",
+      "filePath": "/.cache/icms2/system/fields/url.php",
       "hasOptions": true,
       "isSystem": false,
       "options": [
@@ -3681,7 +3685,7 @@ export const fieldsMap: FieldsMap = {
     "user": {
       "name": "user",
       "className": "fieldUser",
-      "filePath": "/source/system/fields/user.php",
+      "filePath": "/.cache/icms2/system/fields/user.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser user",
@@ -3700,7 +3704,7 @@ export const fieldsMap: FieldsMap = {
     "users": {
       "name": "users",
       "className": "fieldUsers",
-      "filePath": "/source/system/fields/users.php",
+      "filePath": "/.cache/icms2/system/fields/users.php",
       "hasOptions": false,
       "isSystem": false,
       "title": "parser users",
@@ -3709,7 +3713,7 @@ export const fieldsMap: FieldsMap = {
   },
   "systemFields": [],
   "fieldCount": 31,
-  "generatedAt": "2026-03-21T14:57:36.258Z"
+  "generatedAt": "2026-06-04T12:03:09+03:00"
 };
 
 export function getField(name: string): FieldInfo | undefined {

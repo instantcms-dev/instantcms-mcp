@@ -9,7 +9,7 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * Available filter field types
  */
-const FilterTypeEnum = z.enum([
+export const FilterTypeEnum = z.enum([
   'text',
   'select',
   'multiselect',

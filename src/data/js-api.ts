@@ -59,16 +59,21 @@ export interface IcmsAPI {
 }
 
 // Глобальные функции (объявлены как ambient declarations для TypeScript)
-declare function toggleFilter(): void;
-declare function goBack(): void;
-declare function spellcount(num: number, one: string, two: string, many: string): string;
-declare function renderHtmlAvatar(wrap?: Document): void;
-declare function initMultyTabs(selector: string, tab_wrap_field?: string): void;
-declare function initTabs(selector: string): void;
-declare function insertJavascript(filepath: string, onloadCallback?: Function): void;
-declare function setCaretPosition(field: any, pos: number): void;
-declare function getCaretPosition(field: any): number;
-declare function addTextToPosition(field_id: string, text: string, spacer?: string, spacer_stop?: Record<string, any>): boolean;
+export declare function toggleFilter(): void;
+export declare function goBack(): void;
+export declare function spellcount(num: number, one: string, two: string, many: string): string;
+export declare function renderHtmlAvatar(wrap?: Document): void;
+export declare function initMultyTabs(selector: string, tab_wrap_field?: string): void;
+export declare function initTabs(selector: string): void;
+export declare function insertJavascript(filepath: string, onloadCallback?: Function): void;
+export declare function setCaretPosition(field: any, pos: number): void;
+export declare function getCaretPosition(field: any): number;
+export declare function addTextToPosition(
+  field_id: string,
+  text: string,
+  spacer?: string,
+  spacer_stop?: Record<string, any>
+): boolean;
 
 /*
 ====================================

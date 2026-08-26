@@ -31,33 +31,33 @@ export const widgetsMap: WidgetsMap = {
       "name": "html",
       "className": "widgetHtml",
       "controller": "html",
-      "filePath": "/source/system/widgets/html/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/html/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/html/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/html/options.form.php"
     },
     {
       "name": "menu",
       "className": "widgetMenu",
       "controller": "menu",
-      "filePath": "/source/system/widgets/menu/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/menu/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/menu/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/menu/options.form.php"
     },
     {
       "name": "template",
       "className": "widgetTemplate",
       "controller": "template",
-      "filePath": "/source/system/widgets/template/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/template/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/template/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/template/options.form.php"
     },
     {
       "name": "text",
       "className": "widgetText",
       "controller": "text",
-      "filePath": "/source/system/widgets/text/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/text/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/text/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/text/options.form.php"
     }
   ],
   "byName": {
@@ -65,33 +65,33 @@ export const widgetsMap: WidgetsMap = {
       "name": "html",
       "className": "widgetHtml",
       "controller": "html",
-      "filePath": "/source/system/widgets/html/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/html/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/html/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/html/options.form.php"
     },
     "menu": {
       "name": "menu",
       "className": "widgetMenu",
       "controller": "menu",
-      "filePath": "/source/system/widgets/menu/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/menu/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/menu/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/menu/options.form.php"
     },
     "template": {
       "name": "template",
       "className": "widgetTemplate",
       "controller": "template",
-      "filePath": "/source/system/widgets/template/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/template/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/template/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/template/options.form.php"
     },
     "text": {
       "name": "text",
       "className": "widgetText",
       "controller": "text",
-      "filePath": "/source/system/widgets/text/widget.php",
+      "filePath": "/.cache/icms2/system/widgets/text/widget.php",
       "hasOptionsForm": true,
-      "optionsFormPath": "/source/system/widgets/text/options.form.php"
+      "optionsFormPath": "/.cache/icms2/system/widgets/text/options.form.php"
     }
   },
   "byController": {
@@ -100,9 +100,9 @@ export const widgetsMap: WidgetsMap = {
         "name": "html",
         "className": "widgetHtml",
         "controller": "html",
-        "filePath": "/source/system/widgets/html/widget.php",
+        "filePath": "/.cache/icms2/system/widgets/html/widget.php",
         "hasOptionsForm": true,
-        "optionsFormPath": "/source/system/widgets/html/options.form.php"
+        "optionsFormPath": "/.cache/icms2/system/widgets/html/options.form.php"
       }
     ],
     "menu": [
@@ -110,9 +110,9 @@ export const widgetsMap: WidgetsMap = {
         "name": "menu",
         "className": "widgetMenu",
         "controller": "menu",
-        "filePath": "/source/system/widgets/menu/widget.php",
+        "filePath": "/.cache/icms2/system/widgets/menu/widget.php",
         "hasOptionsForm": true,
-        "optionsFormPath": "/source/system/widgets/menu/options.form.php"
+        "optionsFormPath": "/.cache/icms2/system/widgets/menu/options.form.php"
       }
     ],
     "template": [
@@ -120,9 +120,9 @@ export const widgetsMap: WidgetsMap = {
         "name": "template",
         "className": "widgetTemplate",
         "controller": "template",
-        "filePath": "/source/system/widgets/template/widget.php",
+        "filePath": "/.cache/icms2/system/widgets/template/widget.php",
         "hasOptionsForm": true,
-        "optionsFormPath": "/source/system/widgets/template/options.form.php"
+        "optionsFormPath": "/.cache/icms2/system/widgets/template/options.form.php"
       }
     ],
     "text": [
@@ -130,14 +130,14 @@ export const widgetsMap: WidgetsMap = {
         "name": "text",
         "className": "widgetText",
         "controller": "text",
-        "filePath": "/source/system/widgets/text/widget.php",
+        "filePath": "/.cache/icms2/system/widgets/text/widget.php",
         "hasOptionsForm": true,
-        "optionsFormPath": "/source/system/widgets/text/options.form.php"
+        "optionsFormPath": "/.cache/icms2/system/widgets/text/options.form.php"
       }
     ]
   },
   "widgetCount": 4,
-  "generatedAt": "2026-03-21T13:33:10.630Z"
+  "generatedAt": "2026-06-04T12:03:09+03:00"
 };
 
 export function getWidget(name: string): WidgetInfo | undefined {

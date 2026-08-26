@@ -4,8 +4,8 @@
 
 `MCP input → Zod validation → domain function → format serializer → MCP result`
 
-- `src/server.ts` owns transport-facing schemas and tool/resource registration.
-- `src/registry/` содержит модульные группы новых tools; дальнейшее извлечение legacy-регистраций выполняется по доменам без изменения публичных имён.
+- `src/server.ts` is the composition root: it creates the MCP server and invokes domain registrars.
+- `src/registry/` owns transport-facing Zod schemas and tool/resource registration, split into generators, knowledge, database, source analysis, language, extensions, metadata, and resources.
 - `src/utils/mcp-result.ts` задаёт единый `content + structuredContent + isError` контракт.
 - `src/utils/pagination.ts` реализует cursor pagination для больших справочников.
 - `src/tools/` contains deterministic domain operations.
@@ -24,4 +24,6 @@ Lookup functions prefer exact case-insensitive matches. Ambiguous partial matche
 
 ## Knowledge lifecycle
 
-Every new knowledge source should record the InstantCMS version, source URL or repository location, verification date, and confidence (`verified`, `inferred`, or `legacy`). A future build step may generate `src/data` from `knowledge/`; until then, changes must keep both layers explicitly synchronized.
+The official `instantsoft/icms2` repository is the canonical upstream. `knowledge/upstream.json` pins the resolved ref and commit used for generated runtime data. Updates run against a cached checkout; the published MCP package never requires network access at runtime.
+
+Every new knowledge source records the InstantCMS version, repository location, verification date, and confidence (`verified`, `inferred`, or `legacy`). Generated changes are reviewed and committed so releases remain reproducible.

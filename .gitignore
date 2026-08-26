@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 coverage/
+/COVERAGE.md
 
 # TypeScript
 *.tsbuildinfo
@@ -35,4 +36,5 @@ yarn-error.log*
 .npm
 
 source/
+.cache/
 .logs/

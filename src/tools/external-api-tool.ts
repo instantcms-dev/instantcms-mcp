@@ -9,14 +9,14 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * HTTP methods for API endpoints
  */
-const HttpMethodEnum = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
+export const HttpMethodEnum = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
 
 type HttpMethod = z.infer<typeof HttpMethodEnum>;
 
 /**
  * Authentication types
  */
-const AuthTypeEnum = z.enum(['api_key', 'bearer', 'basic', 'oauth2']);
+export const AuthTypeEnum = z.enum(['api_key', 'bearer', 'basic', 'oauth2']);
 
 type AuthType = z.infer<typeof AuthTypeEnum>;
 

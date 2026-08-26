@@ -9,7 +9,7 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 /**
  * Available SEO field types
  */
-const SeoFieldTypeEnum = z.enum([
+export const SeoFieldTypeEnum = z.enum([
   'title',
   'description',
   'keywords',

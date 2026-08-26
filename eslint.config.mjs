@@ -21,6 +21,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/tools/parser/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     files: ['src/__tests__/**/*.ts'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',

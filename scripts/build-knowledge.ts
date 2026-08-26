@@ -6,12 +6,27 @@ import { z } from 'zod';
 const schema = z.object({
   schema_version: z.literal(1),
   instantcms: z.object({ tested_version: z.string(), minimum_version: z.string() }),
+  upstream: z.object({
+    repository: z.string().url(),
+    state_file: z.string().min(1),
+  }),
   sources: z
     .array(
       z.object({
         id: z.string().regex(/^[a-z0-9-]+$/),
         runtime_file: z.string().min(1),
-        domain: z.enum(['hooks', 'components', 'schemas']),
+        domain: z.enum([
+          'hooks',
+          'components',
+          'schemas',
+          'database',
+          'events',
+          'controllers',
+          'widgets',
+          'traits',
+          'fields',
+          'core',
+        ]),
         confidence: z.enum(['verified', 'inferred', 'legacy']),
         verified_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       })
@@ -25,6 +40,12 @@ async function main(): Promise<void> {
     parse(await readFile(resolve(projectRoot, 'knowledge/catalog.yaml'), 'utf8'))
   );
   const ids = new Set<string>();
+  const upstream = JSON.parse(
+    await readFile(resolve(projectRoot, source.upstream.state_file), 'utf8')
+  ) as { repository?: string; commit?: string };
+  if (upstream.repository !== source.upstream.repository || !upstream.commit) {
+    throw new Error('Invalid InstantCMS upstream state');
+  }
   for (const item of source.sources) {
     if (ids.has(item.id)) throw new Error(`Duplicate knowledge source id: ${item.id}`);
     ids.add(item.id);

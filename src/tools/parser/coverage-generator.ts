@@ -22,61 +22,61 @@ function countJsonArrayObjects(content: string, key: string): number {
     const matches = content.match(/category:\s*"\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'tables') {
     const matches = content.match(/"name":\s*"cms_\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'coreClasses') {
     const matches = content.match(/name:\s*"cms\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'events') {
     const matches = content.match(/"event":\s*"\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'widgets') {
     const matches = content.match(/"name":\s*"\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'traits') {
     const matches = content.match(/"filePath":\s*"[^"]*\/traits\/[^"]*"/g);
     return matches ? matches.length : 0;
   }
-  
+
   if (key === 'fieldTypes') {
     const matches = content.match(/"type":\s*"\w+"/g);
     return matches ? matches.length : 0;
   }
-  
+
   const doubleQuote = new RegExp('"' + key + '":\\s*\\[([\\s\\S]*?)\\];');
   const typeAnnotation = new RegExp(key + ':\\s*\\w+\\[([\\s\\S]*?)\\];');
   const constKeyword = new RegExp('const ' + key + '.*?= \\[([\\s\\S]*?)\\];');
-  
+
   const patterns = [doubleQuote, typeAnnotation, constKeyword];
-  
+
   for (const regex of patterns) {
     try {
       const match = content.match(regex);
       if (!match) continue;
-      
+
       const arrContent = match[1];
       let count = 0;
       let depth = 0;
       let inString = false;
       let lastChar = '';
-      
+
       for (let i = 0; i < arrContent.length; i++) {
         const char = arrContent[i];
-        
+
         if (char === '"' && lastChar !== '\\') {
           inString = !inString;
         }
-        
+
         if (!inString) {
           if (char === '{') {
             if (depth === 0) count++;
@@ -85,34 +85,17 @@ function countJsonArrayObjects(content: string, key: string): number {
             depth--;
           }
         }
-        
+
         lastChar = char;
       }
-      
+
       if (count > 0) return count;
-    } catch (e) {
+    } catch {
       continue;
     }
   }
-  
-  return 0;
-}
 
-function countJsonArrayValues(content: string, key: string): number {
-  const regex = new RegExp(`"${key}":\\s*\\[([\\s\\S]*?)\\];`);
-  const match = content.match(regex);
-  if (!match) return 0;
-  
-  const valueRegex = /"([^"]+)":/g;
-  let count = 0;
-  let m;
-  while ((m = valueRegex.exec(match[1])) !== null) {
-    if (m[1] !== 'options' && m[1] !== 'params' && m[1] !== 'columns' && m[1] !== 'actions') {
-      count++;
-    }
-  }
-  
-  return count;
+  return 0;
 }
 
 function countHookCategories(content: string): number {
@@ -125,22 +108,22 @@ function countHookCategories(content: string): number {
 function countTablesWithComment(content: string): number {
   const tablesMatch = content.match(/"tables":\s*\[([\s\S]*)\]\s*,/);
   if (!tablesMatch) return 0;
-  
+
   const tablesContent = tablesMatch[1];
-  
+
   let depth = 0;
   let inString = false;
   let lastChar = '';
   let startIdx = 0;
   let count = 0;
-  
+
   for (let i = 0; i < tablesContent.length; i++) {
     const char = tablesContent[i];
-    
+
     if (char === '"' && lastChar !== '\\') {
       inString = !inString;
     }
-    
+
     if (!inString) {
       if (char === '{') {
         if (depth === 0) startIdx = i;
@@ -149,16 +132,20 @@ function countTablesWithComment(content: string): number {
         depth--;
         if (depth === 0) {
           const tableObj = tablesContent.substring(startIdx, i + 1);
-          if (tableObj.includes('"cms_') && tableObj.includes('"comment": "') && !tableObj.includes('"comment": ""')) {
+          if (
+            tableObj.includes('"cms_') &&
+            tableObj.includes('"comment": "') &&
+            !tableObj.includes('"comment": ""')
+          ) {
             count++;
           }
         }
       }
     }
-    
+
     lastChar = char;
   }
-  
+
   return count;
 }
 
@@ -176,7 +163,7 @@ function getCoverageStats(): CoverageStats {
     fieldTypes: 0,
     fieldsWithOptions: 0,
     events: 0,
-    coreClasses: 0
+    coreClasses: 0,
   };
 
   try {
@@ -188,7 +175,10 @@ function getCoverageStats(): CoverageStats {
   }
 
   try {
-    const dbContent = fs.readFileSync(path.join(process.cwd(), 'src/data/database-schema.ts'), 'utf-8');
+    const dbContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/database-schema.ts'),
+      'utf-8'
+    );
     stats.tables = countJsonArrayObjects(dbContent, 'tables');
     stats.tablesWithComment = countTablesWithComment(dbContent);
   } catch (e) {
@@ -196,29 +186,24 @@ function getCoverageStats(): CoverageStats {
   }
 
   try {
-    const eventsContent = fs.readFileSync(path.join(process.cwd(), 'src/data/events-map.ts'), 'utf-8');
+    const eventsContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/events-map.ts'),
+      'utf-8'
+    );
     stats.events = countJsonArrayObjects(eventsContent, 'events');
   } catch (e) {
     console.error('Error reading events-map:', e);
   }
 
   try {
-    const ctrlContent = fs.readFileSync(path.join(process.cwd(), 'src/data/controllers-map.ts'), 'utf-8');
+    const ctrlContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/controllers-map.ts'),
+      'utf-8'
+    );
     stats.controllers = countJsonArrayObjects(ctrlContent, 'controllers');
-    
+
     const actionsMatch = ctrlContent.match(/"actions":\s*\[([\s\S]*?)\];/);
     if (actionsMatch) {
-      let depth = 0;
-      let inString = false;
-      for (const char of actionsMatch[1]) {
-        if (char === '"' && (actionsMatch[1][actionsMatch[1].indexOf(char) - 1] !== '\\')) {
-          inString = !inString;
-        }
-        if (!inString) {
-          if (char === '{') depth++;
-          else if (char === '}') depth--;
-        }
-      }
       stats.actions = (actionsMatch[1].match(/\{/g) || []).length;
     }
   } catch (e) {
@@ -226,14 +211,20 @@ function getCoverageStats(): CoverageStats {
   }
 
   try {
-    const widgetsContent = fs.readFileSync(path.join(process.cwd(), 'src/data/widgets-map.ts'), 'utf-8');
+    const widgetsContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/widgets-map.ts'),
+      'utf-8'
+    );
     stats.widgets = countJsonArrayObjects(widgetsContent, 'widgets');
   } catch (e) {
     console.error('Error reading widgets-map:', e);
   }
 
   try {
-    const traitsContent = fs.readFileSync(path.join(process.cwd(), 'src/data/traits-map.ts'), 'utf-8');
+    const traitsContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/traits-map.ts'),
+      'utf-8'
+    );
     stats.traits = countJsonArrayObjects(traitsContent, 'traits');
     stats.traitMethods = countJsonArrayObjects(traitsContent, 'methods');
   } catch (e) {
@@ -241,7 +232,10 @@ function getCoverageStats(): CoverageStats {
   }
 
   try {
-    const fieldsContent = fs.readFileSync(path.join(process.cwd(), 'src/data/fields-map.ts'), 'utf-8');
+    const fieldsContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/data/fields-map.ts'),
+      'utf-8'
+    );
     stats.fieldTypes = countJsonArrayObjects(fieldsContent, 'fields');
     stats.fieldsWithOptions = countJsonArrayObjects(fieldsContent, 'options');
   } catch (e) {
@@ -264,14 +258,47 @@ function getCoverageStats(): CoverageStats {
 
 function generateCoverageReport(): string {
   const stats = getCoverageStats();
-  const now = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const now = new Date().toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
-  const totalDataStructures = stats.tables + stats.controllers + stats.widgets + stats.traits + stats.fieldTypes + stats.coreClasses;
-  const coveredDataStructures = stats.tablesWithComment + stats.controllers + stats.widgets + stats.traits + stats.fieldTypes + stats.coreClasses;
-  const dataCoverage = totalDataStructures > 0 ? Math.round((coveredDataStructures / totalDataStructures) * 100) : 0;
+  const totalDataStructures =
+    stats.tables +
+    stats.controllers +
+    stats.widgets +
+    stats.traits +
+    stats.fieldTypes +
+    stats.coreClasses;
+  const coveredDataStructures =
+    stats.tablesWithComment +
+    stats.controllers +
+    stats.widgets +
+    stats.traits +
+    stats.fieldTypes +
+    stats.coreClasses;
+  const dataCoverage =
+    totalDataStructures > 0 ? Math.round((coveredDataStructures / totalDataStructures) * 100) : 0;
 
-  const totalMetrics = 42 + stats.hooks + stats.events + stats.tables + stats.controllers + stats.widgets + stats.traits + stats.fieldTypes;
-  const coveredMetrics = 42 + stats.hooks + stats.events + stats.tablesWithComment + stats.controllers + stats.widgets + stats.traits + stats.fieldTypes;
+  const totalMetrics =
+    42 +
+    stats.hooks +
+    stats.events +
+    stats.tables +
+    stats.controllers +
+    stats.widgets +
+    stats.traits +
+    stats.fieldTypes;
+  const coveredMetrics =
+    42 +
+    stats.hooks +
+    stats.events +
+    stats.tablesWithComment +
+    stats.controllers +
+    stats.widgets +
+    stats.traits +
+    stats.fieldTypes;
   const totalCoverage = totalMetrics > 0 ? Math.round((coveredMetrics / totalMetrics) * 100) : 0;
 
   return `# InstantCMS MCP Server — Покрытие метрик

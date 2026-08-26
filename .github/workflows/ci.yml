@@ -30,6 +30,9 @@ jobs:
       - name: Run TypeScript check
         run: npx tsc --noEmit
 
+      - name: Run linter
+        run: npm run lint
+
       - name: Run tests
         run: npm test
 
@@ -64,3 +67,19 @@ jobs:
 
       - name: Verify build output
         run: test -f dist/index.js
+
+  upstream-compatibility:
+    name: InstantCMS upstream compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Generate knowledge from latest stable InstantCMS
+        run: npm run knowledge:update -- --ref latest
+      - name: Verify generated source
+        run: npm run typecheck && npm test -- --runInBand
