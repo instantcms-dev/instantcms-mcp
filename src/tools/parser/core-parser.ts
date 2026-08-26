@@ -8,7 +8,13 @@ interface ParsedMethod {
   signature: string;
   description: string;
   returnType: string;
-  params: { name: string; type: string; description: string }[];
+  params: {
+    name: string;
+    type: string;
+    description: string;
+    required: boolean;
+    default?: string;
+  }[];
   deprecated?: boolean;
 }
 
@@ -80,77 +86,44 @@ function isDeprecated(docComment: string): boolean {
 
 function extractMethods(content: string): ParsedMethod[] {
   const methods: ParsedMethod[] = [];
+  const methodPattern =
+    /(?:\/\*\*([\s\S]*?)\*\/\s*)?((?:(?:public|private|protected|static|final|abstract)\s+)*)function\s+&?\s*(\w+)\s*\(([^)]*)\)\s*(?::\s*([^\s{]+))?/g;
 
-  const lines = content.split('\n');
-  let i = 0;
+  for (const match of content.matchAll(methodPattern)) {
+    const docComment = match[1] ? `/**${match[1]}*/` : '';
+    const modifiers = match[2].trim().split(/\s+/).filter(Boolean);
+    const funcName = match[3];
+    const paramsStr = match[4];
+    const returnType = match[5] || (docComment ? extractReturnType(docComment) : 'mixed');
+    const params = paramsStr
+      .split(',')
+      .map(part => part.trim())
+      .filter(Boolean)
+      .flatMap(part => {
+        const parameter = part.match(
+          /^(?:(.*?)\s+)?(?:&\s*)?(\.\.\.)?\$([a-zA-Z_]\w*)\s*(?:=\s*(.+))?$/
+        );
+        if (!parameter) return [];
+        return [
+          {
+            name: parameter[3],
+            type: `${parameter[2] || ''}${parameter[1] || 'mixed'}`,
+            description: '',
+            required: parameter[4] === undefined,
+            default: parameter[4]?.trim(),
+          },
+        ];
+      });
 
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.trim().startsWith('/**')) {
-      const docLines: string[] = [line];
-      i++;
-
-      while (i < lines.length && !lines[i].trim().startsWith('*/')) {
-        docLines.push(lines[i]);
-        i++;
-      }
-
-      if (i < lines.length) {
-        docLines.push(lines[i]);
-        i++;
-      }
-
-      const docComment = docLines.join('\n');
-
-      while (i < lines.length && !lines[i].includes('function ')) {
-        i++;
-      }
-
-      if (i >= lines.length) break;
-
-      const funcLine = lines[i];
-      const funcMatch = funcLine.match(
-        /(public|private|protected|static)?\s*function\s+(\w+)\s*\(([^)]*)\)\s*(?::\s*([\w\\|]+))?/
-      );
-
-      if (funcMatch) {
-        const visibility = getVisibility(funcMatch[1] ? [funcMatch[1]] : []);
-        const funcName = funcMatch[2];
-        const paramsStr = funcMatch[3];
-        const returnType = funcMatch[4] || extractReturnType(docComment);
-
-        const params: { name: string; type: string; description: string }[] = [];
-        if (paramsStr.trim()) {
-          const paramParts = paramsStr.split(',');
-          for (const part of paramParts) {
-            const trimmed = part.trim();
-            const dollarIdx = trimmed.indexOf('$');
-            if (dollarIdx === -1) continue;
-            const paramName = trimmed.slice(dollarIdx + 1).trim();
-            const typePart = trimmed.slice(0, dollarIdx).trim();
-            if (paramName) {
-              params.push({
-                name: paramName,
-                type: typePart || 'mixed',
-                description: '',
-              });
-            }
-          }
-        }
-
-        methods.push({
-          name: funcName,
-          visibility,
-          signature: `function ${funcName}(${paramsStr}): ${returnType}`,
-          description: cleanDescription(docComment),
-          returnType,
-          params,
-          deprecated: isDeprecated(docComment),
-        });
-      }
-    }
-    i++;
+    methods.push({
+      name: funcName,
+      visibility: getVisibility(modifiers),
+      signature: `function ${funcName}(${paramsStr}): ${returnType}`,
+      description: cleanDescription(docComment),
+      returnType,
+      params,
+      deprecated: isDeprecated(docComment),
+    });
   }
 
   return methods;

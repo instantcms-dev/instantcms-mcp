@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Generate hook inventory and core component APIs from the pinned official InstantCMS source while preserving curated descriptions and examples.
+- Expose source file provenance for discovered hooks and components.
+
 ## 1.2.0
 
 - Added modular meta-tool registry, structured MCP results, cursor pagination and InstantCMS version profiles.

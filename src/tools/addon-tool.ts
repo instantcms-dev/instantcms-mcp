@@ -117,6 +117,7 @@ export function getComponentApi(componentName: string): object {
     class: component.class,
     description: component.description,
     access: component.access,
+    source: component.source,
     methods: component.methods,
   };
 }
@@ -132,6 +133,7 @@ export function listComponents(pageOptions: PageOptions = {}): object {
       description: c.description,
       methods_count: c.methods.length,
       access: c.access,
+      source: c.source,
     })),
   };
 }
