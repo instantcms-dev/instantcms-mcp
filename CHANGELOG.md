@@ -4,6 +4,8 @@
 
 - Generate hook inventory and core component APIs from the pinned official InstantCMS source while preserving curated descriptions and examples.
 - Expose source file provenance for discovered hooks and components.
+- Add project audit, explain, plan, safe repair, and version upgrade MCP workflows.
+- Add focused migration, widget, theme, API, upgrade, debug, and security skills.
 
 ## 1.2.0
 

@@ -7,10 +7,16 @@ export interface InstantCmsVersionProfile {
 
 export const instantCmsVersionProfiles: InstantCmsVersionProfile[] = [
   {
-    version: '2.18.1',
+    version: '2.18.2',
     php_min: '7.2',
     status: 'verified',
-    notes: ['Основной профиль встроенной базы знаний'],
+    notes: ['Текущий профиль source-backed базы знаний'],
+  },
+  {
+    version: '2.18.1',
+    php_min: '7.2',
+    status: 'compatible',
+    notes: ['Предыдущий стабильный профиль; обновитесь до 2.18.2'],
   },
   {
     version: '2.17',

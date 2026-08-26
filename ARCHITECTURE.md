@@ -6,6 +6,7 @@
 
 - `src/server.ts` is the composition root: it creates the MCP server and invokes domain registrars.
 - `src/registry/` owns transport-facing Zod schemas and tool/resource registration, split into generators, knowledge, database, source analysis, language, extensions, metadata, and resources.
+- `src/registry/project-tools.ts` exposes read-only project analysis, reviewable repair planning, safe file-map transformations, and version upgrade planning.
 - `src/utils/mcp-result.ts` задаёт единый `content + structuredContent + isError` контракт.
 - `src/utils/pagination.ts` реализует cursor pagination для больших справочников.
 - `src/tools/` contains deterministic domain operations.
