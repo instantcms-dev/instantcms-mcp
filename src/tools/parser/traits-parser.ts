@@ -156,7 +156,7 @@ export function getTraitsByNamespace(namespace: string): TraitInfo[] {
 }
 
 if (require.main === module) {
-  const sourcePath = path.resolve('source');
+  const sourcePath = path.resolve(process.env.INSTANTCMS_SOURCE || 'source');
   const outputPath = path.resolve('src/data/traits-map.ts');
   generateTraitsMap(sourcePath, outputPath);
 }

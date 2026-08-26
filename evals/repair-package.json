@@ -1,0 +1,6 @@
+{
+  "name": "repair damaged package",
+  "request": "Проверь и исправь повреждённый ZIP дополнения",
+  "expected_workflow": "audit",
+  "invariants": ["inspects archive paths", "reports diagnostic codes", "does not allow traversal entries"]
+}

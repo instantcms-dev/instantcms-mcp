@@ -82,13 +82,17 @@ import { analyzeRequirement, suggestAddonStructure } from './tools/requirement-t
 import { hooks, hookCategories } from './data/hooks.js';
 import { components } from './data/components.js';
 import { addonStructures, templateStructure } from './data/schemas.js';
+import { registerMetaTools } from './registry/meta-tools.js';
+import { successResult } from './utils/mcp-result.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'instantcms-mcp',
-    version: '1.1.0',
+    version: '1.2.0',
     description: 'MCP сервер для разработки дополнений и шаблонов InstantCMS 2',
   });
+
+  registerMetaTools(server);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TOOLS
@@ -706,17 +710,12 @@ export function createServer(): McpServer {
         .enum(['filter', 'action'])
         .optional()
         .describe('Тип хука: filter (изменяет данные) или action (реагирует на событие)'),
+      limit: z.number().int().min(1).max(200).optional(),
+      cursor: z.string().optional(),
     },
-    async ({ category, type }) => {
-      const result = listHooks(category, type);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ category, type, limit, cursor }) => {
+      const result = listHooks(category, type, { limit, cursor }) as Record<string, unknown>;
+      return successResult(result);
     }
   );
 
@@ -792,17 +791,10 @@ export function createServer(): McpServer {
   server.tool(
     'list_components',
     'Список всех документированных компонентов и классов InstantCMS с кратким описанием и способом доступа',
-    {},
-    async () => {
-      const result = listComponents();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    { limit: z.number().int().min(1).max(200).optional(), cursor: z.string().optional() },
+    async ({ limit, cursor }) => {
+      const result = listComponents({ limit, cursor }) as Record<string, unknown>;
+      return successResult(result);
     }
   );
 
@@ -2403,28 +2395,6 @@ export function createServer(): McpServer {
           },
         ],
       };
-    }
-  );
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  server.tool(
-    'get_server_capabilities',
-    'Версия сервера, поддерживаемая версия InstantCMS и объём встроенной базы знаний',
-    {},
-    async () => {
-      const result = {
-        server_version: '1.1.0',
-        instantcms: { major: 2, tested_version: '2.18.1' },
-        tools_count: 72,
-        knowledge: {
-          hooks: hooks.length,
-          hook_categories: hookCategories.length,
-          components: components.length,
-          addon_types: Object.keys(addonStructures),
-          layout_presets: Object.keys(layoutPresets),
-        },
-      };
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     }
   );
 

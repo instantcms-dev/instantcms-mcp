@@ -1,6 +1,7 @@
 import { hooks, hookCategories, type Hook } from '../data/hooks.js';
+import { paginate, type PageOptions } from '../utils/pagination.js';
 
-export function listHooks(category?: string, type?: string): object {
+export function listHooks(category?: string, type?: string, pageOptions: PageOptions = {}): object {
   let filtered = hooks;
 
   if (category) {
@@ -10,10 +11,12 @@ export function listHooks(category?: string, type?: string): object {
     filtered = filtered.filter(h => h.type === type || h.type.includes(type));
   }
 
+  const page = paginate(filtered, pageOptions);
   return {
     total: filtered.length,
     categories: hookCategories,
-    hooks: filtered.map(h => ({
+    page: page.page,
+    hooks: page.items.map(h => ({
       name: h.name,
       type: h.type,
       category: h.category,

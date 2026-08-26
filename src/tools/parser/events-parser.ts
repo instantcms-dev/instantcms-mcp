@@ -113,7 +113,7 @@ export function isEventExists(eventName: string): boolean {
 }
 
 if (require.main === module) {
-  const sqlPath = path.resolve('source/install/languages/ru/sql/base.sql');
+  const sqlPath = path.resolve(process.env.INSTANTCMS_SOURCE || 'source', 'install/languages/ru/sql/base.sql');
   const outputPath = path.resolve('src/data/events-map.ts');
   generateEventsSchema(sqlPath, outputPath);
 }

@@ -1,0 +1,6 @@
+{
+  "name": "unknown API refusal",
+  "request": "Используй cmsMagicModel::teleport()",
+  "expected_workflow": "addon",
+  "invariants": ["searches component API", "does not invent the method", "returns candidates or a not-found result"]
+}

@@ -48,7 +48,7 @@ npm run check
 
 ## Основные MCP-инструменты
 
-Сервер регистрирует 72 инструмента. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates и анализ исходников.
+Сервер регистрирует 81 инструмент. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates и анализ исходников.
 
 | Инструмент | Назначение |
 |---|---|
@@ -67,6 +67,11 @@ npm run check
 | `scaffold_layout_scheme` | Генерация импортируемой YAML-схемы |
 | `list_layout_presets` | Доступные layout-пресеты |
 | `get_server_capabilities` | Версии и объём базы знаний |
+| `find_tool` / `get_workflow` | Подбор инструмента и последовательности вызовов |
+| `diagnose_request` | Определение типа задачи |
+| `compare_instantcms_versions` | Сравнение version profiles |
+| `validate_generated_artifacts` | Разбор XML, INI, YAML и проверка PHP-формы |
+| `build_addon_archive` / `inspect_addon_archive` | Создание и проверка ZIP в памяти |
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
@@ -92,6 +97,8 @@ CLAUDE.md                    # тонкий адаптер Claude
 ## Поддержание актуальности
 
 GitHub `main` является единственным источником истины. Работайте только из Git clone и начинайте изменения с `git pull --ff-only`. Команда `npm run check` проверяет TypeScript, тесты и наличие AI-адаптеров. GitHub Actions повторяет typecheck, тесты, coverage и build для каждого push и pull request.
+
+`npm run knowledge:update` обновляет runtime-карты из исходников InstantCMS. Путь задаётся через `INSTANTCMS_SOURCE=/path/to/instantcms`; `npm run knowledge:check` проверяет provenance-манифест и generated metadata.
 
 Не синхронизируйте проект копированием поверх clone с удалением отсутствующих файлов. База GitHub содержит расширенные инструменты, которых может не быть в старых локальных копиях.
 
@@ -153,6 +160,8 @@ addon.zip
 ```bash
 npm run typecheck
 npm test
+npm run test:integration
+npm run knowledge:check
 npm run check
 npm run build
 ```

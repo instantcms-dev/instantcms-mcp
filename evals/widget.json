@@ -1,0 +1,6 @@
+{
+  "name": "widget workflow",
+  "request": "Создай виджет последних материалов",
+  "expected_workflow": "widget",
+  "invariants": ["creates widget and options form", "checks template placement", "validates generated artifacts"]
+}

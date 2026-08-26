@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+- Added modular meta-tool registry, structured MCP results, cursor pagination and InstantCMS version profiles.
+- Added real XML, INI and YAML parsing, safe in-memory ZIP build/inspection and artifact diagnostics.
+- Added a provenance-validated knowledge pipeline and configurable InstantCMS source parsers.
+- Added MCP integration tests, expanded cross-client evals, Node 18–24 CI matrix and Dependabot.
+- Replaced the vulnerable legacy ESLint/release toolchain; npm audit now reports zero vulnerabilities.
+- Removed generated coverage artifacts from version control.
+
 ## 1.1.0
 
 - Added strict input validation and safe XML, INI, PHP, and YAML serialization.

@@ -1,6 +1,6 @@
 {
   "name": "instantcms-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP server and reusable AI workflows for InstantCMS 2 development",
   "main": "dist/index.js",
   "bin": {
@@ -10,11 +10,14 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "check:ai": "node scripts/check-ai-configs.mjs",
-    "check": "npm run typecheck && npm test -- --runInBand && npm run check:ai",
+    "knowledge:build": "tsx scripts/build-knowledge.ts",
+    "knowledge:check": "npm run knowledge:build && git diff --exit-code -- src/generated/knowledge-meta.ts",
+    "check": "npm run knowledge:check && npm run typecheck && npm test -- --runInBand && npm run check:ai",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "test": "jest",
+    "test:integration": "jest src/__tests__/mcp-integration.test.ts --runInBand",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/ --ext .ts",
     "lint:fix": "eslint src/ --ext .ts --fix",
@@ -27,12 +30,12 @@
     "parse:fields": "tsx src/tools/parser/fields-parser.ts",
     "parse:core": "tsx src/tools/parser/core-parser.ts",
     "parse:all": "npm run parse:database && npm run parse:events && npm run parse:controllers && npm run parse:widgets && npm run parse:traits && npm run parse:fields && npm run parse:core && tsx src/tools/parser/coverage-generator.ts",
+    "knowledge:update": "npm run parse:all && npm run knowledge:build",
     "coverage": "tsx src/tools/parser/coverage-generator.ts",
     "prepare": "husky install",
-    "release": "release-it",
-    "release:patch": "release-it --increment patch",
-    "release:minor": "release-it --increment minor",
-    "release:major": "release-it --increment major"
+    "release:patch": "npm version patch",
+    "release:minor": "npm version minor",
+    "release:major": "npm version major"
   },
   "keywords": [
     "mcp",
@@ -57,24 +60,27 @@
     ]
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "@types/node": "^25.3.3",
-    "mysql2": "^3.20.0",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "zod": "^4.3.6"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "fast-xml-parser": "^5.11.0",
+    "fflate": "^0.8.3",
+    "ini": "^6.0.0",
+    "mysql2": "^3.24.2",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/ini": "^4.1.1",
     "@types/jest": "^30.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.2",
+    "@types/node": "^25.3.3",
+    "eslint": "^9.39.5",
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
-    "release-it": "^19.2.4",
-    "ts-jest": "^29.4.6"
+    "ts-jest": "^29.4.6",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.68.0"
   }
 }

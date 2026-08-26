@@ -2,6 +2,12 @@ import { getComponentApi, validateAddon } from '../tools/addon-tool.js';
 import { getHookDetails, searchHooks } from '../tools/hooks-tool.js';
 import { scaffoldLayoutScheme } from '../tools/layout-tool.js';
 import { scaffoldAddon, scaffoldTemplate } from '../tools/scaffold-tool.js';
+import {
+  buildAddonArchive,
+  inspectAddonArchive,
+  validateGeneratedArtifacts,
+} from '../tools/artifact-tool.js';
+import { listHooks } from '../tools/hooks-tool.js';
 
 describe('generator hardening', () => {
   test('generated addon passes validation with full package paths', () => {
@@ -52,5 +58,37 @@ describe('generator hardening', () => {
     expect((getHookDetails('content') as { code?: string }).code).toBe('AMBIGUOUS_HOOK');
     expect((getComponentApi('cms') as { code?: string }).code).toBe('AMBIGUOUS_COMPONENT');
     expect((searchHooks('$data') as { total: number }).total).toBeGreaterThan(0);
+  });
+
+  test('paginates large hook results with an opaque cursor', () => {
+    const first = listHooks(undefined, undefined, { limit: 2 }) as {
+      page: { returned: number; next_cursor: string };
+      hooks: unknown[];
+    };
+    const second = listHooks(undefined, undefined, {
+      limit: 2,
+      cursor: first.page.next_cursor,
+    }) as { hooks: Array<{ name: string }> };
+    expect(first.page.returned).toBe(2);
+    expect(second.hooks).toHaveLength(2);
+  });
+
+  test('parses artifacts and round-trips a safe ZIP archive', () => {
+    const files = {
+      '[pkg] manifest.ru.ini': '[info]\ntitle="Test"',
+      'package/system/controllers/test/manifest.xml': '<addon><name>test</name></addon>',
+      'layout.yaml': 'layout:\n  rows: {}',
+    };
+    expect(validateGeneratedArtifacts(files).is_valid).toBe(true);
+    const archive = buildAddonArchive(files);
+    const inspected = inspectAddonArchive(archive.archive);
+    expect(inspected.is_valid).toBe(true);
+    expect(inspected.paths).toContain('manifest.ru.ini');
+  });
+
+  test('rejects archive traversal paths', () => {
+    expect(() => buildAddonArchive({ '../escape.php': '<?php return true;' })).toThrow(
+      'Небезопасный путь архива'
+    );
   });
 });

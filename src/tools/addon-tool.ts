@@ -6,6 +6,7 @@ import {
 } from '../data/schemas.js';
 import { components } from '../data/components.js';
 import { hooks } from '../data/hooks.js';
+import { paginate, type PageOptions } from '../utils/pagination.js';
 
 export function getAddonStructure(addonType: string = 'basic'): object {
   const structure = addonStructures[addonType];
@@ -120,10 +121,12 @@ export function getComponentApi(componentName: string): object {
   };
 }
 
-export function listComponents(): object {
+export function listComponents(pageOptions: PageOptions = {}): object {
+  const page = paginate(components, pageOptions);
   return {
     total: components.length,
-    components: components.map(c => ({
+    page: page.page,
+    components: page.items.map(c => ({
       name: c.name,
       class: c.class,
       description: c.description,

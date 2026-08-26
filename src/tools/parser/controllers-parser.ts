@@ -325,7 +325,7 @@ export function getBackendControllers(): ControllerInfo[] {
 }
 
 if (require.main === module) {
-  const sourcePath = path.resolve('source');
+  const sourcePath = path.resolve(process.env.INSTANTCMS_SOURCE || 'source');
   const outputPath = path.resolve('src/data/controllers-map.ts');
   generateControllersMap(sourcePath, outputPath);
 }

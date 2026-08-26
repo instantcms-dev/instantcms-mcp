@@ -1,0 +1,6 @@
+{
+  "name": "crud addon workflow",
+  "request": "Создай CRUD-дополнение catalog с административной панелью",
+  "expected_workflow": "addon",
+  "invariants": ["uses scaffold_crud or scaffold_addon", "validates complete file map", "does not invent InstantCMS APIs"]
+}

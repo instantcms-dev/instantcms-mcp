@@ -335,7 +335,7 @@ export function generateCoreAPIData(sourceDir: string): string {
 }
 
 if (require.main === module) {
-  const sourceDir = path.resolve(__dirname, '../../../source');
+  const sourceDir = path.resolve(process.env.INSTANTCMS_SOURCE || path.resolve(__dirname, '../../../source'));
   const outputFile = path.resolve(__dirname, '../../../src/data/core-api.ts');
   
   console.log(`Parsing system/core/ files from: ${sourceDir}`);
