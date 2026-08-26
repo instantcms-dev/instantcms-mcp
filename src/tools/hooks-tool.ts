@@ -1,4 +1,4 @@
-import { hooks, hookCategories, type Hook } from "../data/hooks.js";
+import { hooks, hookCategories, type Hook } from '../data/hooks.js';
 
 export function listHooks(category?: string, type?: string): object {
   let filtered = hooks;
@@ -19,22 +19,18 @@ export function listHooks(category?: string, type?: string): object {
       category: h.category,
       description: h.description,
       parameters_count: h.parameters.length,
-      return_type: h.return_type
-    }))
+      return_type: h.return_type,
+    })),
   };
 }
 
 export function getHookDetails(hookName: string): object | null {
-  // Точное совпадение
-  let hook = hooks.find(h => h.name === hookName);
+  const lower = hookName.toLowerCase();
+  const exact = hooks.filter(h => h.name.toLowerCase() === lower);
+  const partial = hooks.filter(h => h.name.toLowerCase().includes(lower));
+  const matches = exact.length > 0 ? exact : partial;
 
-  // Если нет — поиск по частичному совпадению
-  if (!hook) {
-    const lower = hookName.toLowerCase();
-    hook = hooks.find(h => h.name.includes(lower));
-  }
-
-  if (!hook) {
+  if (matches.length === 0) {
     // Поиск похожих
     const lower = hookName.toLowerCase();
     const similar = hooks
@@ -43,11 +39,22 @@ export function getHookDetails(hookName: string): object | null {
       .map(h => h.name);
 
     return {
+      code: 'HOOK_NOT_FOUND',
       error: `Хук "${hookName}" не найден`,
       similar_hooks: similar,
-      tip: "Используйте list_hooks для просмотра всех доступных хуков"
+      tip: 'Используйте list_hooks для просмотра всех доступных хуков',
     };
   }
+
+  if (matches.length > 1) {
+    return {
+      code: 'AMBIGUOUS_HOOK',
+      error: `Запрос "${hookName}" соответствует нескольким хукам`,
+      candidates: matches.slice(0, 20).map(h => h.name),
+    };
+  }
+
+  const [hook] = matches;
 
   const className = buildClassName(hook);
 
@@ -62,23 +69,27 @@ export function getHookDetails(hookName: string): object | null {
     implementation: {
       file_path: `hooks/${hook.name}.php`,
       class_name: className,
-      usage_note: hook.type === "filter"
-        ? "ОБЯЗАТЕЛЬНО вернуть модифицированные данные через return"
-        : "Можно не возвращать данные, но рекомендуется return $data для цепочки"
+      usage_note:
+        hook.type === 'filter'
+          ? 'ОБЯЗАТЕЛЬНО вернуть модифицированные данные через return'
+          : 'Можно не возвращать данные, но рекомендуется return $data для цепочки',
     },
     example: hook.example,
-    manifest_xml: `<hook controller="{your_addon_name}" name="${hook.name}" />`
+    manifest_xml: `<hook controller="{your_addon_name}" name="${hook.name}" />`,
   };
 }
 
 export function searchHooks(query: string): object {
-  const lower = query.toLowerCase();
+  const lower = query.trim().toLowerCase();
 
-  const results = hooks.filter(h =>
-    h.name.includes(lower) ||
-    h.description.toLowerCase().includes(lower) ||
-    h.category.includes(lower) ||
-    h.parameters.some(p => p.description.toLowerCase().includes(lower))
+  const results = hooks.filter(
+    h =>
+      h.name.includes(lower) ||
+      h.description.toLowerCase().includes(lower) ||
+      h.category.includes(lower) ||
+      h.parameters.some(
+        p => p.name.toLowerCase().includes(lower) || p.description.toLowerCase().includes(lower)
+      )
   );
 
   return {
@@ -88,8 +99,8 @@ export function searchHooks(query: string): object {
       name: h.name,
       type: h.type,
       category: h.category,
-      description: h.description
-    }))
+      description: h.description,
+    })),
   };
 }
 

@@ -1,0 +1,5 @@
+{
+  "name": "format injection is escaped",
+  "request": { "name": "safe_addon", "title": "A & <B> 'quoted' \"value\"", "type": "basic" },
+  "invariants": ["XML remains well formed", "INI remains parseable", "PHP literals remain valid"]
+}

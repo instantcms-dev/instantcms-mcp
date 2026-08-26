@@ -86,7 +86,7 @@ import { addonStructures, templateStructure } from './data/schemas.js';
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'instantcms-mcp',
-    version: '1.0.0',
+    version: '1.1.0',
     description: 'MCP сервер для разработки дополнений и шаблонов InstantCMS 2',
   });
 
@@ -126,20 +126,25 @@ export function createServer(): McpServer {
     {
       name: z
         .string()
-        .describe(
-          'Техническое имя дополнения (латинские буквы, цифры, подчёркивание). Пример: my_addon'
-        ),
-      title: z.string().describe('Отображаемое название дополнения. Пример: Мой каталог'),
+        .regex(/^[a-z][a-z0-9_]{1,63}$/)
+        .describe('Техническое имя: 2–64 строчных латинских символа, цифры и подчёркивания'),
+      title: z.string().trim().min(1).max(200).describe('Отображаемое название дополнения'),
       type: z
         .enum(['basic', 'with_admin', 'with_hooks', 'with_routes', 'with_widget'])
         .default('basic')
         .describe('Тип дополнения'),
-      author: z.string().optional().describe('Имя автора'),
-      author_url: z.string().optional().describe('URL сайта автора'),
-      version: z.string().optional().default('1.0.0').describe('Версия дополнения'),
-      description: z.string().optional().describe('Описание дополнения'),
+      author: z.string().trim().min(1).max(200).optional().describe('Имя автора'),
+      author_url: z.string().url().optional().describe('URL сайта автора'),
+      version: z
+        .string()
+        .regex(/^\d+\.\d+\.\d+$/)
+        .optional()
+        .default('1.0.0')
+        .describe('Версия X.Y.Z'),
+      description: z.string().trim().max(1000).optional().describe('Описание дополнения'),
       hooks: z
-        .array(z.string())
+        .array(z.string().refine(value => hooks.some(h => h.name === value), 'Неизвестный хук'))
+        .max(100)
         .optional()
         .describe(
           "Список хуков для интеграции. Пример: ['content_after_add_approve', 'user_registered']"
@@ -807,7 +812,8 @@ export function createServer(): McpServer {
     'Валидация структуры дополнения InstantCMS. Проверяет наличие обязательных файлов, правильность классов, соглашения об именовании',
     {
       files: z
-        .record(z.string(), z.string())
+        .record(z.string().min(1).max(500), z.string().max(2_000_000))
+        .refine(files => Object.keys(files).length <= 500, 'Не более 500 файлов')
         .describe(
           "Map файлов дополнения: {путь_к_файлу: содержимое}. Пример: {'frontend.php': '<?php class myaddon...'}"
         ),
@@ -1064,6 +1070,8 @@ export function createServer(): McpServer {
               .describe('Колонки ряда'),
           })
         )
+        .min(1)
+        .max(100)
         .optional()
         .describe('Массив рядов схемы. Используйте вместо preset для кастомной схемы'),
     },
@@ -1079,6 +1087,7 @@ export function createServer(): McpServer {
       } else {
         // Default: list presets
         return {
+          isError: true,
           content: [
             {
               type: 'text',
@@ -2398,6 +2407,27 @@ export function createServer(): McpServer {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
+  server.tool(
+    'get_server_capabilities',
+    'Версия сервера, поддерживаемая версия InstantCMS и объём встроенной базы знаний',
+    {},
+    async () => {
+      const result = {
+        server_version: '1.1.0',
+        instantcms: { major: 2, tested_version: '2.18.1' },
+        tools_count: 72,
+        knowledge: {
+          hooks: hooks.length,
+          hook_categories: hookCategories.length,
+          components: components.length,
+          addon_types: Object.keys(addonStructures),
+          layout_presets: Object.keys(layoutPresets),
+        },
+      };
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
   // RESOURCES (статичные данные для контекста)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -2475,7 +2505,7 @@ export function createServer(): McpServer {
 | model.php | \`class modelMyaddon extends cmsModel\` |
 | hooks/hook_name.php | \`class onMyaddonHookName extends cmsAction\` |
 | forms/form_item.php | \`class formMyaddonItem extends cmsForm\` |
-| grids/grid_items.php | \`class gridMyaddonItems extends cmsGrid\` |
+| grids/grid_items.php | \`function grid_items($controller) { return [...]; }\` |
 | widgets/list/widget.php | \`class widgetMyaddonList extends cmsWidget\` |
 
 ## 3. Базовый паттерн action

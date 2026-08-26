@@ -29,6 +29,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Check AI adapters and skills
+        run: npm run check:ai
+
       - name: Run tests with coverage
         run: npm run test:coverage
 

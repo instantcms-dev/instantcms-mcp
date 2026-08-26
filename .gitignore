@@ -23,7 +23,6 @@ dist/
 .claude/
 *.swp
 *.swo
-*.md
 *.html
 
 # Logs

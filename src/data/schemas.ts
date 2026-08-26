@@ -571,7 +571,7 @@ class action{Name}Index extends cmsAction {
         $stats = $this->model->getStats();
 
         // cms_template->render() ищет шаблон:
-        //   /templates/admincoreui/controllers/{name}/index.tpl.php
+        //   /templates/{frontend-theme}/controllers/{name}/backend/index.tpl.php
         // или системный:
         //   /system/controllers/{name}/templates/index.tpl.php
         return $this->cms_template->render([

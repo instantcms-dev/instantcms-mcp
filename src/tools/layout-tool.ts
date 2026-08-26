@@ -100,20 +100,19 @@ function _yamlNull(): string {
 /** Wrap value in YAML double quotes */
 function yamlQ(s: string | number | null | undefined): string {
   if (s === null || s === undefined) return 'null';
-  return `"${String(s)}"`;
+  return quoteYaml(s);
 }
 
 /** YAML unquoted scalar (for simple strings without special chars) */
 function yamlBare(s: string | null | undefined): string {
   if (s === null || s === undefined) return 'null';
-  return s;
+  return quoteYaml(s);
 }
 
 /** Serialize JSON options as single-quoted YAML string */
 function yamlJsonOpts(obj: Record<string, unknown>): string {
   const json = JSON.stringify(obj);
-  // JSON won't contain single quotes, so single-quoting is safe
-  return `'${json}'`;
+  return quoteYaml(json);
 }
 
 /** YAML literal block scalar for multiline strings (wrapper field) */
@@ -695,3 +694,4 @@ export function listLayoutPresets(): object {
     positions: preset.scheme.rows.flatMap(r => (r.cols || []).map(c => c.position || '(auto)')),
   }));
 }
+import { quoteYaml } from '../utils/serialization.js';

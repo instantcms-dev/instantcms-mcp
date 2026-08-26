@@ -1,13 +1,16 @@
 {
   "name": "instantcms-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for InstantCMS addon and template development",
+  "version": "1.1.0",
+  "description": "MCP server and reusable AI workflows for InstantCMS 2 development",
   "main": "dist/index.js",
   "bin": {
     "instantcms-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "check:ai": "node scripts/check-ai-configs.mjs",
+    "check": "npm run typecheck && npm test -- --runInBand && npm run check:ai",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
@@ -37,7 +40,15 @@
     "cms"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "commonjs",
   "lint-staged": {
     "*.ts": [

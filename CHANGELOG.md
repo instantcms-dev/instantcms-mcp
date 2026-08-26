@@ -1,0 +1,13 @@
+# Changelog
+
+## 1.1.0
+
+- Added strict input validation and safe XML, INI, PHP, and YAML serialization.
+- Made addon validation compatible with full generated package paths.
+- Added stable diagnostic codes, deterministic lookup behavior, and server capabilities.
+- Added tests, AI project adapters, reusable skills, eval scenarios, and project documentation.
+- Preserved the extended GitHub toolset and added CI drift checks for AI adapters.
+
+## 1.0.0
+
+- Initial MCP tools, resources, addon/template scaffolding, and InstantCMS knowledge base.

@@ -76,12 +76,22 @@ export function getAddonStructure(addonType: string = 'basic'): object {
 
 export function getComponentApi(componentName: string): object {
   const lower = componentName.toLowerCase();
-  const component = components.find(
+  const exact = components.filter(
+    c => c.name.toLowerCase() === lower || c.class.toLowerCase() === lower
+  );
+  const partial = components.filter(
     c => c.name.toLowerCase().includes(lower) || c.class.toLowerCase().includes(lower)
   );
+  const rawMatches = exact.length > 0 ? exact : partial;
+  const matches = rawMatches.filter(
+    (component, index, all) =>
+      all.findIndex(item => item.name === component.name && item.class === component.class) ===
+      index
+  );
 
-  if (!component) {
+  if (matches.length === 0) {
     return {
+      code: 'COMPONENT_NOT_FOUND',
       error: `Компонент "${componentName}" не найден`,
       available: components.map(c => ({
         name: c.name,
@@ -90,6 +100,16 @@ export function getComponentApi(componentName: string): object {
       })),
     };
   }
+
+  if (matches.length > 1) {
+    return {
+      code: 'AMBIGUOUS_COMPONENT',
+      error: `Запрос "${componentName}" соответствует нескольким компонентам`,
+      candidates: matches.map(c => ({ name: c.name, class: c.class })),
+    };
+  }
+
+  const [component] = matches;
 
   return {
     name: component.name,
@@ -114,6 +134,16 @@ export function listComponents(): object {
 }
 
 export function validateAddon(structure: Record<string, string>): object {
+  const normalized: Record<string, string> = {};
+  for (const [originalPath, content] of Object.entries(structure)) {
+    const path = originalPath.replace(/\\/g, '/').replace(/^\.\//, '');
+    normalized[path] = content;
+    const controllerMatch = path.match(/(?:^|\/)controllers\/[^/]+\/(.+)$/);
+    if (controllerMatch) normalized[controllerMatch[1]] ??= content;
+    const languageMatch = path.match(/(?:^|\/)(languages\/.+)$/);
+    if (languageMatch) normalized[languageMatch[1]] ??= content;
+  }
+  structure = normalized;
   const errors: string[] = [];
   const warnings: string[] = [];
   const tips: string[] = [];
@@ -316,6 +346,11 @@ export function validateAddon(structure: Record<string, string>): object {
     errors,
     warnings,
     tips,
+    diagnostics: [
+      ...errors.map(message => ({ code: diagnosticCode(message), severity: 'error', message })),
+      ...warnings.map(message => ({ code: diagnosticCode(message), severity: 'warning', message })),
+      ...tips.map(message => ({ code: 'SUGGESTION', severity: 'tip', message })),
+    ],
     summary:
       errors.length === 0
         ? `✓ Дополнение прошло валидацию (${warnings.length} предупреждений, ${tips.length} советов)`
@@ -342,6 +377,14 @@ export function validateAddon(structure: Record<string, string>): object {
         ),
     },
   };
+}
+
+function diagnosticCode(message: string): string {
+  if (message.startsWith('Отсутствует обязательный файл:')) return 'MISSING_REQUIRED_FILE';
+  if (message.includes('должен наследовать')) return 'INVALID_BASE_CLASS';
+  if (message.includes('отсутствует метод')) return 'MISSING_REQUIRED_METHOD';
+  if (message.startsWith('manifest.xml: отсутствует')) return 'MANIFEST_MISSING_ELEMENT';
+  return 'VALIDATION_NOTICE';
 }
 
 function extractAddonName(structure: Record<string, string>): string | null {

@@ -1,0 +1,5 @@
+{
+  "name": "basic addon round trip",
+  "request": { "name": "catalog", "title": "Каталог", "type": "basic", "version": "1.0.0" },
+  "invariants": ["generation succeeds", "validation has no errors", "full package paths are accepted"]
+}

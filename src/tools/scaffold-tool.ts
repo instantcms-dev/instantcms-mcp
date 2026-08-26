@@ -1,3 +1,5 @@
+import { escapeXml, quoteIni, quotePhp } from '../utils/serialization.js';
+
 interface ScaffoldAddonOptions {
   name: string;
   title: string;
@@ -10,7 +12,12 @@ interface ScaffoldAddonOptions {
 }
 
 export function scaffoldAddon(opts: ScaffoldAddonOptions): object {
-  const name = opts.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(opts.name)) {
+    throw new Error(
+      'Техническое имя должно начинаться с латинской буквы и содержать 2–64 строчных букв, цифр или подчёркиваний'
+    );
+  }
+  const name = opts.name;
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
   const version = opts.version || '1.0.0';
@@ -22,21 +29,25 @@ export function scaffoldAddon(opts: ScaffoldAddonOptions): object {
   const files: Record<string, string> = {};
 
   // ── manifest.ru.ini — корень пакета ─────────────────────────────────────────
-  const [major, minor, build] = version.split('.').map(Number);
+  const versionMatch = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  if (!versionMatch) {
+    throw new Error('Версия должна быть указана в формате X.Y.Z, например 1.0.0');
+  }
+  const [, major, minor, build] = versionMatch;
 
   files['[pkg] manifest.ru.ini'] = `[info]
-title = "${title}"
-description = "${description}"
+title = ${quoteIni(title)}
+description = ${quoteIni(description)}
 image_hint =
 
 [version]
-major = ${major || 1}
-minor = ${minor || 0}
-build = ${build || 1}
+major = ${major}
+minor = ${minor}
+build = ${build}
 
 [author]
-name = "${author}"
-url = "${author_url}"
+name = ${quoteIni(author)}
+url = ${quoteIni(author_url)}
 
 [install]
 type = controller
@@ -97,19 +108,19 @@ class ${name} extends cmsFrontend {
 
   // ── manifest.xml ─────────────────────────────────────────────────────────────
   const hookEntries = (opts.hooks || [])
-    .map(h => `        <hook controller="${name}" name="${h}" />`)
+    .map(h => `        <hook controller="${name}" name="${escapeXml(h)}" />`)
     .join('\n');
 
   files[`${ctrl}/manifest.xml`] = `<?xml version="1.0" encoding="utf-8"?>
 <addon>
     <name>${name}</name>
-    <title>${title}</title>
-    <description>${description}</description>
-    <version>${version}</version>
-    <build>${build || 1}</build>
+    <title>${escapeXml(title)}</title>
+    <description>${escapeXml(description)}</description>
+    <version>${escapeXml(version)}</version>
+    <build>${build}</build>
     <author>
-        <name>${author}</name>
-        <url>${author_url}</url>
+        <name>${escapeXml(author)}</name>
+        <url>${escapeXml(author_url)}</url>
         <email></email>
     </author>
     <dependencies>
@@ -214,7 +225,7 @@ class action${Name}View extends cmsAction {
 // Файл: /system/languages/ru/controllers/${name}/${name}.php
 // ВАЖНО: языковой файл расположен в /system/languages/, а НЕ внутри контроллера!
 
-define('LANG_${NAME}_TITLE',     '${title}');
+define('LANG_${NAME}_TITLE',     ${quotePhp(title)});
 define('LANG_${NAME}_ADD',       'Добавить');
 define('LANG_${NAME}_EDIT',      'Редактировать');
 define('LANG_${NAME}_DELETE',    'Удалить');
@@ -324,14 +335,19 @@ class on${Name}${hookCamel} extends cmsAction {
 }
 
 export function scaffoldTemplate(opts: { name: string; title: string; author?: string }): object {
-  const name = opts.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(opts.name)) {
+    throw new Error(
+      'Техническое имя шаблона должно начинаться с латинской буквы и содержать 2–64 допустимых символа'
+    );
+  }
+  const name = opts.name;
 
   const files: Record<string, string> = {
     'manifest.php': `<?php
 return [
-    'title'  => '${opts.title}',
+    'title'  => ${quotePhp(opts.title)},
     'author' => [
-        'name' => '${opts.author || 'Author'}',
+        'name' => ${quotePhp(opts.author || 'Author')},
         'url'  => 'https://example.com',
         'help' => 'https://example.com/docs'
     ],
