@@ -14,7 +14,9 @@ describe('MCP integration', () => {
       expect(listed.tools.some(tool => tool.name === 'validate_generated_artifacts')).toBe(true);
       expect(listed.tools.some(tool => tool.name === 'audit_instantcms_project')).toBe(true);
       expect(listed.tools.some(tool => tool.name === 'plan_instantcms_upgrade')).toBe(true);
-      expect(listed.tools).toHaveLength(86);
+      expect(listed.tools.some(tool => tool.name === 'load_instantcms_project')).toBe(true);
+      expect(listed.tools.some(tool => tool.name === 'create_project_patch')).toBe(true);
+      expect(listed.tools).toHaveLength(88);
       const result = await client.callTool({ name: 'get_server_capabilities', arguments: {} });
       expect(result.structuredContent).toMatchObject({ server_version: '1.2.0' });
     } finally {

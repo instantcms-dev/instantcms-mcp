@@ -21,7 +21,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 - диагностические коды для автоматического исправления;
 - экранирование пользовательских данных для XML, INI, PHP и YAML;
 - AI-инструкции и skills без дублирования базы знаний.
-- 86 MCP-инструментов и четыре встроенных MCP resource;
+- 88 MCP-инструментов и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 18, 20, 22 и 24 с отдельной проверкой официальных исходников InstantCMS.
@@ -65,7 +65,7 @@ npm run check
 
 ## Основные MCP-инструменты
 
-Сервер регистрирует 86 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates, аудит существующих проектов и планирование обновлений.
+Сервер регистрирует 88 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
 
 | Инструмент                                      | Назначение                                      |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -94,6 +94,8 @@ npm run check
 | `repair_instantcms_project`                     | Только безопасные структурные исправления       |
 | `explain_instantcms_project`                    | Краткая карта существующего проекта             |
 | `plan_instantcms_upgrade`                       | План обновления между версиями InstantCMS       |
+| `load_instantcms_project`                       | Загрузка проекта из директории или GitHub       |
+| `create_project_patch`                          | Unified Git patch между двумя file map          |
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
@@ -108,7 +110,7 @@ npm run check
 | `source-tools`    |         12 | widgets, traits, fields, routes, миграции и анализ требований                    |
 | `language-tools`  |          3 | языковые ключи, language files и migration scaffold                              |
 | `extension-tools` |         17 | WYSIWYG, permissions, filters, SEO, import/export, cache, webhooks, OAuth и темы |
-| `project-tools`   |          5 | аудит, объяснение проекта, план, безопасный repair и upgrade planner             |
+| `project-tools`   |          7 | загрузка, аудит, объяснение, план, безопасный repair, patch и upgrade planner    |
 
 Полные имена, входные Zod-схемы и описания доступны клиенту через стандартный MCP `tools/list`. Для начала неизвестной задачи используйте `diagnose_request`, `find_tool` или `get_workflow`.
 
@@ -192,7 +194,9 @@ Skills разделены по workflow:
 - `skills/instantcms-debug` — диагностика runtime и installation failures;
 - `skills/instantcms-security` — целевой security review.
 
-Для существующего проекта рекомендуемый агентный цикл: `explain_instantcms_project → audit_instantcms_project → plan_project_changes → review → repair_instantcms_project → audit_instantcms_project`. Инструмент repair возвращает новый file map и не записывает файлы самостоятельно.
+Для существующего проекта рекомендуемый агентный цикл: `load_instantcms_project → explain_instantcms_project → audit_instantcms_project → plan_project_changes → review → repair_instantcms_project → create_project_patch → audit_instantcms_project`. Инструмент repair сразу возвращает новый file map и unified Git patch, но не записывает файлы самостоятельно.
+
+Локальный loader рекурсивно читает только текстовые файлы, не следует по symbolic links и пропускает `.git`, `node_modules`, `vendor`, сборочные каталоги и бинарные данные. GitHub loader принимает `owner/repository` или URL публичного репозитория, точный `ref` и необязательный `subpath`. Для обоих источников действуют ограничения количества файлов, размера одного файла и общего объёма.
 
 Большие справочники не копируются в skills. Агент получает факты через MCP tools/resources и `knowledge/`, а skill определяет порядок работы и критерии готовности.
 

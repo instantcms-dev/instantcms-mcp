@@ -3,6 +3,7 @@ import { validateGeneratedArtifacts, type ArtifactDiagnostic } from './artifact-
 import { compareVersionProfiles } from '../data/version-profiles.js';
 import { components } from '../data/components.js';
 import { hooks } from '../data/hooks.js';
+import { createProjectPatch } from './project-patch-tool.js';
 
 export interface ProjectDiagnostic extends ArtifactDiagnostic {
   suggestion?: string;
@@ -146,7 +147,8 @@ export function planProjectChanges(files: Record<string, string>) {
 }
 
 export function repairInstantCmsProject(filesInput: Record<string, string>) {
-  const files = normalizeFiles(filesInput);
+  const before = normalizeFiles(filesInput);
+  const files = { ...before };
   const plan = planProjectChanges(files);
   const applied: ProjectOperation[] = [];
   for (const operation of plan.operations) {
@@ -156,7 +158,12 @@ export function repairInstantCmsProject(filesInput: Record<string, string>) {
     delete files[operation.path];
     applied.push(operation);
   }
-  return { files, applied, remaining: auditInstantCmsProject(files) };
+  return {
+    files,
+    applied,
+    patch: createProjectPatch(before, files),
+    remaining: auditInstantCmsProject(files),
+  };
 }
 
 export function explainInstantCmsProject(files: Record<string, string>) {
