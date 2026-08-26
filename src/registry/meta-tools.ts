@@ -34,10 +34,12 @@ const workflows = {
     'inspect_addon_archive',
   ],
   repair: [
+    'load_instantcms_project',
     'explain_instantcms_project',
     'audit_instantcms_project',
     'plan_project_changes',
     'repair_instantcms_project',
+    'create_project_patch',
     'audit_instantcms_project',
   ],
   upgrade: [
@@ -84,7 +86,7 @@ export function registerMetaTools(server: McpServer): void {
     async () =>
       successResult({
         server_version: '1.2.0',
-        tools_count: 86,
+        tools_count: 88,
         instantcms_profiles: instantCmsVersionProfiles,
         knowledge: {
           hooks: hooks.length,

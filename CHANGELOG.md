@@ -6,6 +6,8 @@
 - Expose source file provenance for discovered hooks and components.
 - Add project audit, explain, plan, safe repair, and version upgrade MCP workflows.
 - Add focused migration, widget, theme, API, upgrade, debug, and security skills.
+- Add bounded project loading from local directories and public GitHub repositories.
+- Generate unified Git patches directly and include them in safe project repair results.
 
 ## 1.2.0
 
