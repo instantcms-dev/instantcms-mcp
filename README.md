@@ -21,7 +21,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 - диагностические коды для автоматического исправления;
 - экранирование пользовательских данных для XML, INI, PHP и YAML;
 - AI-инструкции и skills без дублирования базы знаний.
-- 81 MCP-инструмент и четыре встроенных MCP resource;
+- 86 MCP-инструментов и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 18, 20, 22 и 24 с отдельной проверкой официальных исходников InstantCMS.
@@ -65,7 +65,7 @@ npm run check
 
 ## Основные MCP-инструменты
 
-Сервер регистрирует 81 инструмент. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates и анализ исходников.
+Сервер регистрирует 86 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates, аудит существующих проектов и планирование обновлений.
 
 | Инструмент                                      | Назначение                                      |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -89,6 +89,11 @@ npm run check
 | `compare_instantcms_versions`                   | Сравнение version profiles                      |
 | `validate_generated_artifacts`                  | Разбор XML, INI, YAML и проверка PHP-формы      |
 | `build_addon_archive` / `inspect_addon_archive` | Создание и проверка ZIP в памяти                |
+| `audit_instantcms_project`                      | Комплексный аудит существующего file map        |
+| `plan_project_changes`                          | План исправлений без изменения файлов           |
+| `repair_instantcms_project`                     | Только безопасные структурные исправления       |
+| `explain_instantcms_project`                    | Краткая карта существующего проекта             |
+| `plan_instantcms_upgrade`                       | План обновления между версиями InstantCMS       |
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
@@ -103,6 +108,7 @@ npm run check
 | `source-tools`    |         12 | widgets, traits, fields, routes, миграции и анализ требований                    |
 | `language-tools`  |          3 | языковые ключи, language files и migration scaffold                              |
 | `extension-tools` |         17 | WYSIWYG, permissions, filters, SEO, import/export, cache, webhooks, OAuth и темы |
+| `project-tools`   |          5 | аудит, объяснение проекта, план, безопасный repair и upgrade planner             |
 
 Полные имена, входные Zod-схемы и описания доступны клиенту через стандартный MCP `tools/list`. Для начала неизвестной задачи используйте `diagnose_request`, `find_tool` или `get_workflow`.
 
@@ -178,6 +184,15 @@ Skills разделены по workflow:
 
 - `skills/instantcms-addon` — проектирование и генерация дополнений;
 - `skills/instantcms-audit` — аудит структуры, синтаксиса и безопасности.
+- `skills/instantcms-migration` — миграции и изменения схемы БД;
+- `skills/instantcms-widget` — виджеты, options и caching;
+- `skills/instantcms-theme` — темы, overrides и layout schemes;
+- `skills/instantcms-api` — REST, external API, OAuth и webhooks;
+- `skills/instantcms-upgrade` — обновление между версиями InstantCMS;
+- `skills/instantcms-debug` — диагностика runtime и installation failures;
+- `skills/instantcms-security` — целевой security review.
+
+Для существующего проекта рекомендуемый агентный цикл: `explain_instantcms_project → audit_instantcms_project → plan_project_changes → review → repair_instantcms_project → audit_instantcms_project`. Инструмент repair возвращает новый file map и не записывает файлы самостоятельно.
 
 Большие справочники не копируются в skills. Агент получает факты через MCP tools/resources и `knowledge/`, а skill определяет порядок работы и критерии готовности.
 

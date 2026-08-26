@@ -8,6 +8,7 @@ import { registerSourceTools } from './registry/source-tools.js';
 import { registerLanguageTools } from './registry/language-tools.js';
 import { registerExtensionTools } from './registry/extension-tools.js';
 import { registerResources } from './registry/resources.js';
+import { registerProjectTools } from './registry/project-tools.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -24,6 +25,7 @@ export function createServer(): McpServer {
   registerLanguageTools(server);
   registerExtensionTools(server);
   registerResources(server);
+  registerProjectTools(server);
 
   return server;
 }

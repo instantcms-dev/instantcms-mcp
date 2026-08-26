@@ -33,6 +33,19 @@ const workflows = {
     'validate_generated_artifacts',
     'inspect_addon_archive',
   ],
+  repair: [
+    'explain_instantcms_project',
+    'audit_instantcms_project',
+    'plan_project_changes',
+    'repair_instantcms_project',
+    'audit_instantcms_project',
+  ],
+  upgrade: [
+    'explain_instantcms_project',
+    'plan_instantcms_upgrade',
+    'plan_project_changes',
+    'audit_instantcms_project',
+  ],
 };
 
 const toolCatalog = [
@@ -56,6 +69,11 @@ const toolCatalog = [
     keywords: ['template', 'шаблон', 'layout', 'widget'],
     tools: workflows.template,
   },
+  {
+    category: 'project',
+    keywords: ['project', 'проект', 'audit', 'аудит', 'repair', 'исправ', 'upgrade', 'обнов'],
+    tools: [...workflows.repair, 'plan_instantcms_upgrade'],
+  },
 ];
 
 export function registerMetaTools(server: McpServer): void {
@@ -66,7 +84,7 @@ export function registerMetaTools(server: McpServer): void {
     async () =>
       successResult({
         server_version: '1.2.0',
-        tools_count: 81,
+        tools_count: 86,
         instantcms_profiles: instantCmsVersionProfiles,
         knowledge: {
           hooks: hooks.length,
@@ -93,7 +111,7 @@ export function registerMetaTools(server: McpServer): void {
   server.tool(
     'get_workflow',
     'Возвращает рекомендуемую последовательность инструментов',
-    { workflow: z.enum(['addon', 'widget', 'template', 'audit']) },
+    { workflow: z.enum(['addon', 'widget', 'template', 'audit', 'repair', 'upgrade']) },
     async ({ workflow }) => successResult({ workflow, tools: workflows[workflow] })
   );
 
@@ -110,7 +128,11 @@ export function registerMetaTools(server: McpServer): void {
             ? 'template'
             : lower.includes('провер') || lower.includes('audit')
               ? 'audit'
-              : 'addon';
+              : lower.includes('обнов') || lower.includes('upgrade')
+                ? 'upgrade'
+                : lower.includes('исправ') || lower.includes('repair')
+                  ? 'repair'
+                  : 'addon';
       return successResult({ workflow, tools: workflows[workflow] });
     }
   );
@@ -147,7 +169,7 @@ export function registerMetaTools(server: McpServer): void {
       successResult({
         status: 'ready',
         server_version: '1.2.0',
-        tested_instantcms: '2.18.1',
+        tested_instantcms: '2.18.2',
         checks: ['npm run check', 'npm run test:integration', 'npm run build', 'npm audit'],
       })
   );

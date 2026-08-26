@@ -5,6 +5,13 @@ const required = [
   'CLAUDE.md',
   'skills/instantcms-addon/SKILL.md',
   'skills/instantcms-audit/SKILL.md',
+  'skills/instantcms-migration/SKILL.md',
+  'skills/instantcms-widget/SKILL.md',
+  'skills/instantcms-theme/SKILL.md',
+  'skills/instantcms-api/SKILL.md',
+  'skills/instantcms-upgrade/SKILL.md',
+  'skills/instantcms-debug/SKILL.md',
+  'skills/instantcms-security/SKILL.md',
 ];
 
 for (const path of required) {
