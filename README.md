@@ -148,7 +148,7 @@ src/data/*.ts + knowledge/upstream.json
 Git commit / release snapshot
 ```
 
-`latest` выбирает максимальный стабильный semver-тег из `git ls-remote`. Сейчас он разрешается в тег `2.18.2` и commit `4a13609c480cccfcbd27dbab424d6bf00ad67375`. Время генерации берётся из upstream commit, поэтому повторный запуск для одного SHA не создаёт шумовой diff.
+`latest` выбирает максимальный стабильный semver-тег из `git ls-remote`. Сейчас он разрешается в тег `2.18.2` и commit `4a13609c480cccfcbd27dbab424d6bf00ad67375`. Парсеры извлекают хуки из вызовов `hook`, `hookAll` и `runHook`, а компоненты и публичные сигнатуры — из `system/core/*.php`. Проверенные описания и примеры накладываются поверх source evidence. Время генерации берётся из upstream commit, поэтому повторный запуск для одного SHA не создаёт шумовой diff.
 
 Основные команды:
 

@@ -23,6 +23,7 @@ export function listHooks(category?: string, type?: string, pageOptions: PageOpt
       description: h.description,
       parameters_count: h.parameters.length,
       return_type: h.return_type,
+      source: h.source,
     })),
   };
 }
@@ -69,6 +70,7 @@ export function getHookDetails(hookName: string): object | null {
     parameters: hook.parameters,
     return_type: hook.return_type,
     since: hook.since,
+    source: hook.source,
     implementation: {
       file_path: `hooks/${hook.name}.php`,
       class_name: className,

@@ -98,11 +98,9 @@ function countJsonArrayObjects(content: string, key: string): number {
   return 0;
 }
 
-function countHookCategories(content: string): number {
-  const match = content.match(/export const hookCategories = \[([^\]]+)\]/);
-  if (!match) return 0;
-  const catMatches = match[1].match(/["'](\w+)["']/g);
-  return catMatches ? catMatches.length : 0;
+function countSourceHookCategories(content: string): number {
+  const names = [...content.matchAll(/"name":\s*"([a-z][a-z0-9_]+)"/g)].map(match => match[1]);
+  return new Set(names.map(name => name.split('_')[0])).size;
 }
 
 function countTablesWithComment(content: string): number {
@@ -167,9 +165,12 @@ function getCoverageStats(): CoverageStats {
   };
 
   try {
-    const hooksContent = fs.readFileSync(path.join(process.cwd(), 'src/data/hooks.ts'), 'utf-8');
-    stats.hooks = countJsonArrayObjects(hooksContent, 'hooks');
-    stats.hookCategories = countHookCategories(hooksContent);
+    const hooksContent = fs.readFileSync(
+      path.join(process.cwd(), 'src/generated/hooks-source.ts'),
+      'utf-8'
+    );
+    stats.hooks = (hooksContent.match(/"name":\s*"[a-z][a-z0-9_]+"/g) || []).length;
+    stats.hookCategories = countSourceHookCategories(hooksContent);
   } catch (e) {
     console.error('Error reading hooks:', e);
   }

@@ -2089,9 +2089,17 @@ describe('Components API', () => {
 });
 
 describe('Hooks Data', () => {
-  test('hooks array has 102 hooks', () => {
+  test('hooks array includes source-backed and curated hooks', () => {
     const { hooks } = require('../data/hooks');
-    expect(hooks.length).toBe(102);
+    expect(hooks.length).toBeGreaterThan(250);
+    expect(hooks.some((hook: any) => hook.source?.files?.length > 0)).toBe(true);
+  });
+
+  test('source-backed components include provenance', () => {
+    const { components } = require('../data/components');
+    const cmsModel = components.find((component: any) => component.name === 'cmsModel');
+    expect(cmsModel.source.file).toBe('system/core/model.php');
+    expect(cmsModel.source.repository).toContain('instantsoft/icms2');
   });
 
   test('hooks have required properties', () => {
@@ -2345,7 +2353,7 @@ describe('Hooks Tool Extended', () => {
 
   test('listHooks returns all hooks by default', () => {
     const result = listHooks();
-    expect(result.total).toBe(102);
+    expect(result.total).toBeGreaterThan(250);
   });
 
   test('listHooks filters by category engine', () => {

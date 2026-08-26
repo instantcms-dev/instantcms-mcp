@@ -14,14 +14,28 @@ export const knowledgeCatalog = {
       "id": "runtime-hooks",
       "runtime_file": "src/data/hooks.ts",
       "domain": "hooks",
-      "confidence": "legacy",
+      "confidence": "inferred",
       "verified_at": "2026-08-26"
     },
     {
       "id": "runtime-components",
       "runtime_file": "src/data/components.ts",
       "domain": "components",
-      "confidence": "legacy",
+      "confidence": "inferred",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-hooks-source",
+      "runtime_file": "src/generated/hooks-source.ts",
+      "domain": "hooks",
+      "confidence": "verified",
+      "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-components-source",
+      "runtime_file": "src/generated/components-source.ts",
+      "domain": "components",
+      "confidence": "verified",
       "verified_at": "2026-08-26"
     },
     {
