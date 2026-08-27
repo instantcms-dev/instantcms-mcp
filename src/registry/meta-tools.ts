@@ -29,6 +29,13 @@ const workflows = {
     'scaffold_layout_scheme',
     'validate_layout_scheme',
     'check_template_override_compatibility',
+    'merge_template_overrides',
+    'audit_template_frontend',
+    'extract_template_design_tokens',
+    'audit_template_widget_positions',
+    'scaffold_template_e2e_environment',
+    'index_upstream_template_sources',
+    'scaffold_template_php_quality',
     'validate_generated_artifacts',
   ],
   audit: [
@@ -90,7 +97,7 @@ export function registerMetaTools(server: McpServer): void {
     async () =>
       successResult({
         server_version: '1.2.0',
-        tools_count: 93,
+        tools_count: 100,
         instantcms_profiles: instantCmsVersionProfiles,
         knowledge: {
           hooks: hooks.length,
