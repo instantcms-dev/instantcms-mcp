@@ -21,7 +21,14 @@ describe('MCP integration', () => {
       expect(listed.tools.some(tool => tool.name === 'check_template_override_compatibility')).toBe(
         true
       );
-      expect(listed.tools).toHaveLength(93);
+      expect(listed.tools.some(tool => tool.name === 'merge_template_overrides')).toBe(true);
+      expect(listed.tools.some(tool => tool.name === 'audit_template_frontend')).toBe(true);
+      expect(listed.tools.some(tool => tool.name === 'scaffold_template_e2e_environment')).toBe(
+        true
+      );
+      expect(listed.tools.some(tool => tool.name === 'index_upstream_template_sources')).toBe(true);
+      expect(listed.tools.some(tool => tool.name === 'scaffold_template_php_quality')).toBe(true);
+      expect(listed.tools).toHaveLength(100);
       const result = await client.callTool({ name: 'get_server_capabilities', arguments: {} });
       expect(result.structuredContent).toMatchObject({ server_version: '1.2.0' });
     } finally {

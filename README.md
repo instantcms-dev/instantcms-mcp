@@ -21,7 +21,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 - диагностические коды для автоматического исправления;
 - экранирование пользовательских данных для XML, INI, PHP и YAML;
 - AI-инструкции и skills без дублирования базы знаний.
-- 93 MCP-инструмента и четыре встроенных MCP resource;
+- 100 MCP-инструментов и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 18, 20, 22 и 24 с отдельной проверкой официальных исходников InstantCMS.
@@ -61,11 +61,11 @@ npm run inspector
 npm run check
 ```
 
-`npm run check` выполняет проверку provenance/generated metadata, TypeScript, 245 unit-тестов и конфигураций AI-клиентов. Интеграционный MCP smoke-test запускается отдельно командой `npm run test:integration`.
+`npm run check` выполняет проверку provenance/generated metadata, TypeScript, unit-тестов и конфигураций AI-клиентов. Интеграционный MCP smoke-test запускается отдельно командой `npm run test:integration`.
 
 ## Основные MCP-инструменты
 
-Сервер регистрирует 93 инструмента. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, углублённую разработку шаблонов, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
+Сервер регистрирует 100 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, углублённую разработку и визуальное тестирование шаблонов, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
 
 | Инструмент                                      | Назначение                                      |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -101,6 +101,13 @@ npm run check
 | `scaffold_template_override`                    | Override из upstream template-файла             |
 | `validate_layout_scheme`                        | Проверка YAML layout-схемы                      |
 | `check_template_override_compatibility`         | Проверка overrides при обновлении InstantCMS    |
+| `merge_template_overrides`                      | Безопасный трёхсторонний merge overrides        |
+| `audit_template_frontend`                       | HTML, accessibility, escaping и CSS-аудит       |
+| `extract_template_design_tokens`                | Извлечение цветов, spacing и CSS tokens         |
+| `audit_template_widget_positions`               | Сверка PHP-позиций с layout YAML                |
+| `scaffold_template_e2e_environment`             | Docker и Playwright visual regression           |
+| `index_upstream_template_sources`               | SHA-256 provenance upstream-шаблонов            |
+| `scaffold_template_php_quality`                 | PHPStan, PHPCS и PHPCompatibility               |
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
@@ -116,7 +123,7 @@ npm run check
 | `language-tools`             |          3 | языковые ключи, language files и migration scaffold                              |
 | `extension-tools`            |         17 | WYSIWYG, permissions, filters, SEO, import/export, cache, webhooks, OAuth и темы |
 | `project-tools`              |          7 | загрузка, аудит, объяснение, план, безопасный repair, patch и upgrade planner    |
-| `template-development-tools` |          5 | полный scaffold, анализ, overrides, layout validation и upgrade compatibility    |
+| `template-development-tools` |         12 | scaffold, merge, frontend/PHP quality, provenance, tokens, layouts и visual E2E  |
 
 Полные имена, входные Zod-схемы и описания доступны клиенту через стандартный MCP `tools/list`. Для начала неизвестной задачи используйте `diagnose_request`, `find_tool` или `get_workflow`.
 
@@ -204,7 +211,9 @@ Skills разделены по workflow:
 
 Локальный loader рекурсивно читает только текстовые файлы, не следует по symbolic links и пропускает `.git`, `node_modules`, `vendor`, сборочные каталоги и бинарные данные. GitHub loader принимает `owner/repository` или URL публичного репозитория, точный `ref` и необязательный `subpath`. Для обоих источников действуют ограничения количества файлов, размера одного файла и общего объёма.
 
-Для разработки темы используйте цикл `load_instantcms_project → analyze_instantcms_template → scaffold_complete_template/scaffold_template_override → validate_layout_scheme → create_project_patch → audit_instantcms_project`. Перед обновлением InstantCMS передайте старую и новую upstream-карты шаблонов в `check_template_override_compatibility`: инструмент отделит совместимые overrides от изменённых или удалённых upstream-файлов, требующих ручной проверки.
+Для разработки темы используйте цикл `load_instantcms_project → analyze_instantcms_template → scaffold_complete_template/scaffold_template_override → audit_template_widget_positions → validate_layout_scheme → audit_template_frontend → create_project_patch → audit_instantcms_project`. Design tokens можно получить через `extract_template_design_tokens`, PHP quality-конфигурацию — через `scaffold_template_php_quality`, а Docker/Playwright окружение — через `scaffold_template_e2e_environment`.
+
+Перед обновлением InstantCMS зафиксируйте карту исходников через `index_upstream_template_sources`, передайте старую и новую upstream-карты в `check_template_override_compatibility`, затем вызовите `merge_template_overrides`. Неизменённые overrides обновляются автоматически; одно однозначное upstream-изменение переносится в кастомный файл; неоднозначные изменения остаются конфликтами и не модифицируются. Результат всегда содержит reviewable Git patch.
 
 Большие справочники не копируются в skills. Агент получает факты через MCP tools/resources и `knowledge/`, а skill определяет порядок работы и критерии готовности.
 

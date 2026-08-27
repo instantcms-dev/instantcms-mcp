@@ -9,6 +9,7 @@
 - Add bounded project loading from local directories and public GitHub repositories.
 - Generate unified Git patches directly and include them in safe project repair results.
 - Add complete template scaffolding, existing-theme analysis, source-preserving overrides, layout validation, and upstream override compatibility checks.
+- Add safe three-way override updates, frontend/accessibility and PHP quality tooling, upstream template provenance, design-token extraction, widget-position checks, and generated Docker/Playwright visual tests.
 
 ## 1.2.0
 
