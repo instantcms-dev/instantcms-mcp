@@ -21,7 +21,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 - диагностические коды для автоматического исправления;
 - экранирование пользовательских данных для XML, INI, PHP и YAML;
 - AI-инструкции и skills без дублирования базы знаний.
-- 88 MCP-инструментов и четыре встроенных MCP resource;
+- 93 MCP-инструмента и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 18, 20, 22 и 24 с отдельной проверкой официальных исходников InstantCMS.
@@ -65,7 +65,7 @@ npm run check
 
 ## Основные MCP-инструменты
 
-Сервер регистрирует 88 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, templates, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
+Сервер регистрирует 93 инструмента. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, углублённую разработку шаблонов, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
 
 | Инструмент                                      | Назначение                                      |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -96,21 +96,27 @@ npm run check
 | `plan_instantcms_upgrade`                       | План обновления между версиями InstantCMS       |
 | `load_instantcms_project`                       | Загрузка проекта из директории или GitHub       |
 | `create_project_patch`                          | Unified Git patch между двумя file map          |
+| `scaffold_complete_template`                    | Полный каркас темы и layout-схема               |
+| `analyze_instantcms_template`                   | Анализ структуры, позиций и overrides           |
+| `scaffold_template_override`                    | Override из upstream template-файла             |
+| `validate_layout_scheme`                        | Проверка YAML layout-схемы                      |
+| `check_template_override_compatibility`         | Проверка overrides при обновлении InstantCMS    |
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
 ### Группы инструментов
 
-| Registry          | Количество | Что входит                                                                       |
-| ----------------- | ---------: | -------------------------------------------------------------------------------- |
-| `meta-tools`      |         10 | capabilities, подбор workflow, диагностика, версии и артефакты                   |
-| `generator-tools` |         13 | addon, CRUD, формы, grid, REST API, тесты, email, cron и overrides               |
-| `knowledge-tools` |         20 | хуки, компоненты, поля, шаблоны, layout, БД и контроллеры                        |
-| `database-tools`  |          6 | безопасный доступ к MariaDB и исследование таблиц                                |
-| `source-tools`    |         12 | widgets, traits, fields, routes, миграции и анализ требований                    |
-| `language-tools`  |          3 | языковые ключи, language files и migration scaffold                              |
-| `extension-tools` |         17 | WYSIWYG, permissions, filters, SEO, import/export, cache, webhooks, OAuth и темы |
-| `project-tools`   |          7 | загрузка, аудит, объяснение, план, безопасный repair, patch и upgrade planner    |
+| Registry                     | Количество | Что входит                                                                       |
+| ---------------------------- | ---------: | -------------------------------------------------------------------------------- |
+| `meta-tools`                 |         10 | capabilities, подбор workflow, диагностика, версии и артефакты                   |
+| `generator-tools`            |         13 | addon, CRUD, формы, grid, REST API, тесты, email, cron и overrides               |
+| `knowledge-tools`            |         20 | хуки, компоненты, поля, шаблоны, layout, БД и контроллеры                        |
+| `database-tools`             |          6 | безопасный доступ к MariaDB и исследование таблиц                                |
+| `source-tools`               |         12 | widgets, traits, fields, routes, миграции и анализ требований                    |
+| `language-tools`             |          3 | языковые ключи, language files и migration scaffold                              |
+| `extension-tools`            |         17 | WYSIWYG, permissions, filters, SEO, import/export, cache, webhooks, OAuth и темы |
+| `project-tools`              |          7 | загрузка, аудит, объяснение, план, безопасный repair, patch и upgrade planner    |
+| `template-development-tools` |          5 | полный scaffold, анализ, overrides, layout validation и upgrade compatibility    |
 
 Полные имена, входные Zod-схемы и описания доступны клиенту через стандартный MCP `tools/list`. Для начала неизвестной задачи используйте `diagnose_request`, `find_tool` или `get_workflow`.
 
@@ -197,6 +203,8 @@ Skills разделены по workflow:
 Для существующего проекта рекомендуемый агентный цикл: `load_instantcms_project → explain_instantcms_project → audit_instantcms_project → plan_project_changes → review → repair_instantcms_project → create_project_patch → audit_instantcms_project`. Инструмент repair сразу возвращает новый file map и unified Git patch, но не записывает файлы самостоятельно.
 
 Локальный loader рекурсивно читает только текстовые файлы, не следует по symbolic links и пропускает `.git`, `node_modules`, `vendor`, сборочные каталоги и бинарные данные. GitHub loader принимает `owner/repository` или URL публичного репозитория, точный `ref` и необязательный `subpath`. Для обоих источников действуют ограничения количества файлов, размера одного файла и общего объёма.
+
+Для разработки темы используйте цикл `load_instantcms_project → analyze_instantcms_template → scaffold_complete_template/scaffold_template_override → validate_layout_scheme → create_project_patch → audit_instantcms_project`. Перед обновлением InstantCMS передайте старую и новую upstream-карты шаблонов в `check_template_override_compatibility`: инструмент отделит совместимые overrides от изменённых или удалённых upstream-файлов, требующих ручной проверки.
 
 Большие справочники не копируются в skills. Агент получает факты через MCP tools/resources и `knowledge/`, а skill определяет порядок работы и критерии готовности.
 
