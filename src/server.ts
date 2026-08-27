@@ -9,6 +9,7 @@ import { registerLanguageTools } from './registry/language-tools.js';
 import { registerExtensionTools } from './registry/extension-tools.js';
 import { registerResources } from './registry/resources.js';
 import { registerProjectTools } from './registry/project-tools.js';
+import { registerTemplateDevelopmentTools } from './registry/template-development-tools.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -26,6 +27,7 @@ export function createServer(): McpServer {
   registerExtensionTools(server);
   registerResources(server);
   registerProjectTools(server);
+  registerTemplateDevelopmentTools(server);
 
   return server;
 }

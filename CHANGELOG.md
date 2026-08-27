@@ -8,6 +8,7 @@
 - Add focused migration, widget, theme, API, upgrade, debug, and security skills.
 - Add bounded project loading from local directories and public GitHub repositories.
 - Generate unified Git patches directly and include them in safe project repair results.
+- Add complete template scaffolding, existing-theme analysis, source-preserving overrides, layout validation, and upstream override compatibility checks.
 
 ## 1.2.0
 
