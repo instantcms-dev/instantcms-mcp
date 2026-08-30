@@ -9,6 +9,8 @@ import {
   inspectAddonArchive,
   validateGeneratedArtifacts,
 } from '../tools/artifact-tool.js';
+import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
+import { findToolCategories } from '../utils/find-tool.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
 
 const workflows = {
@@ -90,49 +92,58 @@ const toolCatalog = [
 ];
 
 export function registerMetaTools(server: McpServer): void {
-  server.tool(
+  defineTool(
+    server,
     'get_server_capabilities',
     'Версии, профили и объём базы знаний MCP-сервера',
     {},
-    async () =>
-      successResult({
-        server_version: '1.2.0',
-        tools_count: 100,
-        instantcms_profiles: instantCmsVersionProfiles,
-        knowledge: {
-          hooks: hooks.length,
-          hook_categories: hookCategories.length,
-          components: components.length,
-          addon_types: Object.keys(addonStructures),
-        },
-      })
+    () => ({
+      server_version: '1.2.0',
+      tools_count: 100,
+      instantcms_profiles: instantCmsVersionProfiles,
+      knowledge: {
+        hooks: hooks.length,
+        hook_categories: hookCategories.length,
+        components: components.length,
+        addon_types: Object.keys(addonStructures),
+      },
+    })
   );
 
-  server.tool(
+  defineTool(
+    server,
     'find_tool',
     'Подбирает MCP-инструменты по описанию задачи',
     { query: z.string().trim().min(2).max(500) },
-    async ({ query }) => {
-      const lower = query.toLowerCase();
-      const matches = toolCatalog.filter(entry =>
-        entry.keywords.some(keyword => lower.includes(keyword))
-      );
-      return successResult({ query, matches: matches.length ? matches : toolCatalog });
+    args => {
+      const query = (args as { query: string }).query;
+      const { matches, ranked } = findToolCategories(query, toolCatalog);
+      return {
+        query,
+        matches: matches.length ? matches : toolCatalog,
+        ranked,
+      };
     }
   );
 
-  server.tool(
+  defineTool(
+    server,
     'get_workflow',
     'Возвращает рекомендуемую последовательность инструментов',
     { workflow: z.enum(['addon', 'widget', 'template', 'audit', 'repair', 'upgrade']) },
-    async ({ workflow }) => successResult({ workflow, tools: workflows[workflow] })
+    args => {
+      const workflow = (args as { workflow: keyof typeof workflows }).workflow;
+      return { workflow, tools: workflows[workflow] };
+    }
   );
 
-  server.tool(
+  defineTool(
+    server,
     'diagnose_request',
     'Определяет тип InstantCMS-задачи и рекомендуемый workflow',
     { request: z.string().trim().min(3).max(2000) },
-    async ({ request }) => {
+    args => {
+      const request = (args as { request: string }).request;
       const lower = request.toLowerCase();
       const workflow =
         lower.includes('виджет') || lower.includes('widget')
@@ -146,15 +157,17 @@ export function registerMetaTools(server: McpServer): void {
                 : lower.includes('исправ') || lower.includes('repair')
                   ? 'repair'
                   : 'addon';
-      return successResult({ workflow, tools: workflows[workflow] });
+      return { workflow, tools: workflows[workflow] };
     }
   );
 
-  server.tool(
+  defineToolWithManualResult(
+    server,
     'explain_validation_error',
     'Объясняет стабильный код диагностики',
     { code: z.string().trim().min(2).max(100) },
-    async ({ code }) => {
+    args => {
+      const code = (args as { code: string }).code;
       const explanations: Record<string, string> = {
         MISSING_REQUIRED_FILE: 'Добавьте обязательный файл в каталог контроллера.',
         INVALID_BASE_CLASS: 'Проверьте наследование класса InstantCMS.',
@@ -167,44 +180,48 @@ export function registerMetaTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  defineTool(
+    server,
     'compare_instantcms_versions',
     'Сравнивает документированные профили InstantCMS',
     { from: z.string(), to: z.string() },
-    async ({ from, to }) => successResult(compareVersionProfiles(from, to))
+    args => compareVersionProfiles((args as { from: string }).from, (args as { to: string }).to)
   );
 
-  server.tool(
+  defineTool(
+    server,
     'get_project_health',
     'Возвращает состояние встроенной базы и рекомендуемые проверки',
     {},
-    async () =>
-      successResult({
-        status: 'ready',
-        server_version: '1.2.0',
-        tested_instantcms: '2.18.2',
-        checks: ['npm run check', 'npm run test:integration', 'npm run build', 'npm audit'],
-      })
+    () => ({
+      status: 'ready',
+      server_version: '1.2.0',
+      tested_instantcms: '2.18.2',
+      checks: ['npm run check', 'npm run test:integration', 'npm run build', 'npm audit'],
+    })
   );
 
-  server.tool(
+  defineTool(
+    server,
     'validate_generated_artifacts',
     'Проверяет XML, INI, YAML и форму PHP-файлов настоящими parser-ами',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
-    async ({ files }) => successResult(validateGeneratedArtifacts(files))
+    args => validateGeneratedArtifacts((args as { files: Record<string, string> }).files)
   );
 
-  server.tool(
+  defineTool(
+    server,
     'build_addon_archive',
     'Создаёт ZIP дополнения в памяти и возвращает base64',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
-    async ({ files }) => successResult(buildAddonArchive(files))
+    args => buildAddonArchive((args as { files: Record<string, string> }).files)
   );
 
-  server.tool(
+  defineTool(
+    server,
     'inspect_addon_archive',
     'Проверяет пути и синтаксис файлов ZIP-архива base64',
     { archive: z.string().max(20_000_000) },
-    async ({ archive }) => successResult(inspectAddonArchive(archive))
+    args => inspectAddonArchive((args as { archive: string }).archive)
   );
 }
