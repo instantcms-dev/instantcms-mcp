@@ -17,7 +17,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 npm install @maxisoft/instantcms-mcp
 ```
 
-Это **первый релиз, опубликованный на центральном npm-реестре** через Trusted Publishing (GitHub Actions OpenID Connect). Пакет `instantcms-mcp` был `npm unpublish`ed в июне 2026, поэтому имя скопировано под scope `@maxisoft`. Для пользователей без доверия к npm также доступен GitHub Release ZIP:
+npm-пакет: `@maxisoft/instantcms-mcp`. Автоматическая публикация использует Trusted Publishing (GitHub Actions OIDC). Готовая сборка также доступна в GitHub Release ZIP:
 
 ```bash
 curl -L -O https://github.com/instantcms-dev/instantcms-mcp/releases/download/v1.2.4/instantcms-mcp-v1.2.4.zip
@@ -301,7 +301,9 @@ npm run build
 
 Изменения в `main` принимаются через Pull Request. GitHub требует успешные `Build`, Node.js 18/20/22/24 и `InstantCMS upstream compatibility`, один approving review, разрешение обсуждений и линейную историю. Force-push и удаление `main` запрещены классической branch protection и repository ruleset `Protect main`.
 
-Push тега `v*` запускает `.github/workflows/release.yml`: тесты, сборку, lint, создание ZIP и GitHub Release. Публикация в npm является отдельным шагом и требует рабочего repository secret `NPM_TOKEN` с правом создавать/обновлять пакет `instantcms-mcp`.
+Push тега `v*` или публикация GitHub Release запускает `.github/workflows/release.yml`: проверки, сборку, lint, создание ZIP и публикацию `@maxisoft/instantcms-mcp` в npm. Тег должен совпадать с версией в `package.json` и `package-lock.json`. Уже опубликованная версия пропускается; предварительные релизы публикуются с dist-tag `next`, стабильные — `latest`.
+
+Публикация использует Node.js 24, npm 11 и Trusted Publishing без `NPM_TOKEN`. В настройках npm-пакета необходимо привязать GitHub repository `instantcms-dev/instantcms-mcp` и workflow filename **`release.yml`**, без пути `.github/workflows/`. Подробности и восстановление после ошибки: [NPM_TRUSTED_PUBLISHING_SETUP.md](NPM_TRUSTED_PUBLISHING_SETUP.md).
 
 ## Лицензия
 
