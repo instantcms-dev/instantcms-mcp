@@ -97,12 +97,15 @@ jobs:
       # id-token через actions/github-script и передаём его npm как обычный
       # Bearer authToken. Trusted Publisher на npmjs.com верифицирует именно
       # этот JWT — поэтому NPM_TOKEN как secret больше не нужен.
-      - name: Get OIDC token for npmjs
+      - name: Get OIDC token for npm registry
         id: oidc
         uses: actions/github-script@v7
         with:
+          # npm registry verifies the JWT against audience 'npm:registry.npmjs.org'
+          # (per https://docs.npmjs.com/trusted-publishers-with-npm-publish).
+          # Using a different audience — e.g. 'npmjs.com' — is rejected with 404.
           script: |
-            const token = await core.getIDToken('npmjs.com');
+            const token = await core.getIDToken('npm:registry.npmjs.org');
             core.setOutput('token', token);
 
       - name: Publish to npm
