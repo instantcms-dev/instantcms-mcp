@@ -73,9 +73,6 @@ describe('getComponentApi', () => {
       const all = listComponents({ limit: 1000 }) as {
         components: Array<{ name: string; class: string }>;
       };
-      const expected = all.components.filter(
-        c => c.name.toLowerCase().includes('cms') || c.class.toLowerCase().includes('cms')
-      );
       expect(result.candidates!.length).toBeGreaterThan(0);
       // Каждый candidate есть в оригинальной базе
       for (const c of result.candidates!) {
