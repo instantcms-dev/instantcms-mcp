@@ -10,6 +10,7 @@ import {
   validateGeneratedArtifacts,
 } from '../tools/artifact-tool.js';
 import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
+import { findToolCategories } from '../utils/find-tool.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
 
 const workflows = {
@@ -116,11 +117,12 @@ export function registerMetaTools(server: McpServer): void {
     { query: z.string().trim().min(2).max(500) },
     args => {
       const query = (args as { query: string }).query;
-      const lower = query.toLowerCase();
-      const matches = toolCatalog.filter(entry =>
-        entry.keywords.some(keyword => lower.includes(keyword))
-      );
-      return { query, matches: matches.length ? matches : toolCatalog };
+      const { matches, ranked } = findToolCategories(query, toolCatalog);
+      return {
+        query,
+        matches: matches.length ? matches : toolCatalog,
+        ranked,
+      };
     }
   );
 
