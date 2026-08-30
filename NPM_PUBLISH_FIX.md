@@ -1,45 +1,26 @@
-# NPM_PUBLISH_FIX.md — RESOLVED in v1.2.3
+# NPM_PUBLISH_FIX.md — superseded by Trusted Publishing
 
-## Status: ✅ Resolved
+**The npm-publish story has been migrated to Trusted Publishing (GitHub Actions OIDC) and no longer needs this file. See `NPM_TRUSTED_PUBLISHING_SETUP.md` for the one-time browser setup.**
 
-The npm publish path now works in v1.2.3. The maintainer's npm account is **`maxisoft`** (not `maxisoft-git`); the package is now published as **`@maxisoft/instantcms-mcp`** under the existing `@maxisoft/*` scope that already has packages (e.g. `@maxisoft/figma-mcp-bridge`).
+## Historical context (kept for changelog reading)
 
-## TL;DR of what happened
+The npm publish path went through several iterations:
 
-| Release | npm publish path | Outcome |
-|---------|------------------|---------|
-| 1.2.1 | `npm publish instantcms-mcp` (unscoped) | 404 — name was `npm unpublish`ed in June 2026, reclaim pending |
-| 1.2.2 | `npm publish --access public @maxisoft-git/instantcms-mcp` | 404 — `maxisoft-git` is **not a registered scope**. The CI token authenticated fine; npm simply could not find `@maxisoft-git` anywhere in the registry |
-| 1.2.3 | `npm publish --access public @maxisoft/instantcms-mcp` | ✅ Will succeed. The `@maxisoft` scope is owned by maintainer `npm whoami` → `maxisoft`, and the existing repository `NPM_TOKEN` (March 2026) has publish rights for that scope |
+| Release | Why it failed | Resolution |
+|---------|--------------|------------|
+| 1.2.1 | `npm publish instantcms-mcp` → 404 (name `npm unpublish`ed June 2026, reclaim pending) | Renamed to a scope |
+| 1.2.2 | `npm publish @maxisoft-git/instantcms-mcp` → `404 Scope not found`. Maintainer username is `maxisoft`, not `maxisoft-git` (`npm whoami` ⇒ `maxisoft`). | Renamed to a scope that actually exists |
+| 1.2.3 | `npm publish @maxisoft/instantcms-mcp` from CI → `404 Not Found`. The repository `NPM_TOKEN` is a March-2026 token for the original `instantcms-mcp` and cannot create new packages. Local `npm publish --access public` works when 2FA is bypassed. | Switched to **Trusted Publishing** so no NPM_TOKEN is involved |
+| 1.2.4+ | (none yet) | See `NPM_TRUSTED_PUBLISHING_SETUP.md` |
 
-## Why every version before 1.2.3 failed
+## What trusted publishing requires
 
-1. `instantcms-mcp` was `npm unpublish`ed in 2026-06. Republishing under the same name requires a reclaim request through https://www.npmjs.com/support — out of scope for a test-harness release.
-2. Renaming to a scoped name like `@maxisoft-git/instantcms-mcp` does not work if the scope is **unregistered**. npm returns `404 Scope not found`.
-3. The right scope is **`@maxisoft`** — the actual npm username the maintainer is logged in as (`npm whoami` → `maxisoft`).
+1. `permissions: { contents: read, id-token: write }` on the publish job — done in release.yml.
+2. `publishConfig: { access: "public", provenance: true }` in package.json — done.
+3. **One-time browser step:** add the GitHub Actions workflow as a Trusted Publisher on the npm package page. See `NPM_TRUSTED_PUBLISHING_SETUP.md` for step-by-step.
 
-## What v1.2.3 adds
+After that, every push of a `v*` tag publishes unattended, with no NPM_TOKEN secret and no 2FA prompt.
 
-```diff
-- "name": "@maxisoft-git/instantcms-mcp",
-+ "name": "@maxisoft/instantcms-mcp",
-```
+## Rollback path (if needed)
 
-```diff
-- "version": "1.2.2",
-+ "version": "1.2.3",
-```
-
-`server_version` and integration-test assertion updated to `1.2.3`. README now lists `npm install @maxisoft/instantcms-mcp` as the primary install method. The `publishConfig.access: "public"` added in PR #12 is retained.
-
-## Verify locally
-
-```bash
-git checkout main && git pull
-npm install
-npm run build          # produces dist/
-npm publish --access public
-# → + @maxisoft/instantcms-mcp@1.2.3
-```
-
-Or trigger the GitHub Release workflow by pushing `v1.2.3`.
+Revert `.github/workflows/release.yml` to the legacy `NPM_TOKEN` shape (job env with `NPM_TOKEN` / `NODE_AUTH_TOKEN`, `echo > ~/.npmrc` then `npm publish --access public`), restore a Granular Access Token with publish-and-create scope to the `NPM_TOKEN` secret, and remove `publishConfig.provenance` from package.json. Then re-run by re-tagging the latest `v*` tag.
