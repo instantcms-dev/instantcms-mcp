@@ -14,7 +14,7 @@ import { registerTemplateDevelopmentTools } from './registry/template-developmen
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'instantcms-mcp',
-    version: '1.2.0',
+    version: '1.2.5',
     description: 'MCP сервер для разработки дополнений и шаблонов InstantCMS 2',
   });
 

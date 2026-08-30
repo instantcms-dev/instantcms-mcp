@@ -30,7 +30,7 @@ describe('MCP integration', () => {
       expect(listed.tools.some(tool => tool.name === 'scaffold_template_php_quality')).toBe(true);
       expect(listed.tools).toHaveLength(100);
       const result = await client.callTool({ name: 'get_server_capabilities', arguments: {} });
-      expect(result.structuredContent).toMatchObject({ server_version: '1.2.4' });
+      expect(result.structuredContent).toMatchObject({ server_version: '1.2.5' });
     } finally {
       await client.close();
       await server.close();
