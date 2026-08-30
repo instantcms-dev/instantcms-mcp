@@ -1,15 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.2.1
 
-- Generate hook inventory and core component APIs from the pinned official InstantCMS source while preserving curated descriptions and examples.
-- Expose source file provenance for discovered hooks and components.
-- Add project audit, explain, plan, safe repair, and version upgrade MCP workflows.
-- Add focused migration, widget, theme, API, upgrade, debug, and security skills.
-- Add bounded project loading from local directories and public GitHub repositories.
-- Generate unified Git patches directly and include them in safe project repair results.
-- Add complete template scaffolding, existing-theme analysis, source-preserving overrides, layout validation, and upstream override compatibility checks.
-- Add safe three-way override updates, frontend/accessibility and PHP quality tooling, upstream template provenance, design-token extraction, widget-position checks, and generated Docker/Playwright visual tests.
+- Significantly expanded automated test coverage: 179 new tests across 13 suites (from 272 to 451 passed), covering property-based serialization/pagination, scaffold-addon round-trip for all 5 types, project workflow edge cases, knowledge lookups, artifact ZIP handling, db-tool invocations, MCP integration smoke, and performance baselines.
+- Introduced `defineTool` and `defineToolWithManualResult` helpers in `src/utils/define-tool.ts` to normalize the MCP result contract; exceptions in handler now produce a structured `errorResult(TOOL_EXECUTION_ERROR)` instead of leaking.
+- Refactored `find_tool` to use token-based matching with priority scoring (exact > prefix > substring), returning a `ranked` array with `score` and `matchedTokens` for transparency.
+- No runtime/tool surface changes; the public MCP contract is fully backward compatible with `1.2.0`.
 
 ## 1.2.0
 

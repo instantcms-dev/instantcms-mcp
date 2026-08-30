@@ -98,7 +98,7 @@ export function registerMetaTools(server: McpServer): void {
     'Версии, профили и объём базы знаний MCP-сервера',
     {},
     () => ({
-      server_version: '1.2.0',
+      server_version: '1.2.1',
       tools_count: 100,
       instantcms_profiles: instantCmsVersionProfiles,
       knowledge: {
@@ -195,7 +195,7 @@ export function registerMetaTools(server: McpServer): void {
     {},
     () => ({
       status: 'ready',
-      server_version: '1.2.0',
+      server_version: '1.2.1',
       tested_instantcms: '2.18.2',
       checks: ['npm run check', 'npm run test:integration', 'npm run build', 'npm audit'],
     })
