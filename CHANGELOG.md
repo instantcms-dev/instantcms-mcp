@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2
+
+- **npm publish fix:** moved the package under the `@maxisoft-git` scope (`@maxisoft-git/instantcms-mcp`) to work around npm's refusal to republish a name that was `npm unpublish`ed in June 2026. The 1.2.1 "Publish to npm" CI job had correctly authenticated (the `NPM_TOKEN` secret is valid) but received `404 Not Found - PUT https://registry.npmjs.org/instantcms-mcp` from the registry. Scoped packages create new name slots and don't require reclaim. Same code, same tests, same public MCP contract — only the npm name changed.
+- All the test-harness improvements from 1.2.1 are included verbatim.
+
 ## 1.2.1
 
 - Significantly expanded automated test coverage: 179 new tests across 13 suites (from 272 to 451 passed), covering property-based serialization/pagination, scaffold-addon round-trip for all 5 types, project workflow edge cases, knowledge lookups, artifact ZIP handling, db-tool invocations, MCP integration smoke, and performance baselines.

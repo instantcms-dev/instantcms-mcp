@@ -9,7 +9,15 @@ MCP-сервер и набор переносимых AI-workflows для раз
 
 Сервер предоставляет структурированную базу API InstantCMS, безопасные генераторы, валидатор пакетов, диагностические инструменты и MCP resources. Runtime-данные синхронизированы с официальным репозиторием [`instantsoft/icms2`](https://github.com/instantsoft/icms2), последняя проверенная стабильная версия — **InstantCMS 2.18.2**.
 
-Текущий релиз: [`v1.2.1`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.1). MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
+Текущий релиз: [`v1.2.2`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.2). MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
+
+С версии 1.2.2 пакет публикуется на npm под scoped-именем `@maxisoft-git/instantcms-mcp` (прежнее имя `instantcms-mcp` было `npm unpublish`ed; reclaim пока не сделан):
+
+```bash
+npm install @maxisoft-git/instantcms-mcp
+```
+
+Альтернативно — установка из GitHub Release ZIP: см. секцию [Установка](#требования-и-установка).
 
 ## Возможности
 

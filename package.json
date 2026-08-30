@@ -1,6 +1,6 @@
 {
-  "name": "instantcms-mcp",
-  "version": "1.2.1",
+  "name": "@maxisoft-git/instantcms-mcp",
+  "version": "1.2.2",
   "description": "MCP server and reusable AI workflows for InstantCMS 2 development",
   "main": "dist/index.js",
   "bin": {
