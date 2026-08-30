@@ -1,0 +1,8 @@
+name: Check NPM_TOKEN
+on: workflow_dispatch
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sL "https://registry.npmjs.org/-/whoami" -H "Authorization: Bearer ${{ secrets.NPM_TOKEN }}"
