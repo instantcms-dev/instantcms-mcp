@@ -92,8 +92,26 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Получаем OIDC id-token от GitHub Actions для Trusted Publisher.
+      # npm CLI напрямую не использует ACTIONS_ID_TOKEN_*, поэтому обмениваем
+      # id-token через actions/github-script и передаём его npm как обычный
+      # Bearer authToken. Trusted Publisher на npmjs.com верифицирует именно
+      # этот JWT — поэтому NPM_TOKEN как secret больше не нужен.
+      - name: Get OIDC token for npmjs
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('npmjs.com');
+            core.setOutput('token', token);
+
       - name: Publish to npm
-        # OIDC token автоматически передаётся в npm publish через окружение.
-        # NPM_TOKEN не нужен — npm registry получит id-token от GitHub Actions.
-        # Это работает когда trusted publisher настроен на https://www.npmjs.com.
-        run: npm publish --access public --provenance
+        # npm CLI не читает ACTIONS_ID_TOKEN_* автоматически, поэтому
+        # подставляем полученный JWT как обычный Bearer-token. npm пошлёт
+        # его в Authorization: Bearer, npm registry сверит подпись и owner
+        # через Trusted Publisher entry (см. NPM_TRUSTED_PUBLISHING_SETUP.md).
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+          npm publish --access public --provenance
+        env:
+          TOKEN: ${{ steps.oidc.outputs.token }}
