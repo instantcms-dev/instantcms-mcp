@@ -1,6 +1,6 @@
 {
   "name": "@maxisoft/instantcms-mcp",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "MCP server and reusable AI workflows for InstantCMS 2 development",
   "main": "dist/index.js",
   "bin": {
@@ -91,5 +91,9 @@
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.68.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/instantcms-dev/instantcms-mcp.git"
   }
 }

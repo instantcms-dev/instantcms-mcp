@@ -4,6 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+  release:
+    types: [published]
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
 
 jobs:
   release:
@@ -14,18 +23,33 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+
+      - name: Verify release version
+        run: |
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          if (process.env.RELEASE_TAG !== `v${pkg.version}`) {
+            throw new Error('Release tag must match v' + pkg.version);
+          }
+          if (lock.name !== pkg.name || lock.version !== pkg.version ||
+              lock.packages[''].name !== pkg.name || lock.packages[''].version !== pkg.version) {
+            throw new Error('package-lock.json must match package.json');
+          }
+          NODE
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run checks
+        run: npm run check
 
       - name: Build
         run: npm run build
@@ -40,32 +64,19 @@ jobs:
           cp package.json release/
           cp README.md release/
           cp LICENSE release/ || true
-          cd release && zip -r ../instantcms-mcp-${{ github.ref_name }}.zip .
+          cd release && zip -r "../instantcms-mcp-${RELEASE_TAG}.zip" .
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: instantcms-mcp-${{ github.ref_name }}.zip
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: instantcms-mcp-${{ env.RELEASE_TAG }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Trusted Publishing через GitHub Actions OIDC.
-  # Не использует NPM_TOKEN — npm registry проверяет OIDC token от GitHub Actions
-  # и сопоставляет его с настройками Trusted Publisher пакета на npmjs.com.
-  #
-  # Подготовка:
-  #   1. Зайти на https://www.npmjs.com/package/@maxisoft/instantcms-mcp
-  #      → Settings → Trusted Publishers → Add GitHub Actions publisher:
-  #        - Repository: instantcms-dev/instantcms-mcp
-  #        - Workflow file: .github/workflows/release.yml
-  #        - Environment: (пусто)
-  #   2. Должен быть первый пакет — trusted publishing работает только для scoped
-  #      packages без предыдущих публикаций от других owners.
-  #      Если npm-published уже был под чужим user — придётся сначала сделать
-  #      первый publish через NPM_TOKEN (вариант B ниже).
-  #
-  # Подробная документация:
-  #   https://docs.npmjs.com/trusted-publishers-with-npm-publish
+  # npm CLI exchanges GitHub OIDC credentials automatically.
+  # Configure the package's Trusted Publisher with workflow filename release.yml.
+  # See NPM_TRUSTED_PUBLISHING_SETUP.md.
   npm-publish-oidc:
     name: Publish to npm (Trusted Publishing)
     runs-on: ubuntu-latest
@@ -79,12 +90,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+
+      - name: Install npm with Trusted Publishing support
+        # OIDC requires npm >=11.5.1 and Node >=22.14.0.
+        run: npm install --global npm@11.18.0 --registry=https://registry.npmjs.org
 
       - name: Install dependencies
         run: npm ci
@@ -92,26 +108,26 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Получаем OIDC id-token от GitHub Actions для Trusted Publisher.
-      # npm CLI напрямую не использует ACTIONS_ID_TOKEN_*, поэтому обмениваем
-      # id-token через actions/github-script и передаём его npm как обычный
-      # Bearer authToken. Trusted Publisher на npmjs.com верифицирует именно
-      # этот JWT — поэтому NPM_TOKEN как secret больше не нужен.
-      - name: Get OIDC token for npmjs
-        id: oidc
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const token = await core.getIDToken('npmjs.com');
-            core.setOutput('token', token);
+      - name: Check whether version is already published
+        id: published
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const { name, version } = JSON.parse(readFileSync('package.json', 'utf8'));
+          const response = await fetch(
+            `https://registry.npmjs.org/${encodeURIComponent(name)}/${encodeURIComponent(version)}`,
+            { signal: AbortSignal.timeout(30000) }
+          );
+          if (response.status !== 200 && response.status !== 404) {
+            throw new Error(`npm registry check failed: HTTP ${response.status}`);
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, `exists=${response.status === 200}\n`);
+          if (response.status === 200) console.log(`${name}@${version} is already published; skipping.`);
+          NODE
 
       - name: Publish to npm
-        # npm CLI не читает ACTIONS_ID_TOKEN_* автоматически, поэтому
-        # подставляем полученный JWT как обычный Bearer-token. npm пошлёт
-        # его в Authorization: Bearer, npm registry сверит подпись и owner
-        # через Trusted Publisher entry (см. NPM_TRUSTED_PUBLISHING_SETUP.md).
-        run: |
-          echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
-          npm publish --access public --provenance
+        if: steps.published.outputs.exists != 'true'
+        # No NODE_AUTH_TOKEN, raw JWT or manually written .npmrc is needed.
+        run: npm publish --access public --provenance --registry=https://registry.npmjs.org --tag "$NPM_DIST_TAG"
         env:
-          TOKEN: ${{ steps.oidc.outputs.token }}
+          NPM_DIST_TAG: ${{ (github.event.release.prerelease || contains(env.RELEASE_TAG, '-')) && 'next' || 'latest' }}

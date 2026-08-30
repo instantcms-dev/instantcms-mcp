@@ -1,97 +1,60 @@
-# NPM_TRUSTED_PUBLISHING_SETUP.md
+# npm Trusted Publishing setup
 
-## TL;DR
+Releases publish `@maxisoft/instantcms-mcp` through GitHub Actions OIDC, without an `NPM_TOKEN` secret. The package already exists: the public registry reported version `1.2.3` on 2026-08-30. The failed `v1.2.4` publish does not mean the package needs to be created again.
 
-The `instantcms-mcp` repository switched to **Trusted Publishing via GitHub Actions OIDC** in v1.2.4+. There is **no NPM_TOKEN secret** any more — the `NPM_PUBLISH_FIX.md` `npm whoami`-based workaround is no longer needed for releases.
+## One-time npm configuration
 
-This document is the one-shot setup checklist for the **package's npm settings page** (online, in a browser). Once the Trusted Publisher is added, every push of a `v*` tag triggers an unattended `npm publish` from CI without 2FA prompts.
+Open the [package settings](https://www.npmjs.com/package/@maxisoft/instantcms-mcp/access) as a package owner. In **Trusted Publisher**, select **GitHub Actions**:
 
----
+| Field | Value |
+| --- | --- |
+| Organization or user | `instantcms-dev` |
+| Repository | `instantcms-mcp` |
+| Workflow filename | `release.yml` |
+| Environment name | Leave blank |
+| Allowed actions | `npm publish` |
 
-## Why this exists
+Use only the workflow filename, **not** `.github/workflows/release.yml`. This is a package-level setting, not an account-wide publisher setting. npm does not validate these values when saving them; mistakes become visible during publication.
 
-The previous `NPM_TOKEN` repository secret was created in March 2026 for the original `instantcms-mcp@1.0.0` package and has only `read` / `update-existing` scopes. It cannot create a new scoped package, and the maintainer has 2FA enabled so `npm publish` from a local shell always prompts for OTP.
+The repository cannot configure or verify this private npm setting. A package owner must check it on npmjs.com. See the [official trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/).
 
-**Trusted Publishing** solves both:
+## Workflow requirements
 
-- No long-lived secret in repository settings.
-- npm registry verifies the OIDC token issued by GitHub Actions (signed by `token.actions.githubusercontent.com`).
-- 2FA on the maintainer's npm account is **not consulted** because the publish comes from a CI identity, not a user identity.
+- GitHub-hosted runner with `id-token: write` on the publishing job.
+- Node.js 24 and an explicitly installed npm 11.18.0. npm's OIDC minimum is npm 11.5.1 with Node.js 22.14.0.
+- npm performs the OIDC exchange itself. Do not obtain a raw GitHub JWT with `core.getIDToken()` and write it into `_authToken`; that JWT is not an npm access token.
+- `package.json` declares the public Git repository URL matching `instantcms-dev/instantcms-mcp`, as required for [provenance](https://docs.npmjs.com/generating-provenance-statements/).
+- No `NODE_AUTH_TOKEN`, `NPM_TOKEN`, or manually generated authentication `.npmrc` is needed.
 
-Reference: https://docs.npmjs.com/trusted-publishers-with-npm-publish
+## Creating a release
 
-## One-time setup (browser)
+Merge the workflow fix before creating the release tag. The tagged commit must contain the corrected workflow, and `v<version>` must match both package manifests.
 
-1. Open https://www.npmjs.com/package/@maxisoft/instantcms-mcp — if the package is not yet published, the URL will 404; that's fine, do step 2 first and re-do step 3 once the first publish succeeds.
-2. Sign in to npmjs.com as the **package owner**: `maxisoft`.
-3. Go to **Account Settings → Trusted Publishers** (under **Publishing access**) → **Add a Trusted Publisher**.
+For a new version, from an up-to-date checkout:
 
-   Choose **GitHub Actions**.
-
-   - **Repository**: `instantcms-dev/instantcms-mcp`
-   - **Workflow filename**: `.github/workflows/release.yml`
-   - **Environment name**: leave blank (the workflow has no `environment:` clause).
-
-   Submit.
-
-4. Verify the entry now shows up in the package's Trusted Publishers list with the GitHub organisation, repo and workflow identifier.
-
-## Required workflow shape
-
-Already in place on `main` (and running CI green):
-
-- `permissions: { contents: read, id-token: write }` on the publish job.
-- `npm publish --access public --provenance`
-- `publishConfig: { access: "public", provenance: true }` in `package.json`.
-- No `NODE_AUTH_TOKEN` or `NPM_TOKEN` set in the environment of the publish step — npm must read the OIDC `ACTIONS_ID_TOKEN_*` from the runner.
-
-## First publish
-
-`@maxisoft/instantcms-mcp` does not yet exist on npm. To publish it for the first time:
-
-1. Re-tag the latest `v1.2.3`-like state (or bump to `1.2.4`):
-   ```bash
-   # From the repo root, with the trusted-publisher setup already done on npm:
-   git checkout main && git pull
-   # Bump version + push tag (e.g.):
-   npm version patch -m "chore(release): 1.2.4"
-   git push --follow-tags
-   ```
-   This pushes `v1.2.4` and the existing workflow does the publish — no interactive login, no NPM_TOKEN, no 2FA prompt.
-2. Watch the **Publish to npm (Trusted Publishing)** job on https://github.com/instantcms-dev/instantcms-mcp/actions.
-3. On success, the package appears at https://www.npmjs.com/package/@maxisoft/instantcms-mcp.
-
-If the first publish fails with `npm error 404 Not Found`, the Trusted Publisher entry has not propagated yet. Wait a minute and re-trigger by re-pushing the tag (`git tag -fa v1.2.4 -m "retry" && git push --force origin v1.2.4`).
-
-## Operational notes
-
-- **No more `NPM_TOKEN` secret.** A maintainer can rotate / delete it from repository secrets — nothing depends on it.
-- 2FA stays enabled on the npm account for ordinary local publishes. Trusted Publishing is **not** affected.
-- All releases continue to publish the GitHub Release ZIP for users who don't want to depend on npm.
-- If the workflow must be paused temporarily, set the job to `if: false` in `release.yml`, or comment out the `npm-publish-oidc` job.
-
-## Rollback
-
-If trusted publishing ever breaks (e.g., npm policy change), revert `.github/workflows/release.yml` to the older token-based shape:
-
-```yaml
-- name: Publish to npm
-  run: |
-    echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-    npm publish --access public
-  env:
-    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```bash
+npm version patch
+# Submit the version change through the repository's normal PR process.
+# After merge, push the corresponding tag pointing to the merged release commit.
 ```
 
-and remove `publishConfig.provenance` from `package.json`. The earlier `NPM_TOKEN` must then be a real publish-and-create-packages token (Granular Access Token, allow-publish-not-existing), and the first publish will only succeed after a maintainer adds that token.
+Pushing a `v*` tag runs validation, builds the ZIP, creates the GitHub Release, and publishes to npm. Publishing a GitHub Release manually also triggers the workflow. Both paths check out the release tag, not the latest branch tip.
 
-## Why this is safer than `NPM_TOKEN`
+Executions for the same tag are serialized. If that exact package version already exists, the npm publish step is skipped. Registry errors other than a missing version stop the workflow. Prereleases use dist-tag `next`; stable releases use `latest`.
 
-| Attack surface | `NPM_TOKEN` | Trusted Publishing |
-|----------------|------------|--------------------|
-| Secret expiry / leakage | Possible (long-lived token in GitHub) | Impossible (no persistent secret to leak) |
-| Insider takeover | Token allows publish under any scope | OIDC token is workflow-scoped, single-purpose, expiring |
-| Maintainer key | 2FA bypass token can outlive ownership | OIDC is per-job; user 2FA is not consulted |
-| Auditability | npm-side opaque | GitHub Actions OIDC claims are inspectable per release |
+## Recovering from the failed v1.2.4 release
 
-This is the modern npm-recommended flow and removes the entire class of bug we hit in 1.2.1–1.2.3.
+1. Merge this fix and verify the package's Trusted Publisher configuration above.
+2. Create a new release version/tag from a commit containing the fix. Do not force-move an existing release tag.
+3. Watch **Release → Publish to npm (Trusted Publishing)** in GitHub Actions.
+
+Re-running an old failed workflow uses its original workflow revision; it does not pick up changes merged into `main`. For a transient failure in the corrected workflow, retry the failed job. Already published versions cannot be overwritten.
+
+## Diagnosing failures
+
+- `E404`, `ENEEDAUTH`, or `E403`: inspect the npm error and verify the publisher's owner, repository, filename, allowed action, runner, npm version, and OIDC permission. A 404 is not proof of propagation delay or a missing package.
+- Provenance rejection: verify `repository.url` and that the source repository is public.
+- Version mismatch: update both manifests before tagging.
+- Published version: use a new version if package contents need to change.
+
+Local packing can verify package contents, but cannot test GitHub's OIDC identity or npm's private publisher settings. A successful GitHub Actions publish is the end-to-end verification.
