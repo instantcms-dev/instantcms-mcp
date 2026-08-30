@@ -5,13 +5,12 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -93,17 +92,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify npm provenance support
-        run: |
-          # Включаем автоматическую публикацию через OIDC.
-          # npm v11+ поддерживает --provenance для SLSA-аттестации.
-          npm config set provenance true
-
       - name: Publish to npm
         # OIDC token автоматически передаётся в npm publish через окружение.
         # NPM_TOKEN не нужен — npm registry получит id-token от GitHub Actions.
         # Это работает когда trusted publisher настроен на https://www.npmjs.com.
         run: npm publish --access public --provenance
-        env:
-          # Не устанавливаем NODE_AUTH_TOKEN — это отключает обычную авторизацию
-          # и позволяет npm использовать OIDC.
