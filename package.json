@@ -63,6 +63,9 @@
       "prettier --write"
     ]
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "fast-xml-parser": "^5.11.0",
