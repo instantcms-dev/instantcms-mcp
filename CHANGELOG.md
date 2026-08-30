@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+- **First central npm publish via Trusted Publishing.** The 1.2.x series had a long-running `NPM_TOKEN`-related failure (1.2.1: name unpublished; 1.2.2: scope `maxisoft-git` not registered; 1.2.3: token scope invalid). This release switches the CI workflow to **GitHub Actions OpenID Connect** as the authentication mechanism, replacing the persistent `NPM_TOKEN` secret with a short-lived OIDC id-token verified by the npm registry against the package's Trusted Publisher entry. No 2FA prompt at publish time, no long-lived token to leak. The full setup walkthrough is in `NPM_TRUSTED_PUBLISHING_SETUP.md`.
+- Same code, same tests, same public MCP contract. The `--provenance` flag is now enabled in the publish step so npm attaches SLSA provenance attestations to every published tarball.
+- Version bump `1.2.3 → 1.2.4` (patch).
+
 ## 1.2.3
 
 - **npm publish fix (real solution):** the maintainer's npm **username is `maxisoft`**, not `maxisoft-git`. The 1.2.2 attempt chose `@maxisoft-git/instantcms-mcp`, an unregistered scope, which `npm` correctly rejected with `404 Scope not found`. This release renames the package to **`@maxisoft/instantcms-mcp`**, an already-published scope (existing package `@maxisoft/figma-mcp-bridge`). The `NPM_TOKEN` already in the repo (created March 2026) has publish rights to `@maxisoft/*`, so this is the first version that should actually publish to the central npm registry.
