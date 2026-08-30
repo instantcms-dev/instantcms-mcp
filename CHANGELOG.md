@@ -1,9 +1,21 @@
 # Changelog
 
-## 1.2.2
+## 1.2.3
 
-- **npm publish fix:** moved the package under the `@maxisoft-git` scope (`@maxisoft-git/instantcms-mcp`) to work around npm's refusal to republish a name that was `npm unpublish`ed in June 2026. The 1.2.1 "Publish to npm" CI job had correctly authenticated (the `NPM_TOKEN` secret is valid) but received `404 Not Found - PUT https://registry.npmjs.org/instantcms-mcp` from the registry. Scoped packages create new name slots and don't require reclaim. Same code, same tests, same public MCP contract — only the npm name changed.
-- All the test-harness improvements from 1.2.1 are included verbatim.
+- **npm publish fix (real solution):** the maintainer's npm **username is `maxisoft`**, not `maxisoft-git`. The 1.2.2 attempt chose `@maxisoft-git/instantcms-mcp`, an unregistered scope, which `npm` correctly rejected with `404 Scope not found`. This release renames the package to **`@maxisoft/instantcms-mcp`**, an already-published scope (existing package `@maxisoft/figma-mcp-bridge`). The `NPM_TOKEN` already in the repo (created March 2026) has publish rights to `@maxisoft/*`, so this is the first version that should actually publish to the central npm registry.
+- Same code, same tests, same public MCP contract.
+
+## 1.2.2 (failed publish, kept for history)
+
+- **Attempted npm publish fix:** the package was renamed to `@maxisoft-git/instantcms-mcp`, an *unregistered* scope, which npm rejected with `404 Scope not found`. Replaced by `1.2.3`.
+- GitHub Release ZIP and GitHub tarball install paths still work; see release notes.
+
+## 1.2.1 (first test-harness release, failed publish)
+
+- Significantly expanded automated test coverage: 179 new tests across 13 suites (from 272 to 451 passed).
+- Introduced `defineTool` and `defineToolWithManualResult` helpers in `src/utils/define-tool.ts`.
+- Refactored `find_tool` to use token-based matching with priority scoring.
+- No runtime/tool surface changes.
 
 ## 1.2.1
 

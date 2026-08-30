@@ -9,24 +9,24 @@ MCP-сервер и набор переносимых AI-workflows для раз
 
 Сервер предоставляет структурированную базу API InstantCMS, безопасные генераторы, валидатор пакетов, диагностические инструменты и MCP resources. Runtime-данные синхронизированы с официальным репозиторием [`instantsoft/icms2`](https://github.com/instantsoft/icms2), последняя проверенная стабильная версия — **InstantCMS 2.18.2**.
 
-Текущий релиз: [`v1.2.2`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.2). MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
+Текущий релиз: [`v1.2.3`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.3). MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
 
-### Установка (доступно прямо сейчас)
-
-Пакет `instantcms-mcp` был `npm unpublish`ed в июне 2026, а существующий репозиторский `NPM_TOKEN` ограничен и не может создавать новые scoped-пакеты. До восстановления npm-публикации рекомендуются альтернативные способы:
+### Установка
 
 ```bash
-# 1. Из GitHub Release ZIP — рекомендуемый способ
-curl -L -O https://github.com/instantcms-dev/instantcms-mcp/releases/download/v1.2.2/instantcms-mcp-v1.2.2.zip
-unzip instantcms-mcp-v1.2.2.zip && cd instantcms-mcp-*/release
-npm install --production
-node dist/index.js
-
-# 2. Через прямую ссылку на Git-репозиторий (npm сам подтянет зависимости)
-npm install --save github:instantcms-dev/instantcms-mcp#v1.2.2
+npm install @maxisoft/instantcms-mcp
 ```
 
-Полный tarball со всеми runtime-зависимостями — `instantcms-mcp-v1.2.2.zip` на странице релиза v1.2.2. Подробности секции [Установка](#требования-и-установка).
+Пакет `instantcms-mcp` был `npm unpublish`ed в июне 2026, поэтому release 1.2.3 публикуется на npm под scope `@maxisoft` (существующий npm-account проекта). Альтернативно — из GitHub Release ZIP:
+
+```bash
+curl -L -O https://github.com/instantcms-dev/instantcms-mcp/releases/download/v1.2.3/instantcms-mcp-v1.2.3.zip
+unzip instantcms-mcp-v1.2.3.zip && cd instantcms-mcp-*/release
+npm install --production
+node dist/index.js
+```
+
+Подробности секции [Установка](#требования-и-установка).
 
 ## Возможности
 
