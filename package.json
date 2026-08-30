@@ -67,7 +67,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "fast-xml-parser": "^5.11.0",
     "fflate": "^0.8.3",
-    "ini": "^6.0.0",
+    "ini": "^7.0.0",
     "mysql2": "^3.24.2",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
