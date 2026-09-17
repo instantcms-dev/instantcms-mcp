@@ -29,7 +29,12 @@ export function validateGeneratedArtifacts(files: Record<string, string>) {
         const lint = spawnSync('php', ['-l'], { input: content, encoding: 'utf8', timeout: 5_000 });
         if (lint.error && (lint.error as NodeJS.ErrnoException).code === 'ENOENT') {
           if (!diagnostics.some(item => item.code === 'PHP_LINTER_UNAVAILABLE')) {
-            diagnostics.push({ code: 'PHP_LINTER_UNAVAILABLE', severity: 'warning', path, message: 'php executable не найден; выполнена только структурная проверка' });
+            diagnostics.push({
+              code: 'PHP_LINTER_UNAVAILABLE',
+              severity: 'warning',
+              path,
+              message: 'php executable не найден; выполнена только структурная проверка',
+            });
           }
         } else if (lint.status !== 0) {
           throw new Error((lint.stderr || lint.stdout || 'php -l failed').trim());
@@ -92,7 +97,6 @@ function validatePhpShape(content: string): void {
   if (!content.trimStart().startsWith('<?php') && !content.trimStart().startsWith('<!DOCTYPE')) {
     throw new Error('PHP-файл должен начинаться с <?php');
   }
-  const opens = (content.match(/[({\[]/g) ?? []).length;
-  const closes = (content.match(/[)}\]]/g) ?? []).length;
-  if (opens !== closes) throw new Error('Несбалансированные скобки в PHP-файле');
+  // Delimiters inside strings, comments and template HTML are not PHP syntax.
+  // Only php -l can establish syntax validity; do not guess by counting them.
 }

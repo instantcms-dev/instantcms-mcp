@@ -446,7 +446,13 @@ describe('API Tool', () => {
     expect(result).toHaveProperty('addon_name', 'test_api');
     expect(result).toHaveProperty('api_version', 'v1');
     expect(result).toHaveProperty('endpoints_count', 3);
-    expect('package/system/controllers/test_api/api/v1/index.php' in result.files).toBe(true);
+    expect('package/system/controllers/test_api/actions/api_v1_list.php' in result.files).toBe(
+      true
+    );
+    expect('package/system/controllers/test_api/actions/api_v1_get.php' in result.files).toBe(true);
+    expect('package/system/controllers/test_api/actions/api_v1_create.php' in result.files).toBe(
+      true
+    );
   });
 
   test('scaffoldApi with swagger', () => {
@@ -478,7 +484,7 @@ describe('API Tool', () => {
       addon_name: 'test_api',
       endpoints: [{ name: 'list', method: 'GET', path: '/list' }],
     }) as any;
-    const apiContent = result.files['package/system/controllers/test_api/api/v1/index.php'];
+    const apiContent = result.files['package/system/controllers/test_api/actions/api_v1_list.php'];
     expect(apiContent).toContain('function run()');
     expect(apiContent).toContain('checkAuth');
   });
@@ -488,7 +494,8 @@ describe('API Tool', () => {
       addon_name: 'test_api',
       endpoints: [{ name: 'create', method: 'POST', path: '/' }],
     }) as any;
-    const apiContent = result.files['package/system/controllers/test_api/api/v1/index.php'];
+    const apiContent =
+      result.files['package/system/controllers/test_api/actions/api_v1_create.php'];
     expect(apiContent).toContain('addTest_api');
   });
 });

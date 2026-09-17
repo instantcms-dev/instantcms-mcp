@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Fixed generators producing invalid PHP.** `scaffold_crud`: the frontend class no longer assigns `Class::ROUTE_NAME` outside the class body (now a `public const` inside the class), form field options are emitted as PHP arrays via the new `phpValue()` serializer instead of JSON-style objects, addon/field names are validated, and language constants are quoted safely. `scaffold_api`: each endpoint now becomes its own `actions/api_{version}_{name}.php` action instead of redeclaring `run()` in one class, path parameters form a valid method signature, endpoints with `auth_required: false` no longer get `checkAuth()`, an HTTP-method guard returns 405, and the result honestly reports `scaffold_status: 'partial'` with `limitations`.
+- **Fixed PHP artifact validator false positives.** Removed the bracket-counting heuristic that rejected valid PHP containing `(`/`)` inside strings or comments; `php -l` is the authority when available.
+- **Fixed MariaDB parameter binding.** `executeQuery` now passes query parameters to `pool.execute`, so the `information_schema` `?` placeholders actually bind; `maria_get_table_data` validates table/column identifiers and checks integer limit/offset before building SQL and binds filters/pagination. Database connection errors are no longer disguised as empty metadata.
+- **Unified MCP result contract for database tools.** `maria_*` tools now return `content + structuredContent` via the shared `defineTool` wrapper (errors surface as `isError` results instead of text-only payloads).
+- Added `src/utils/serialization.ts#phpValue` (strings, numbers, booleans, null, lists, associative arrays; arbitrary expressions are deliberately unsupported) and a regression suite `src/__tests__/generator-regression.test.ts` that lints generated CRUD/API PHP with a real PHP interpreter through `validateGeneratedArtifacts`.
+
 ## 1.2.4
 
 - **First central npm publish via Trusted Publishing.** The 1.2.x series had a long-running `NPM_TOKEN`-related failure (1.2.1: name unpublished; 1.2.2: scope `maxisoft-git` not registered; 1.2.3: token scope invalid). This release switches the CI workflow to **GitHub Actions OpenID Connect** as the authentication mechanism, replacing the persistent `NPM_TOKEN` secret with a short-lived OIDC id-token verified by the npm registry against the package's Trusted Publisher entry. No 2FA prompt at publish time, no long-lived token to leak. The full setup walkthrough is in `NPM_TRUSTED_PUBLISHING_SETUP.md`.

@@ -1,3 +1,5 @@
+import { escapeXml, quotePhp } from '../utils/serialization.js';
+
 interface ApiEndpoint {
   name: string;
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -26,22 +28,46 @@ interface ScaffoldApiOptions {
 }
 
 export function scaffoldApi(opts: ScaffoldApiOptions): object {
-  const name = opts.addon_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  const Name = name.split('_').map(capitalize).join('');
+  const name = opts.addon_name;
   const version = opts.version || 'v1';
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(name) || !/^v[0-9]+$/.test(version)) {
+    throw new Error('Invalid addon name or API version (expected v1, v2, ...)');
+  }
+  const names = new Set<string>();
+  for (const endpoint of opts.endpoints) {
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(endpoint.name) || names.has(endpoint.name)) {
+      throw new Error('Invalid or duplicate endpoint name');
+    }
+    names.add(endpoint.name);
+    const params = new Set<string>();
+    for (const param of endpoint.params || []) {
+      if (
+        !/^[a-z][a-z0-9_]{0,63}$/.test(param.name) ||
+        param.name === 'this' ||
+        params.has(param.name)
+      ) {
+        throw new Error('Invalid or duplicate parameter name');
+      }
+      params.add(param.name);
+    }
+  }
+  const Name = name.split('_').map(capitalize).join('');
   const basePath = opts.options?.base_path || `/api/${version}/${name}`;
 
   const files: Record<string, string> = {};
 
   const ctrl = `package/system/controllers/${name}`;
 
-  files[`${ctrl}/api/${version}/index.php`] = generateApiController(
-    name,
-    Name,
-    version,
-    opts.endpoints,
-    basePath
-  );
+  for (const endpoint of opts.endpoints) {
+    const action = `api_${version}_${endpoint.name}`;
+    files[`${ctrl}/actions/${action}.php`] = generateApiController(
+      name,
+      Name,
+      action,
+      [endpoint],
+      basePath
+    );
+  }
 
   files[`${ctrl}/manifest.xml`] = generateManifest(name, Name, version);
 
@@ -54,6 +80,13 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
     api_version: version,
     base_path: basePath,
     endpoints_count: opts.endpoints.length,
+    scaffold_status: 'partial',
+    limitations: [
+      'Not an installable addon: merge actions into an existing controller and configure routing.',
+      'Implement and review model methods, permissions, input validation and token authentication before deployment.',
+      'JSON request body parsing and rate limiting are not implemented by this scaffold.',
+      'Syntax validation does not establish InstantCMS runtime compatibility.',
+    ],
     files,
     endpoints: opts.endpoints.map(e => ({
       method: e.method,
@@ -62,9 +95,9 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
       auth_required: e.auth_required ?? true,
     })),
     structure_notes: [
-      `API контроллер: ${ctrl}/api/${version}/index.php`,
-      `Маршрут: ${basePath}/*`,
-      `Аутентификация: через API ключ или OAuth токен`,
+      `API actions: ${ctrl}/actions/api_${version}_*.php`,
+      `Настройте маршруты ${basePath}/* на соответствующие actions в существующем frontend-контроллере`,
+      `Защищённые endpoints требуют реализации getUserByToken в модели`,
     ],
   };
 }
@@ -76,28 +109,15 @@ function capitalize(str: string): string {
 function generateApiController(
   name: string,
   Name: string,
-  version: string,
+  actionClass: string,
   endpoints: ApiEndpoint[],
-  basePath: string
+  _basePath: string
 ): string {
-  let code = `<?php
-/**
- * API Controller ${name} v${version}
- * Base path: ${basePath}
- */
-
-class api${Name}${capitalize(version)} extends cmsBackend {
-
-    protected $token;
-    protected $user_id;
-
-    public function __construct(cmsRequest $request) {
-        parent::__construct($request);
-        $this->token = $this->request->get('token', '');
-        $this->checkAuth();
-    }
-
+  const needsAuth = endpoints.some(endpoint => endpoint.auth_required !== false);
+  const authBlock = needsAuth
+    ? `
     protected function checkAuth() {
+        $this->token = $this->request->get('token', '');
         if (!$this->token) {
             $this->errorResponse('API token required', 401);
             return false;
@@ -112,7 +132,17 @@ class api${Name}${capitalize(version)} extends cmsBackend {
         $this->user_id = $user['id'];
         return true;
     }
+`
+    : '';
 
+  let code = `<?php
+// Partial API action: integrate routes and model methods before deployment.
+class action${Name}${actionClass.split('_').map(capitalize).join('')} extends cmsAction {
+
+    protected $token;
+    protected $user_id;
+
+${authBlock}
     protected function errorResponse($message, $code = 400) {
         http_response_code($code);
         echo json_encode(['error' => true, 'message' => $message]);
@@ -140,15 +170,16 @@ function generateEndpoint(name: string, _Name: string, endpoint: ApiEndpoint): s
   const methodUpper = endpoint.method.toUpperCase();
 
   let paramsValidation = '';
-  let pathParams = '';
+  const pathParams = (endpoint.params || [])
+    .filter(p => p.type === 'path')
+    .map(p => `$${p.name} = null`)
+    .join(', ');
 
   if (endpoint.params) {
     for (const param of endpoint.params) {
       if (param.type === 'path') {
-        pathParams += `, $${param.name}`;
         paramsValidation += `
-        $${param.name} = $this->request->get('${param.name}', ${param.required ? "''" : 'null'});
-        if (${param.required ? `empty($${param.name})` : 'false'}) {
+        if (${param.required ? `$${param.name} === null || $${param.name} === ''` : 'false'}) {
             $this->errorResponse('Missing required parameter: ${param.name}', 400);
         }`;
       } else if (param.type === 'query') {
@@ -164,19 +195,13 @@ function generateEndpoint(name: string, _Name: string, endpoint: ApiEndpoint): s
   const authCheck =
     endpoint.auth_required !== false
       ? `
-        if (!$this->user_id) {
-            $this->errorResponse('Unauthorized', 401);
-        }`
+        $this->checkAuth();`
       : '';
 
-  const endpointDoc = endpoint.description
-    ? `/**
-     * ${endpoint.description}
-     */
-    `
-    : '';
-
-  let code = `${endpointDoc}    public function run(${pathParams}) {${authCheck}${paramsValidation}
+  let code = `    public function run(${pathParams}) {
+        if (strtoupper($this->request->getMethod()) !== ${quotePhp(methodUpper)}) {
+            $this->errorResponse('Method not allowed', 405);
+        }${authCheck}${paramsValidation}
 `;
 
   switch (methodUpper) {
@@ -292,16 +317,9 @@ function generateManifest(name: string, Name: string, version: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <addon>
     <name>${name}_api</name>
-    <title>${Name} API ${version}</title>
+    <title>${escapeXml(Name)} API ${escapeXml(version)}</title>
     <version>1.0.0</version>
-    <files>
-        <file>controllers/${name}/api/${version}/index.php</file>
-    </files>
-    <routes>
-        <route path="/api/${version}/${name}/">
-            <handler>${name}/api/${version}/index.php</handler>
-        </route>
-    </routes>
+    <!-- Partial scaffold: configure frontend routing in the host addon. -->
 </addon>`;
 }
 
@@ -311,11 +329,12 @@ function generateOpenApi(
   endpoints: ApiEndpoint[],
   basePath: string
 ): string {
-  const paths: Record<string, unknown> = {};
+  const paths: Record<string, Record<string, unknown>> = {};
 
   for (const endpoint of endpoints) {
     const path = `${basePath}${endpoint.path}`;
     paths[path] = {
+      ...paths[path],
       [endpoint.method.toLowerCase()]: {
         summary: endpoint.description || endpoint.name,
         tags: [name],

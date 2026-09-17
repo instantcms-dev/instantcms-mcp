@@ -9,7 +9,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 
 Сервер предоставляет структурированную базу API InstantCMS, безопасные генераторы, валидатор пакетов, диагностические инструменты и MCP resources. Runtime-данные синхронизированы с официальным репозиторием [`instantsoft/icms2`](https://github.com/instantsoft/icms2), последняя проверенная стабильная версия — **InstantCMS 2.18.2**.
 
-Текущий релиз: [`v1.2.5`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.5). MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
+Текущий релиз: [`v1.2.5`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.2.5). Сгенерированные API-дополнения помечаются `scaffold_status: 'partial'` с перечнем ограничений: маршрутизация, модель и аутентификация требуют ручной интеграции. MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
 
 ### Установка
 
@@ -104,7 +104,7 @@ npm run check
 | `find_tool` / `get_workflow`                    | Подбор инструмента и последовательности вызовов |
 | `diagnose_request`                              | Определение типа задачи                         |
 | `compare_instantcms_versions`                   | Сравнение version profiles                      |
-| `validate_generated_artifacts`                  | Разбор XML, INI, YAML и проверка PHP-формы      |
+| `validate_generated_artifacts`                  | Разбор XML, INI, YAML и PHP через `php -l`      |
 | `build_addon_archive` / `inspect_addon_archive` | Создание и проверка ZIP в памяти                |
 | `audit_instantcms_project`                      | Комплексный аудит существующего file map        |
 | `plan_project_changes`                          | План исправлений без изменения файлов           |

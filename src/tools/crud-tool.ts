@@ -1,3 +1,5 @@
+import { phpValue, quotePhp } from '../utils/serialization.js';
+
 interface CrdField {
   name: string;
   type: string;
@@ -24,7 +26,15 @@ interface ScaffoldCrudOptions {
 }
 
 export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
-  const name = opts.addon_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const name = opts.addon_name;
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(name)) throw new Error('Invalid addon name');
+  const fieldNames = new Set<string>();
+  for (const field of opts.fields) {
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(field.name) || fieldNames.has(field.name)) {
+      throw new Error('Invalid or duplicate field name');
+    }
+    fieldNames.add(field.name);
+  }
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
 
@@ -141,19 +151,20 @@ class model${Name} extends cmsModel {
   return modelCode;
 }
 
-function generateFrontend(name: string, Name: string): string {
+function generateFrontend(name: string, _Name: string): string {
   return `<?php
 
 class ${name} extends cmsFrontend {
 
+    public const ROUTE_NAME = '${name}';
+
     protected $useOptions = true;
 
     public function run() {
-        return $this->redirect(href_to(${Name}::ROUTE_NAME));
+        return $this->redirect(href_to(${name}::ROUTE_NAME));
     }
 
 }
-${Name}::ROUTE_NAME = '${name}';
 `;
 }
 
@@ -205,7 +216,7 @@ class action${Name}View extends cmsAction {
 
         $this->cms_template->setTitle($item['title']);
         $this->cms_template->setMetaDescription($item['description'] ?? '');
-        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${Name}::ROUTE_NAME));
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb($item['title']);
 
         return $this->cms_template->render('view', [
@@ -243,12 +254,12 @@ class action${Name}Add extends cmsAction {
 
                 cmsEventsManager::hook('${name}_after_add', $id, $data);
 
-                $this->redirect(href_to(${Name}::ROUTE_NAME, $id));
+                $this->redirect(href_to(${name}::ROUTE_NAME, $id));
             }
         }
 
         $this->cms_template->setTitle(LANG_${NAME}_ADD);
-        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${Name}::ROUTE_NAME));
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb(LANG_${NAME}_ADD);
 
         return $this->cms_template->render('add', [
@@ -288,12 +299,12 @@ class action${Name}Edit extends cmsAction {
 
                 cmsEventsManager::hook('${name}_after_update', $id, $data);
 
-                $this->redirect(href_to(${Name}::ROUTE_NAME, $id));
+                $this->redirect(href_to(${name}::ROUTE_NAME, $id));
             }
         }
 
         $this->cms_template->setTitle(LANG_${NAME}_EDIT);
-        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${Name}::ROUTE_NAME));
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb(LANG_${NAME}_EDIT);
 
         return $this->cms_template->render('edit', [
@@ -327,7 +338,7 @@ class action${Name}Delete extends cmsAction {
 
             cmsEventsManager::hook('${name}_after_delete', $id);
 
-            $this->redirect(href_to(${Name}::ROUTE_NAME));
+            $this->redirect(href_to(${name}::ROUTE_NAME));
         }
 
         return $this->cms_template->render('delete', [
@@ -357,7 +368,7 @@ class action${Name}Category extends cmsAction {
         $items = $this->model->getByCategory($category['id'], $perpage, ($page - 1) * $perpage);
 
         $this->cms_template->setTitle($category['title']);
-        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${Name}::ROUTE_NAME));
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb($category['title']);
 
         return $this->cms_template->render('category', [
@@ -639,7 +650,7 @@ class form${Name}Item extends cmsForm {
       fieldOptions.default = field.default;
     }
 
-    const optionsStr = JSON.stringify(fieldOptions, null, 6).replace(/"(\w+)":/g, '$1:');
+    const optionsStr = phpValue(fieldOptions);
 
     formCode += `                    new ${fieldClass}('${field.name}', ${optionsStr}),
 `;
@@ -710,7 +721,7 @@ define('LANG_${NAME}_CP_DELETE',  'Удаление элемента');
     }
     const key = `LANG_${NAME}_${field.name.toUpperCase().replace(/_/g, '_')}`;
     const value = field.title || capitalize(field.name.replace(/_/g, ' '));
-    lang += `define('${key}', '${value}');
+    lang += `define(${quotePhp(key)}, ${quotePhp(value)});
 `;
   }
 

@@ -51,7 +51,7 @@ function getConnection(): MariaDBConfig {
   const user = process.env.DB_USER || 'root';
   const password = process.env.DB_PASSWORD || '';
   const database = process.env.DB_DATABASE || 'instantcms';
-  
+
   return { host, port, user, password, database };
 }
 
@@ -66,28 +66,38 @@ export function getPool(): mysql.Pool {
       database: config.database,
       waitForConnections: true,
       connectionLimit: 5,
-      queueLimit: 0
+      queueLimit: 0,
     });
   }
   return pool;
 }
 
-export async function executeQuery(sql: string): Promise<QueryResult> {
+export type QueryParameter = string | number | boolean | null;
+
+export function quoteIdentifier(name: string): string {
+  if (!/^[A-Za-z0-9_$]{1,64}$/.test(name)) throw new Error('Invalid database identifier');
+  return `\`${name}\``;
+}
+
+export async function executeQuery(
+  sql: string,
+  params: QueryParameter[] = []
+): Promise<QueryResult> {
   const startTime = Date.now();
-  
+
   try {
-    const [rows, fields] = await getPool().execute(sql);
+    const [rows, fields] = await getPool().execute(sql, params);
     const executionTime = Date.now() - startTime;
-    
-    const columns = Array.isArray(fields) ? (fields as mysql.FieldPacket[]).map((f) => f.name) : [];
+
+    const columns = Array.isArray(fields) ? (fields as mysql.FieldPacket[]).map(f => f.name) : [];
     const rowCount = Array.isArray(rows) ? rows.length : 0;
-    
+
     return {
       columns,
-      rows: Array.isArray(rows) ? rows as Record<string, unknown>[] : [],
+      rows: Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [],
       rowCount,
       query: sql,
-      executionTime
+      executionTime,
     };
   } catch (error) {
     const executionTime = Date.now() - startTime;
@@ -97,14 +107,16 @@ export async function executeQuery(sql: string): Promise<QueryResult> {
       rowCount: 0,
       query: sql,
       executionTime,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
 export async function getTableInfo(tableName: string): Promise<TableInfo | null> {
-  const [columnsResult, indexesResult, countResult] = await Promise.all([
-    executeQuery(`
+  const table = quoteIdentifier(tableName);
+  const [columnsResult, indexesResult] = await Promise.all([
+    executeQuery(
+      `
       SELECT 
         COLUMN_NAME as name,
         COLUMN_TYPE as type,
@@ -115,8 +127,11 @@ export async function getTableInfo(tableName: string): Promise<TableInfo | null>
         COLUMN_COMMENT as comment
       FROM information_schema.COLUMNS 
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-    `),
-    executeQuery(`
+    `,
+      [tableName]
+    ),
+    executeQuery(
+      `
       SELECT 
         INDEX_NAME as name,
         INDEX_TYPE as type,
@@ -125,14 +140,17 @@ export async function getTableInfo(tableName: string): Promise<TableInfo | null>
       FROM information_schema.STATISTICS 
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
       GROUP BY INDEX_NAME, INDEX_TYPE, NON_UNIQUE
-    `),
-    executeQuery(`SELECT COUNT(*) as cnt FROM \`${tableName}\``)
+    `,
+      [tableName]
+    ),
   ]);
-  
-  if (columnsResult.error || columnsResult.rows.length === 0) {
-    return null;
-  }
-  
+
+  if (columnsResult.error) throw new Error(columnsResult.error);
+  if (indexesResult.error) throw new Error(indexesResult.error);
+  if (columnsResult.rows.length === 0) return null;
+  const countResult = await executeQuery(`SELECT COUNT(*) as cnt FROM ${table}`);
+  if (countResult.error) throw new Error(countResult.error);
+
   return {
     name: tableName,
     comment: null,
@@ -143,15 +161,15 @@ export async function getTableInfo(tableName: string): Promise<TableInfo | null>
       key: row.key ? String(row.key) : null,
       default: row.default as string | null,
       extra: row.extra as string | null,
-      comment: row.comment as string | null
+      comment: row.comment as string | null,
     })),
     indexes: indexesResult.rows.map(row => ({
       name: String(row.name),
       type: row.type ? String(row.type) : null,
       columns: String(row.columns).split(','),
-      unique: row.non_unique === 0
+      unique: row.non_unique === 0,
     })),
-    rowCount: countResult.rows[0]?.cnt as number | undefined
+    rowCount: countResult.rows[0]?.cnt as number | undefined,
   };
 }
 
@@ -163,7 +181,8 @@ export async function listTables(): Promise<string[]> {
     AND TABLE_TYPE = 'BASE TABLE'
     ORDER BY TABLE_NAME
   `);
-  
+
+  if (result.error) throw new Error(result.error);
   return result.rows.map(row => String(row.TABLE_NAME));
 }
 
@@ -183,21 +202,23 @@ export async function getDatabaseInfo(): Promise<{
     WHERE TABLE_SCHEMA = DATABASE() 
     AND TABLE_TYPE = 'BASE TABLE'
   `);
-  
+
+  if (result.error) throw new Error(result.error);
   const tablesCount = result.rows.length;
   let totalRows = 0;
   let totalData = 0;
   let totalIndex = 0;
-  
+
   for (const row of result.rows) {
     totalRows += Number(row.TABLE_ROWS) || 0;
     totalData += Number(row.data_mb) || 0;
     totalIndex += Number(row.index_mb) || 0;
   }
-  
+
   const dbResult = await executeQuery('SELECT DATABASE() as db_name');
+  if (dbResult.error) throw new Error(dbResult.error);
   const dbName = String(dbResult.rows[0]?.db_name || 'unknown');
-  
+
   return {
     name: dbName,
     tablesCount,
@@ -205,8 +226,8 @@ export async function getDatabaseInfo(): Promise<{
     size: {
       data: totalData,
       index: totalIndex,
-      total: totalData + totalIndex
-    }
+      total: totalData + totalIndex,
+    },
   };
 }
 
