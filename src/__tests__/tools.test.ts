@@ -1328,51 +1328,65 @@ describe('Cache Tool', () => {
 });
 
 describe('Webhook Tool', () => {
-  test('scaffoldWebhook generates webhook files', () => {
+  test('scaffoldWebhook generates a real incoming receiver', () => {
     const result = scaffoldWebhook({
       addon_name: 'notifications',
       events: ['user.registered', 'order.paid'],
     }) as any;
     expect(result).toHaveProperty('addon_name', 'notifications');
     expect(result).toHaveProperty('events_count', 2);
-    expect('notifications/webhooks.php' in result.files).toBe(true);
-    expect('notifications/webhook.config.php' in result.files).toBe(true);
+    expect('package/system/controllers/notifications/webhook.php' in result.files).toBe(true);
+    expect('package/system/controllers/notifications/actions/webhook.php' in result.files).toBe(
+      true
+    );
+    expect(
+      Object.keys(result.files).some((p: string) => p.includes('system/config/webhooks'))
+    ).toBe(false);
+    expect(Object.keys(result.files).some((p: string) => p.endsWith('webhook.config.php'))).toBe(
+      false
+    );
   });
 
-  test('scaffoldWebhook generates webhook handler class', () => {
+  test('scaffoldWebhook handler dispatches events to handle<Event>', () => {
     const result = scaffoldWebhook({
       addon_name: 'shop',
-      events: ['item.created', 'item.updated', 'item.deleted'],
+      events: ['item.created', 'item.updated'],
     }) as any;
-    const handlerFile = result.files['shop/webhooks.php'];
-    expect(handlerFile).toContain('ShopWebhook');
-    expect(handlerFile).toContain('function handle(');
-    expect(handlerFile).toContain('handleitem_created');
+    const handler = result.files['package/system/controllers/shop/webhook.php'];
+    expect(handler).toContain('class ShopWebhook');
+    expect(handler).toContain('function handle(');
+    expect(handler).toContain('function handleItemCreated(');
+    expect(handler).toContain('function handleItemUpdated(');
+    expect(handler).toContain('new cmsModel()');
   });
 
-  test('scaffoldWebhook generates config file', () => {
-    const result = scaffoldWebhook({
-      addon_name: 'test_wh',
-      events: ['event.one', 'event.two'],
-      options: { use_signature: true },
-    }) as any;
-    const configFile = result.files['test_wh/webhook.config.php'];
-    expect(configFile).toContain('event.one');
-    expect(configFile).toContain('event.two');
-    expect(configFile).toContain('signature');
-  });
-
-  test('scaffoldWebhook with retry enabled generates queue', () => {
+  test('scaffoldWebhook queue uses cmsModel, not cmsDatabase', () => {
     const result = scaffoldWebhook({
       addon_name: 'api_events',
       events: ['sync.data'],
       options: { use_retry: true, retry_count: 5 },
     }) as any;
-    expect('api_events/webhook.queue.php' in result.files).toBe(true);
-    const queueFile = result.files['api_events/webhook.queue.php'];
-    expect(queueFile).toContain('ApiEventsWebhookQueue');
-    expect(queueFile).toContain('function getPending(');
-    expect(queueFile).toContain('function retry(');
+    const queue = result.files['package/system/controllers/api_events/webhook.queue.php'];
+    expect(queue).toContain('class ApiEventsWebhookQueue');
+    expect(queue).toContain('function getPending(');
+    expect(queue).toContain('function retry(');
+    expect(queue).toContain('$this->model->insert(');
+    expect(queue).not.toContain('cmsDatabase');
+    expect(result.files['[pkg] install.sql']).toContain('cms_api_events_webhook_queue');
+    expect(
+      'package/system/controllers/api_events/hooks/cron_api_events_queue.php' in result.files
+    ).toBe(true);
+  });
+
+  test('scaffoldWebhook cron hook class matches the kernel formula', () => {
+    const result = scaffoldWebhook({
+      addon_name: 'api_events',
+      events: ['sync.data'],
+    }) as any;
+    const hook =
+      result.files['package/system/controllers/api_events/hooks/cron_api_events_queue.php'];
+    expect(hook).toContain('class onApiEventsCronApiEventsQueue extends cmsAction');
+    expect(hook).toContain('processQueue');
   });
 
   test('scaffoldWebhook with signature enabled generates security', () => {
@@ -1381,11 +1395,28 @@ describe('Webhook Tool', () => {
       events: ['payment.completed'],
       options: { use_signature: true },
     }) as any;
-    expect('secure_webhook/webhook.security.php' in result.files).toBe(true);
-    const securityFile = result.files['secure_webhook/webhook.security.php'];
-    expect(securityFile).toContain('SecureWebhookWebhookSecurity');
-    expect(securityFile).toContain('function verifySignature(');
-    expect(securityFile).toContain('function generateSignature(');
+    const security = result.files['package/system/controllers/secure_webhook/webhook.security.php'];
+    expect(security).toContain('SecureWebhookWebhookSecurity');
+    expect(security).toContain('function verifySignature(');
+    expect(security).toContain('function generateSignature(');
+    expect(security).toContain('getContent()');
+    expect(security).not.toContain('getRawData');
+  });
+
+  test('scaffoldWebhook without retry skips queue, SQL and cron hook', () => {
+    const result = scaffoldWebhook({
+      addon_name: 'noqueue',
+      events: ['event.one'],
+      options: { use_retry: false },
+    }) as any;
+    expect(result).toHaveProperty('cron_hook', null);
+    expect(Object.keys(result.files).some((p: string) => p.includes('webhook.queue'))).toBe(false);
+    expect('[pkg] install.sql' in result.files).toBe(false);
+    expect(Object.keys(result.files).some((p: string) => p.includes('/hooks/'))).toBe(false);
+  });
+
+  test('scaffoldWebhook validates event names', () => {
+    expect(() => scaffoldWebhook({ addon_name: 'bad', events: ['has space'] })).toThrow(/события/);
   });
 });
 
