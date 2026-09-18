@@ -140,7 +140,7 @@ jobs:
       - name: Verify generated artifacts
         run: |
           set -e
-          for scenario in crud api addon widget routes crud_options crud_slug filter cache core_artifacts template_override admin_partial cron form grid integration; do
+          for scenario in crud api addon widget routes crud_options crud_slug filter cache core_artifacts template_override admin_partial import_export cron form grid integration; do
             echo "::group::$scenario"
             npx tsx scripts/verify-generated.ts \
               --scenario "$scenario" --name "ci_$scenario" \
