@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.5.0
+
+Ломающих изменений нет. Изменения поведения: `maria_execute_query` и `maria_get_table_data` маскируют значения колонок-секретов (обойти можно через `include_sensitive: true`), а версия сервера теперь берётся из `package.json`, а не из литералов в коде.
 
 - **Гигиена: версия сервера берётся из `package.json`.** `server.ts`, `get_server_capabilities` и `get_project_health` больше не содержат литерал `1.4.0` — новый `src/version.ts` ищет ближайший `package.json` вверх от своего файла, поэтому работает и из `src/` (tsx, тесты), и из `dist/` (опубликованный пакет). Раньше версия правилась в трёх местах и могла разойтись с пакетом. Устаревшие строки husky в `.husky/pre-commit` (ломающие husky 10) удалены, `prepare` переведён на `husky`. Добавлен CI-job **Dependency audit** (`npm audit --omit=dev --audit-level=high`), и `npm audit fix` закрыл найденные уязвимости транзитивных `js-yaml` и `qs` — теперь `npm audit` чистый.
 
