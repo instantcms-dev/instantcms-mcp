@@ -1,3 +1,22 @@
+/**
+ * Письма InstantCMS 2.
+ *
+ * Механизм проверен по 2.18.2:
+ *  - шаблоны лежат в `system/languages/<lang>/letters/<name>.txt`
+ *    (например `system/languages/ru/letters/email_verify.txt`);
+ *  - первая строка — тема в виде `[subject:Тема - {site}]`, дальше тело
+ *    с плейсхолдерами `{name}`;
+ *  - чтение: `cmsCore::getLanguageTextFile('letters/<name>')`;
+ *  - подстановка: `string_replace_keys_values($text, $vars)`;
+ *  - отправка: `cmsMailer::parseSubject()` + `setBodyHTML()`/`setBodyText()` + `send()`.
+ *
+ * Прежняя версия генератора писала `.email.php` в каталог языков контроллера —
+ * такого механизма в ICMS2 нет, файлы никто не подхватывал.
+ */
+
+import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
+
 interface EmailVariable {
   name: string;
   description?: string;
@@ -20,262 +39,78 @@ interface ScaffoldEmailOptions {
   };
 }
 
-export function scaffoldEmail(opts: ScaffoldEmailOptions): object {
-  const name = opts.addon_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  const NAME = name.toUpperCase();
+/** Тема не должна занимать несколько строк: одна строка `[subject:...]`. */
+function normalizeSubject(subject: string): string {
+  return String(subject ?? '')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\]/g, ')')
+    .trim();
+}
 
+function generateLetter(template: EmailTemplate): string {
+  const subject = normalizeSubject(template.subject);
+  const body = String(template.body ?? '').trim();
+
+  return `[subject:${subject}]
+
+${body}
+`;
+}
+
+export function scaffoldEmail(opts: ScaffoldEmailOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_email', opts.options, {
+    base_template:
+      'у писем ICMS2 нет HTML-каркаса: шаблон — текстовый файл с [subject:...] и {плейсхолдерами}',
+    use_html:
+      'разметку письма рендерит почтовый клиент; HTML пишется прямо в теле шаблона, отдельного режима нет',
+  });
+
+  if (!opts.templates?.length) {
+    throw new Error('scaffold_email: нужен хотя бы один шаблон письма');
+  }
+
+  const { lowercase } = normalizeAddonName(opts.addon_name);
   const files: Record<string, string> = {};
-  const baseDir = `package/system/languages/ru/controllers/${name}`;
+  const letters: Array<{
+    name: string;
+    file: string;
+    subject: string;
+    variables_count: number;
+  }> = [];
 
   for (const template of opts.templates) {
-    const templateFileName = `${name}_${template.name}.email.php`;
-    files[`${baseDir}/${templateFileName}`] = generateEmailTemplate(
-      name,
-      NAME,
-      template,
-      opts.options
-    );
-  }
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(template.name)) {
+      throw new Error(`scaffold_email: недопустимое имя шаблона ${template.name}`);
+    }
 
-  files[`${baseDir}/${name}_emails.php`] = generateEmailIndex(name, NAME, opts.templates);
+    const letterName = `${lowercase}_${template.name}`;
+    const file = `package/system/languages/ru/letters/${letterName}.txt`;
+
+    files[file] = generateLetter(template);
+    letters.push({
+      name: letterName,
+      file,
+      subject: normalizeSubject(template.subject),
+      variables_count: template.variables?.length ?? 0,
+    });
+  }
 
   return {
-    addon_name: name,
+    addon_name: lowercase,
     templates_count: opts.templates.length,
     files,
-    templates: opts.templates.map(t => ({
-      name: t.name,
-      file: `${name}_${t.name}.email.php`,
-      subject: t.subject,
-      variables_count: t.variables?.length || 0,
-    })),
+    letters,
+    supported_options: [],
+    options_applied: {},
     structure_notes: [
-      `Email шаблоны: ${baseDir}/`,
-      `Использование в коде: $this->controller->emailTask('${name}', $template, $data)`,
-      `Отправка: cmsEventsManager::hook('send_email', ['to' => $email, 'template' => '${name}:${opts.templates[0]?.name || 'default'}', 'vars' => $data])`,
+      `Письма: system/languages/ru/letters/<name>_<template>.txt`,
+      `Чтение: cmsCore::getLanguageTextFile('letters/${letters[0]?.name ?? lowercase}')`,
+      'Подстановка: string_replace_keys_values($text, $vars)',
+      'Отправка: (new cmsMailer())->parseSubject($text) → setBodyHTML()/setBodyText() → send()',
+    ],
+    limitations: [
+      'Файл письма лежит в языковом каталоге: для другого языка нужен свой system/languages/<lang>/letters/.',
+      'Плейсхолдеры {name} подставляет вызывающий код; имена должны совпадать с ключами массива подстановки.',
     ],
   };
-}
-
-function generateEmailTemplate(
-  name: string,
-  NAME: string,
-  template: EmailTemplate,
-  options?: ScaffoldEmailOptions['options']
-): string {
-  const useHtml = options?.use_html ?? true;
-  const baseTemplate = options?.base_template || 'default';
-
-  const header = generateEmailHeader(template.subject, baseTemplate, useHtml);
-  const body = generateEmailBody(template.body, name, NAME, template.variables);
-  const footer = generateEmailFooter(baseTemplate, useHtml);
-
-  let code = `<?php
-/**
- * Email шаблон: ${template.name}
- * Для отправки используйте метод emailTask() контроллера
- */
-
-`;
-
-  if (useHtml) {
-    code += `$${name}_template = <<<'HTML'
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>${escapeHtml(template.subject)}</title>
-    ${header}
-</head>
-<body>
-    ${body}
-    ${footer}
-</body>
-</html>
-HTML;
-
-`;
-  } else {
-    code += `$${name}_template = <<<'TEXT'
-${template.body}
-TEXT;
-
-`;
-  }
-
-  code += `
-$${name}_subject = '${escapeHtml(template.subject)}';
-`;
-
-  if (template.variables && template.variables.length > 0) {
-    code += `
-// Доступные переменные:
-`;
-    for (const v of template.variables) {
-      const example = v.example ? ` // Пример: ${v.example}` : '';
-      code += `// \${${v.name}}${example}
-`;
-    }
-  }
-
-  return code;
-}
-
-function generateEmailHeader(subject: string, baseTemplate: string, useHtml: boolean): string {
-  if (!useHtml) {
-    return '';
-  }
-
-  const baseStyles = `
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        font-size: 14px;
-        line-height: 1.6;
-        color: #333;
-    }
-    .email-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    .email-header {
-        background: #4a90d9;
-        color: white;
-        padding: 20px;
-        text-align: center;
-    }
-    .email-body {
-        padding: 30px 20px;
-        background: #ffffff;
-    }
-    .email-footer {
-        padding: 20px;
-        text-align: center;
-        font-size: 12px;
-        color: #666;
-        background: #f5f5f5;
-    }
-    .button {
-        display: inline-block;
-        padding: 10px 20px;
-        background: #4a90d9;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-    }
-`;
-
-  switch (baseTemplate) {
-    case 'minimal':
-      return `
-    <style type="text/css">
-        body { background: #fafafa; }
-        .email-container { background: #ffffff; padding: 30px; }
-    </style>
-`;
-    case 'notifications':
-      return `
-    <style type="text/css">
-        ${baseStyles}
-        .email-header { background: #e74c3c; }
-    </style>
-`;
-    default:
-      return `
-    <style type="text/css">
-        ${baseStyles}
-    </style>
-`;
-  }
-}
-
-function generateEmailBody(
-  body: string,
-  name: string,
-  NAME: string,
-  variables?: EmailVariable[]
-): string {
-  let processedBody = body;
-
-  if (variables) {
-    for (const v of variables) {
-      processedBody = processedBody.replace(new RegExp(`{${v.name}}`, 'g'), `\${\${${v.name}}}`);
-    }
-  }
-
-  processedBody = processedBody.replace(/\{site_name\}/g, '<?php echo \\$site_name; ?>');
-  processedBody = processedBody.replace(/\{site_url\}/g, '<?php echo \\$site_url; ?>');
-  processedBody = processedBody.replace(/\{user_name\}/g, '<?php echo \\$user_name; ?>');
-  processedBody = processedBody.replace(/\{user_email\}/g, '<?php echo \\$user_email; ?>');
-
-  const subjectPreview = escapeHtml(body.slice(0, 50));
-
-  return `
-    <div class="email-container">
-        <div class="email-header">
-            <h1><?php echo \\$subject ?: '${subjectPreview}'; ?></h1>
-        </div>
-        <div class="email-body">
-${processedBody
-  .split('\n')
-  .map(line => `            <p>${line}</p>`)
-  .join('\n')}
-        </div>
-        <div class="email-footer">
-            <p>С уважением, команда <?php echo \\$site_name; ?></p>
-            <p><a href="<?php echo \\$site_url; ?>"><?php echo \\$site_url; ?></a></p>
-        </div>
-    </div>
-`;
-}
-
-function generateEmailFooter(baseTemplate: string, useHtml: boolean): string {
-  if (!useHtml) {
-    return '';
-  }
-
-  switch (baseTemplate) {
-    case 'minimal':
-      return '';
-    default:
-      return '';
-  }
-}
-
-function generateEmailIndex(name: string, NAME: string, templates: EmailTemplate[]): string {
-  let code = `<?php
-/**
- * Email шаблоны для ${name}
- * Генерируется автоматически
- */
-
-`;
-
-  for (const template of templates) {
-    code += `/**
- * ${template.name} - ${template.subject}
- */
-define('LANG_${NAME}_EMAIL_${template.name.toUpperCase()}_SUBJECT', '${escapeHtml(template.subject)}');
-define('LANG_${NAME}_EMAIL_${template.name.toUpperCase()}_BODY', '${escapeHtml(template.body.slice(0, 100))}...');
-
-`;
-  }
-
-  code += `
-// Отправка email
-// $this->controller->emailTask('${name}', '${templates[0]?.name || 'default'}', $data);
-`;
-
-  return code;
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }

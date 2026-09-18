@@ -274,7 +274,6 @@ const cases: Case[] = [
         scaffoldEmail({
           addon_name: 'genemail',
           templates: [{ name: 'welcome', subject: 'Hi', body: 'Hello {user_name}' }],
-          options: { use_html: true },
         })
       ),
   },

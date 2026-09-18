@@ -556,48 +556,59 @@ describe('Test Tool', () => {
 });
 
 describe('Email Tool', () => {
-  test('scaffoldEmail generates email templates', () => {
+  test('scaffoldEmail генерирует письма в формате ICMS2', () => {
     const result = scaffoldEmail({
       addon_name: 'test_email',
       templates: [
         { name: 'welcome', subject: 'Добро пожаловать!', body: 'Привет {user_name}!' },
-        { name: 'notification', subject: 'Уведомление', body: 'Новое уведомление для {user_name}' },
+        {
+          name: 'notification',
+          subject: 'Уведомление',
+          body: 'Новое уведомление для {user_name}',
+        },
       ],
     }) as any;
+
     expect(result).toHaveProperty('addon_name', 'test_email');
     expect(result).toHaveProperty('templates_count', 2);
+
+    const welcome = result.files['package/system/languages/ru/letters/test_email_welcome.txt'];
+    expect(welcome).toBe('[subject:Добро пожаловать!]\n\nПривет {user_name}!\n');
     expect(
-      'package/system/languages/ru/controllers/test_email/test_email_welcome.email.php' in
-        result.files
-    ).toBe(true);
-    expect(
-      'package/system/languages/ru/controllers/test_email/test_email_notification.email.php' in
-        result.files
-    ).toBe(true);
+      result.files['package/system/languages/ru/letters/test_email_notification.txt']
+    ).toContain('[subject:Уведомление]');
+    expect(result.letters[0]).toMatchObject({ name: 'test_email_welcome' });
   });
 
-  test('scaffoldEmail generates email index', () => {
+  test('тема письма приводится к одной строке', () => {
     const result = scaffoldEmail({
       addon_name: 'test_email',
-      templates: [{ name: 'welcome', subject: 'Test', body: 'Body' }],
+      templates: [{ name: 'multi', subject: 'Первая\nВторая', body: 'Текст' }],
     }) as any;
-    expect(
-      'package/system/languages/ru/controllers/test_email/test_email_emails.php' in result.files
-    ).toBe(true);
+    expect(result.files['package/system/languages/ru/letters/test_email_multi.txt']).toContain(
+      '[subject:Первая Вторая]'
+    );
   });
 
-  test('scaffoldEmail with HTML', () => {
+  test('в вымышленном HTML-механизме больше нет файлов', () => {
     const result = scaffoldEmail({
       addon_name: 'test_email',
       templates: [{ name: 'welcome', subject: 'Test', body: 'Hello' }],
-      options: { use_html: true, base_template: 'default' },
     }) as any;
-    const emailContent =
-      result.files[
-        'package/system/languages/ru/controllers/test_email/test_email_welcome.email.php'
-      ];
-    expect(emailContent).toContain('HTML');
-    expect(emailContent).toContain('email-container');
+    expect(Object.keys(result.files).every(path => path.endsWith('.txt'))).toBe(true);
+    expect(Object.keys(result.files).some(path => path.includes('/controllers/'))).toBe(false);
+  });
+
+  test('вымышленные опции use_html и base_template отклоняются', () => {
+    for (const options of [{ use_html: true }, { base_template: 'default' as const }]) {
+      expect(() =>
+        scaffoldEmail({
+          addon_name: 'test_email',
+          templates: [{ name: 'welcome', subject: 'Test', body: 'Hello' }],
+          options,
+        })
+      ).toThrow(/use_html|base_template/);
+    }
   });
 
   test('scaffoldEmail returns correct template info', () => {
@@ -607,8 +618,8 @@ describe('Email Tool', () => {
         { name: 'test', subject: 'Test Subject', body: 'Body', variables: [{ name: 'user_name' }] },
       ],
     }) as any;
-    expect(result.templates[0].name).toBe('test');
-    expect(result.templates[0].variables_count).toBe(1);
+    expect(result.letters[0].name).toBe('test_email_test');
+    expect(result.letters[0].variables_count).toBe(1);
   });
 });
 
