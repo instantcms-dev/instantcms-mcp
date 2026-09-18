@@ -334,13 +334,19 @@ export function registerExtensionTools(server: McpServer): void {
   // ── 49. Система кэширования ──────────────────────────────────────────────
   server.tool(
     'scaffold_cache',
-    'Генерация системы кэширования для InstantCMS с поддержкой тегов и различных бэкендов',
+    'Генерация системы кэширования InstantCMS: класс кэша, тег-инвалидация и реальные хуки контроллера',
     {
       addon_name: z.string().describe('Имя дополнения'),
       options: z
         .object({
-          use_memcached: z.boolean().optional().describe('Использовать Memcached'),
-          use_redis: z.boolean().optional().describe('Использовать Redis'),
+          use_memcached: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: драйвер задаётся в настройках сайта (cache_method)'),
+          use_redis: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: драйвер задаётся в настройках сайта (cache_method)'),
           default_ttl: z.number().optional().describe('TTL по умолчанию (секунды)'),
           use_tags: z.boolean().optional().describe('Использовать теги кэша'),
         })

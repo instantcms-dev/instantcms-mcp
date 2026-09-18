@@ -6,6 +6,7 @@ import {
 } from '../data/schemas.js';
 import { components } from '../data/components.js';
 import { hooks } from '../data/hooks.js';
+import { hookClassName } from '../utils/hook-class.js';
 import { paginate, type PageOptions } from '../utils/pagination.js';
 
 export function getAddonStructure(addonType: string = 'basic'): object {
@@ -1492,13 +1493,5 @@ ${
 
 function buildHookClassName(addonName: string, hookName: string): string {
   // Та же формула, что у ядра: on + string_to_camel('_', listener) + string_to_camel('_', event).
-  const camel = (value: string): string =>
-    value
-      .toLowerCase()
-      .split('_')
-      .filter(Boolean)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join('');
-
-  return `on${camel(addonName)}${camel(hookName)}`;
+  return hookClassName(addonName, hookName);
 }

@@ -25,6 +25,7 @@ import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
+import { scaffoldCache } from '../src/tools/cache-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
 import { scaffoldHook } from '../src/tools/addon-tool.js';
 import { scaffoldLang } from '../src/tools/lang-tool.js';
@@ -667,6 +668,57 @@ echo is_string($result) ? $result : json_encode($result);`,
         ],
       };
     }
+    case 'cache': {
+      // Кэш-класс и хуки: ядро вызывает хук события <controller>_after_add.
+      const addon = scaffoldAddon({
+        name: options.name,
+        title: 'Verify cache',
+        type: 'basic',
+      }) as { files: Record<string, string> };
+      put(addon.files);
+
+      const result = scaffoldCache({
+        addon_name: options.name,
+        options: { use_tags: true, default_ttl: 60 },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const UpperCamelCase = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify cache', isBackend: 1 },
+        events: [{ event: `${options.name}_after_add` }],
+        runtimePhp: [
+          {
+            note: 'класс кэша загружается и инвалидация не падает',
+            script: `require_once PATH . '/system/controllers/${options.name}/cache.php';
+
+$cache = ${UpperCamelCase}Cache::getInstance();
+$cache->invalidateItem(7);
+$cache->invalidateList();
+
+$missing = [];
+foreach (['get', 'set', 'delete', 'remember', 'invalidateItem', 'invalidateList'] as $method) {
+    if (!method_exists($cache, $method)) { $missing[] = $method; }
+}
+echo $missing ? 'missing:' . implode(',', $missing) : (class_exists('${UpperCamelCase}CacheTags') ? 'ok' : 'no-tags');`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'хук кэша вызывается ядром через cms_events',
+            script: `$result = cmsEventsManager::hook('${options.name}_after_add', ['id' => 7]);
+echo is_array($result) && ($result['id'] ?? null) === 7 ? 'ok' : json_encode($result);`,
+            expect: output => output.trim() === 'ok',
+          },
+        ],
+      };
+    }
     case 'cron': {
       // Планировщик вызывает runHook() у контроллера — значит, контроллер нужен.
       const crud = scaffoldCrud({
@@ -1211,7 +1263,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|core_artifacts|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');

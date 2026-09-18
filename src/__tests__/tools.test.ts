@@ -1182,59 +1182,83 @@ describe('Import/Export Tool', () => {
 });
 
 describe('Cache Tool', () => {
-  test('scaffoldCache generates cache files', () => {
-    const result = scaffoldCache({
-      addon_name: 'blog',
-    }) as any;
+  test('scaffoldCache кладёт файлы в контроллер, а не в мнимый system/hooks', () => {
+    const result = scaffoldCache({ addon_name: 'blog' }) as any;
     expect(result).toHaveProperty('addon_name', 'blog');
-    expect('blog/cache.php' in result.files).toBe(true);
-    expect('system/hooks/blog/cache.hooks.php' in result.files).toBe(true);
+    expect(result.files['package/system/controllers/blog/cache.php']).toBeDefined();
+    expect(result.files['package/system/controllers/blog/cache.tags.php']).toBeDefined();
+    expect(Object.keys(result.files).some(path => path.startsWith('system/hooks/'))).toBe(false);
   });
 
-  test('scaffoldCache generates cache class with methods', () => {
+  test('scaffoldCache генерирует класс кэша с методами', () => {
     const result = scaffoldCache({
       addon_name: 'content',
       options: { default_ttl: 7200 },
     }) as any;
-    const cacheFile = result.files['content/cache.php'];
-    expect(cacheFile).toContain('ContentCache');
+    const cacheFile = result.files['package/system/controllers/content/cache.php'];
+    expect(cacheFile).toContain('class ContentCache');
     expect(cacheFile).toContain('function get(');
     expect(cacheFile).toContain('function set(');
     expect(cacheFile).toContain('function delete(');
     expect(cacheFile).toContain('function remember(');
+    // Драйвер задаётся конфигом сайта, метод не принимает аргументов.
+    expect(cacheFile).toContain('$this->cache = cmsCache::getInstance();');
+    expect(cacheFile).not.toContain("getInstance('redis')");
+    expect(cacheFile).not.toContain("getInstance('memcached')");
+    expect(cacheFile).toContain("require_once __DIR__ . '/cache.tags.php';");
   });
 
-  test('scaffoldCache with tags enabled', () => {
+  test('инвалидация с тегами делегируется в CacheTags, а не в несуществующий метод', () => {
     const result = scaffoldCache({
       addon_name: 'items',
       options: { use_tags: true },
     }) as any;
-    expect('items/cache.tags.php' in result.files).toBe(true);
-    const tagsFile = result.files['items/cache.tags.php'];
-    expect(tagsFile).toContain('ItemsCacheTags');
+    const cacheFile = result.files['package/system/controllers/items/cache.php'];
+    expect(cacheFile).toContain("ItemsCacheTags::getInstance()->invalidateTag('item:' . $item_id)");
+    expect(cacheFile).toContain("ItemsCacheTags::getInstance()->invalidateTag('list')");
+    expect(cacheFile).not.toContain('$this->deleteTag(');
+
+    const tagsFile = result.files['package/system/controllers/items/cache.tags.php'];
+    expect(tagsFile).toContain('class ItemsCacheTags');
     expect(tagsFile).toContain('function invalidateTag(');
     expect(tagsFile).toContain('function flushAll(');
   });
 
-  test('scaffoldCache generates hooks for cache invalidation', () => {
+  test('scaffoldCache генерирует пофайловые хуки с именем класса как у ядра', () => {
     const result = scaffoldCache({
       addon_name: 'test_cache',
       options: { use_tags: true },
     }) as any;
-    const hooksFile = result.files['system/hooks/test_cache/cache.hooks.php'];
-    expect(hooksFile).toContain('onTestCacheCacheHook');
-    expect(hooksFile).toContain('function onAfterSave(');
-    expect(hooksFile).toContain('function onAfterDelete(');
-    expect(hooksFile).toContain('function onClearCache(');
+
+    const addHook =
+      result.files['package/system/controllers/test_cache/hooks/test_cache_after_add.php'];
+    expect(addHook).toContain('class onTestCacheTestCacheAfterAdd extends cmsAction');
+    expect(addHook).toContain('public function run($item)');
+    expect(addHook).toContain('return $item;');
+    expect(addHook).toContain("require_once __DIR__ . '/../cache.php';");
+
+    expect(
+      result.files['package/system/controllers/test_cache/hooks/test_cache_after_update.php']
+    ).toContain('class onTestCacheTestCacheAfterUpdate');
+    expect(
+      result.files['package/system/controllers/test_cache/hooks/test_cache_after_delete.php']
+    ).toContain('class onTestCacheTestCacheAfterDelete');
+    expect(result.hook_events).toEqual([
+      'test_cache_after_add',
+      'test_cache_after_update',
+      'test_cache_after_delete',
+    ]);
+    expect(result.manifest_xml).toContain(
+      '<hook controller="test_cache" name="test_cache_after_add" />'
+    );
   });
 
-  test('scaffoldCache with Redis backend', () => {
-    const result = scaffoldCache({
-      addon_name: 'fast_cache',
-      options: { use_redis: true, use_tags: true },
-    }) as any;
-    const cacheFile = result.files['fast_cache/cache.php'];
-    expect(cacheFile).toContain('redis');
+  test('драйверы Redis/Memcached отклоняются: их выбирает конфиг сайта', () => {
+    for (const option of ['use_redis', 'use_memcached'] as const) {
+      expect(() =>
+        scaffoldCache({ addon_name: 'fast_cache', options: { [option]: true } })
+      ).toThrow(new RegExp(option));
+    }
   });
 });
 
