@@ -25,6 +25,8 @@ import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
+import { scaffoldForm } from '../src/tools/form-tool.js';
+import { scaffoldGrid } from '../src/tools/grid-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
 
 interface Options {
@@ -65,6 +67,8 @@ interface Artifact {
   sql: string[];
   /** Строка в cms_controllers, если контроллер нужно зарегистрировать. */
   controller?: { name: string; title: string; isBackend: number };
+  /** PHP-сценарий для проверки загружаемых классов (form, grid и т.п.). */
+  runtimePhp?: { script: string; expect: (output: string) => boolean; note: string };
   /** Задача планировщика, если создан cron-хук. */
   schedulerTask?: { hook: string; period: number; title: string };
   /** Строка в cms_widgets, если создан виджет. */
@@ -230,6 +234,84 @@ function buildArtifact(options: Options): Artifact {
             values: `1,'Материал дополнения','Текст',NOW(),1`,
           },
         ],
+      };
+    }
+    case 'form':
+    case 'grid': {
+      // Формы и гриды живут внутри контроллера и проверяются загрузкой классов.
+      const crud = scaffoldCrud({
+        addon_name: options.name,
+        fields: [
+          { name: 'description', type: 'text', title: 'Описание' },
+          { name: 'price', type: 'int', title: 'Цена' },
+        ],
+        options: { theme: options.theme },
+      }) as { files: Record<string, string> };
+      put(crud.files);
+
+      const UpperCamelCase = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      if (options.scenario === 'form') {
+        const form = scaffoldForm({
+          addon_name: options.name,
+          form_name: 'item',
+          fields: [
+            { name: 'description', type: 'text', title: 'Описание' },
+            { name: 'price', type: 'decimal', title: 'Цена' },
+          ],
+        }) as { files: Record<string, string> };
+        put(form.files);
+
+        return {
+          files,
+          sql,
+          tables,
+          controller: { name: options.name, title: 'Verify form', isBackend: 1 },
+          runtimePhp: {
+            note: 'форма собирается через init()',
+            script: `cmsCore::loadControllerLanguage('admin');
+require_once PATH . '/system/controllers/${options.name}/backend/forms/form_item.php';
+$form = new form${UpperCamelCase}Item();
+$structure = $form->init('add');
+$childs = 0;
+foreach ($structure as $fieldset) {
+    $childs += count($fieldset['childs'] ?? []);
+}
+echo (int) $childs;`,
+            expect: output => Number(output.trim()) >= 2,
+          },
+        };
+      }
+
+      const grid = scaffoldGrid({
+        addon_name: options.name,
+        grid_name: 'items',
+        columns: [
+          { name: 'title', title: 'Заголовок', filter: 'like' },
+          { name: 'price', title: 'Цена', filter: 'range' },
+        ],
+      }) as { files: Record<string, string> };
+      put(grid.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify grid', isBackend: 1 },
+        runtimePhp: {
+          note: 'функция грида возвращает колонки с фильтрами',
+          script: `require_once PATH . '/system/controllers/${options.name}/backend/grids/grid_items.php';
+$controller = cmsCore::getController('${options.name}');
+$grid = grid_items($controller);
+echo count($grid['columns']) . '|' . (!empty($grid['options']['is_filter']) ? 1 : 0);`,
+          expect: output => {
+            const [columns, filter] = output.trim().split('|');
+            return Number(columns) >= 2 && filter === '1';
+          },
+        },
       };
     }
     case 'cron': {
@@ -531,6 +613,34 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     add(`GET /${name}/view/99999`, 404, missing.status);
   }
 
+  if (artifact.runtimePhp) {
+    const scriptPath = path.join(options.site, '_verify_runtime.php');
+    const body = `<?php
+if (PHP_SAPI !== 'cli') { die('404'); }
+require_once __DIR__ . '/bootstrap.php';
+chdir(PATH);
+$core->initLanguage();
+cmsTemplate::getInstance();
+${artifact.runtimePhp.script}
+`;
+    fs.writeFileSync(scriptPath, body);
+
+    let output = '';
+    let status = 1;
+    try {
+      const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
+      output = executed.stdout || '';
+      status = executed.status ?? 1;
+    } finally {
+      fs.rmSync(scriptPath, { force: true });
+    }
+
+    add(`${artifact.runtimePhp.note}: PHP без ошибок`, 0, status);
+    if (status === 0) {
+      add(`${artifact.runtimePhp.note}: результат`, 1, artifact.runtimePhp.expect(output) ? 1 : 0);
+    }
+  }
+
   if (options.scenario === 'cron') {
     const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
 
@@ -594,7 +704,7 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget|cron');
+    die('укажите --scenario crud|api|addon|widget|cron|form|grid');
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {
