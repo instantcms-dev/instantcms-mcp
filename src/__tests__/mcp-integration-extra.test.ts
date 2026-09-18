@@ -218,4 +218,31 @@ describe('MCP integration (extra)', () => {
       expect(guide).not.toContain('function actionIndex()');
     });
   });
+
+  test('paged resources / постраничные ресурсы / 分页资源 keep every entry', async () => {
+    await withClient(async client => {
+      for (const [kind, expected] of [
+        ['hooks', hooks.length],
+        ['components', components.length],
+      ] as const) {
+        let cursor: string | null = 'first';
+        let received = 0;
+        while (cursor) {
+          const resource = await client.readResource({
+            uri: `instantcms://${kind}/page/${cursor}`,
+          });
+          const content = resource.contents[0];
+          expect('text' in content).toBe(true);
+          const data = JSON.parse('text' in content ? content.text : '') as {
+            items: unknown[];
+            page: { next_cursor: string | null };
+          };
+          expect(data.items.length).toBeGreaterThan(0);
+          received += data.items.length;
+          cursor = data.page.next_cursor;
+        }
+        expect(received).toBe(expected);
+      }
+    });
+  });
 });

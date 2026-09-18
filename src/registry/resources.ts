@@ -1,7 +1,8 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { hooks, hookCategories } from '../data/hooks.js';
 import { components } from '../data/components.js';
 import { addonStructures } from '../data/schemas.js';
+import { paginate } from '../utils/pagination.js';
 
 export function registerResources(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -16,6 +17,49 @@ export function registerResources(server: McpServer): void {
           uri: 'instantcms://hooks/all',
           mimeType: 'application/json',
           text: JSON.stringify({ total: hooks.length, categories: hookCategories, hooks }, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.resource(
+    'instantcms-hooks-page',
+    new ResourceTemplate('instantcms://hooks/page/{cursor}', { list: undefined }),
+    { mimeType: 'application/json', description: 'Страница хуков / Hook page / 钩子分页' },
+    async (uri, variables) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(
+            paginate(hooks, {
+              cursor: variables.cursor === 'first' ? undefined : String(variables.cursor),
+              limit: 50,
+            })
+          ),
+        },
+      ],
+    })
+  );
+
+  server.resource(
+    'instantcms-components-page',
+    new ResourceTemplate('instantcms://components/page/{cursor}', { list: undefined }),
+    {
+      mimeType: 'application/json',
+      description: 'Страница компонентов / Component page / 组件分页',
+    },
+    async (uri, variables) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(
+            paginate(components, {
+              cursor: variables.cursor === 'first' ? undefined : String(variables.cursor),
+              limit: 10,
+            })
+          ),
         },
       ],
     })

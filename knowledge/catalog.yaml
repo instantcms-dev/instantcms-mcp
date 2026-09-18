@@ -78,3 +78,9 @@ sources:
     confidence: verified
     provenance: generated
     verified_at: '2026-08-26'
+  - id: generated-version-api
+    runtime_file: src/generated/version-api.ts
+    domain: versions
+    confidence: verified
+    provenance: generated
+    verified_at: '2026-09-18'
