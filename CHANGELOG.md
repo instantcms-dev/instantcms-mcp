@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
+
+**Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.
+
+### Migration
+
+- **`scaffold_api`** now writes one action per endpoint at `package/system/controllers/{name}/actions/api_{version}_{name}.php` instead of a single `api/{version}/index.php`, and no longer generates `manifest.xml`. Configure routes in the host controller.
+- **`scaffold_addon` / `scaffold_migration`** now place `install.sql` and `install.php` in the **package root** (`[pkg] install.sql`, `[pkg] install.php`). `install.php` must define the function `install_package(array $install_options = [])`; the class-based installer (`class ... extends cmsInstaller`) is not supported by InstantCMS and `uninstall.php` is no longer generated (the core has no uninstall hook).
+- **`validate_addon`** requires `manifest.xml` and `frontend.php` only; `install.php` is optional and must define `install_package()`.
+- **`scaffold_crud`** also generates theme templates (`templates/{theme}/controllers/{name}/*.tpl.php`), `[pkg] install.sql`, a separate frontend form (`forms/form_item_public.php`) and reports `scaffold_status: 'partial'`. The model no longer defines `getItem()` (it conflicted with `cmsModel::getItem()`) — use `getItemById()`. The category helper is now `getItemCategoryBySlug()` instead of `getCategoryBySlug()`.
+- **`scaffold_widget`** now targets the real layout: `system/controllers/{controller}/widgets/{widget}/widget.php` (class `widget{Controller}{Widget} extends cmsWidget`), `options.form.php` (class `formWidget{Controller}{Widget}Options`, fields prefixed `options:`) and `templates/{theme}/controllers/{controller}/widgets/{widget}/{widget}.tpl.php`. Register the widget in `cms_widgets` to make it available.
+- **`scaffold_grid`** no longer invents `LANG_<ADDON>_*` constants: titles are emitted as strings, and values containing `LANG_` or a PHP expression are emitted as code.
 
 - **Fixed generators producing invalid PHP.** `scaffold_crud`: the frontend class no longer assigns `Class::ROUTE_NAME` outside the class body (now a `public const` inside the class), form field options are emitted as PHP arrays via the new `phpValue()` serializer instead of JSON-style objects, addon/field names are validated, and language constants are quoted safely. `scaffold_api`: each endpoint now becomes its own `actions/api_{version}_{name}.php` action instead of redeclaring `run()` in one class, path parameters form a valid method signature, endpoints with `auth_required: false` no longer get `checkAuth()`, an HTTP-method guard returns 405, and the result honestly reports `scaffold_status: 'partial'` with `limitations`.
 - **Fixed PHP artifact validator false positives.** Removed the bracket-counting heuristic that rejected valid PHP containing `(`/`)` inside strings or comments; `php -l` is the authority when available.
