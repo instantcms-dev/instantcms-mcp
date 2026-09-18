@@ -1546,9 +1546,10 @@ describe('OAuth Tool', () => {
     }) as any;
     expect(result).toHaveProperty('addon_name', 'social_login');
     expect(result).toHaveProperty('providers_count', 1);
-    expect('social_login/oauth/client.php' in result.files).toBe(true);
-    expect('social_login/oauth/provider.php' in result.files).toBe(true);
-    expect('social_login/oauth/callback.php' in result.files).toBe(true);
+    expect('package/system/controllers/social_login/oauth/client.php' in result.files).toBe(true);
+    expect('package/system/controllers/social_login/oauth/provider.php' in result.files).toBe(true);
+    expect('package/system/controllers/social_login/oauth/callback.php' in result.files).toBe(true);
+    expect(Object.keys(result.files).some((p: string) => p.includes('system/hooks/'))).toBe(false);
   });
 
   test('scaffoldOAuth generates OAuth client class', () => {
@@ -1564,8 +1565,9 @@ describe('OAuth Tool', () => {
         },
       ],
     }) as any;
-    const clientFile = result.files['oauth_test/oauth/client.php'];
-    expect(clientFile).toContain('OauthTestOAuthClient');
+    const clientFile = result.files['package/system/controllers/oauth_test/oauth/client.php'];
+    expect(clientFile).toContain('class OauthTestOAuthClient');
+    expect(clientFile).toContain("require_once __DIR__ . '/provider.php'");
     expect(clientFile).toContain('function getProvider(');
     expect(clientFile).toContain('function getAuthUrl(');
   });
@@ -1583,11 +1585,13 @@ describe('OAuth Tool', () => {
         },
       ],
     }) as any;
-    const providerFile = result.files['secure_oauth/oauth/provider.php'];
-    expect(providerFile).toContain('SecureOauthOAuthProvider');
+    const providerFile = result.files['package/system/controllers/secure_oauth/oauth/provider.php'];
+    expect(providerFile).toContain('class SecureOauthOAuthProvider');
     expect(providerFile).toContain('function getAuthorizationUrl(');
     expect(providerFile).toContain('function handleCallback(');
     expect(providerFile).toContain('function refreshToken(');
+    expect(providerFile).toContain('curl_init()');
+    expect(providerFile).not.toContain("cmsConfig::get('root_url')");
   });
 
   test('scaffoldOAuth with db storage generates storage class', () => {
@@ -1604,15 +1608,18 @@ describe('OAuth Tool', () => {
       ],
       options: { store_tokens_in_db: true },
     }) as any;
-    expect('db_oauth/oauth/storage.php' in result.files).toBe(true);
-    const storageFile = result.files['db_oauth/oauth/storage.php'];
-    expect(storageFile).toContain('DbOauthOAuthStorage');
+    const storageFile = result.files['package/system/controllers/db_oauth/oauth/storage.php'];
+    expect(storageFile).toContain('class DbOauthOAuthStorage');
     expect(storageFile).toContain('function storeTokens(');
     expect(storageFile).toContain('function getTokens(');
     expect(storageFile).toContain('function getValidToken(');
+    expect(storageFile).toContain('new cmsModel()');
+    expect(storageFile).toContain('deleteFiltered');
+    expect(storageFile).not.toContain('cmsModel::getInstance');
+    expect(result.files['[pkg] install.sql']).toContain('cms_db_oauth_oauth_tokens');
   });
 
-  test('scaffoldOAuth generates hooks for login buttons', () => {
+  test('scaffoldOAuth embeds provider config safely and generates no hooks', () => {
     const result = scaffoldOAuth({
       addon_name: 'login_oauth',
       providers: [
@@ -1632,10 +1639,32 @@ describe('OAuth Tool', () => {
         },
       ],
     }) as any;
-    const hooksFile = result.files['system/hooks/login_oauth/oauth.hooks.php'];
-    expect(hooksFile).toContain('onLoginOauthOAuthHook');
-    expect(hooksFile).toContain('btn-google');
-    expect(hooksFile).toContain('btn-vkontakte');
+    const clientFile = result.files['package/system/controllers/login_oauth/oauth/client.php'];
+    expect(clientFile).toContain("'google' =>");
+    expect(clientFile).toContain("'vkontakte' =>");
+    expect(clientFile).toContain("'token_url'");
+    expect(clientFile).toContain('https://oauth.vk.com/access_token');
+    expect(Object.keys(result.files).some((p: string) => p.includes('oauth.hooks.php'))).toBe(
+      false
+    );
+  });
+
+  test('scaffoldOAuth validates providers', () => {
+    expect(() =>
+      scaffoldOAuth({
+        addon_name: 'bad_oauth',
+        providers: [
+          {
+            name: 'google',
+            client_id: 'x',
+            client_secret: 'y',
+            auth_url: 'accounts.google.com',
+            token_url: 'https://oauth2.googleapis.com/token',
+          },
+        ],
+      })
+    ).toThrow(/auth_url/);
+    expect(() => scaffoldOAuth({ addon_name: 'empty_oauth', providers: [] })).toThrow(/провайдера/);
   });
 });
 

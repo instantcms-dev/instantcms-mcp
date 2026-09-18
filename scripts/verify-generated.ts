@@ -15,7 +15,7 @@
  * Скрипт пишет в тестовый сайт и БД. Без флага --yes он только печатает план.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -37,6 +37,7 @@ import { scaffoldLayoutOverride } from '../src/tools/layout-override-tool.js';
 import { scaffoldHook } from '../src/tools/addon-tool.js';
 import { scaffoldLang } from '../src/tools/lang-tool.js';
 import { scaffoldMigration } from '../src/tools/migration-tool.js';
+import { scaffoldOAuth } from '../src/tools/oauth-tool.js';
 import { generateMigration } from '../src/tools/migration-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
@@ -44,6 +45,10 @@ import { quotePhp } from '../src/utils/serialization.js';
 import { scaffoldSeo } from '../src/tools/seo-tool.js';
 import { scaffoldWebhook } from '../src/tools/webhook-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
+
+/** Mock-эндпоинт обмена OAuth-кода на токен для сценария `oauth`. */
+const OAUTH_MOCK_PORT = 8317;
+const OAUTH_TOKEN_URL = `http://127.0.0.1:${OAUTH_MOCK_PORT}/token.php`;
 
 interface Options {
   scenario: string;
@@ -1031,6 +1036,65 @@ echo !empty($home['success'])
         },
       };
     }
+    case 'oauth': {
+      // Обмен кода на токен идёт на отдельный mock-сервер (см. runChecks).
+      const result = scaffoldOAuth({
+        addon_name: options.name,
+        providers: [
+          {
+            name: 'mock',
+            client_id: 'ci-client',
+            client_secret: 'ci-secret',
+            auth_url: 'https://provider.example/authorize',
+            token_url: OAUTH_TOKEN_URL,
+            scopes: ['openid', 'profile'],
+          },
+        ],
+        options: { use_refresh_token: true, store_tokens_in_db: true, PKCE_support: true },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const Name = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        runtimePhp: {
+          note: 'OAuth: авторизационный URL, обмен кода на токен, хранение',
+          script: `require_once PATH . '/system/controllers/${options.name}/oauth/client.php';
+require_once PATH . '/system/controllers/${options.name}/oauth/storage.php';
+
+$client = ${Name}OAuthClient::getInstance();
+
+$auth_url = $client->getAuthUrl('mock', 'state-ci', 'http://example.test/callback');
+$auth_ok = strpos($auth_url, 'client_id=ci-client') !== false
+    && strpos($auth_url, 'state=state-ci') !== false
+    && strpos($auth_url, 'code_challenge=') !== false
+    && strpos($auth_url, 'redirect_uri=') !== false;
+
+$tokens = $client->handleCallback('mock', 'ci-code', null);
+$tokens_ok = ($tokens['access_token'] ?? '') === 'access-ci-code'
+    && ($tokens['refresh_token'] ?? '') === 'refresh-1';
+
+$storage = new ${Name}OAuthStorage();
+$storage->storeTokens(1, 'mock', $tokens);
+$stored = $storage->getTokens(1, 'mock');
+$valid = $storage->getValidToken(1, 'mock');
+$storage->deleteTokens(1, 'mock');
+$after = $storage->getTokens(1, 'mock');
+
+echo $auth_ok && $tokens_ok && $stored && $valid === 'access-ci-code' && !$after
+    ? 'ok'
+    : 'fail:' . json_encode([$auth_url, $tokens, $stored, $valid, $after]);`,
+          // На боевом ядре PHP может печатать предупреждения — результат последняя строка.
+          expect: output => output.trim().split('\n').pop() === 'ok',
+        },
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1475,6 +1539,38 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     fs.writeFileSync(configPath, configBackup.replace(/('cache_enabled'\s*=>\s*)0/, '$11'));
   }
 
+  // OAuth обменивает код на токен настоящим HTTP-запросом, поэтому на время
+  // проверки поднимаем отдельный mock-сервер провайдера.
+  let oauthServer: ReturnType<typeof spawn> | null = null;
+  let oauthMockDir = '';
+  if (options.scenario === 'oauth' && runtimeChecks.length) {
+    oauthMockDir = fs.mkdtempSync(path.join(os.tmpdir(), 'icms-oauth-'));
+    fs.writeFileSync(
+      path.join(oauthMockDir, 'token.php'),
+      `<?php
+header('Content-Type: application/json');
+echo json_encode([
+    'access_token'  => 'access-' . (string) ($_POST['code'] ?? 'none'),
+    'refresh_token' => 'refresh-1',
+    'expires_in'    => 3600,
+    'token_type'    => 'Bearer',
+    'scope'         => 'openid profile',
+]);`
+    );
+    oauthServer = spawn('php', ['-S', `127.0.0.1:${OAUTH_MOCK_PORT}`, '-t', oauthMockDir], {
+      stdio: 'ignore',
+    });
+    for (let attempt = 0; attempt < 50; attempt++) {
+      try {
+        const probe = await fetch(OAUTH_TOKEN_URL, { method: 'POST' });
+        if (probe.ok) break;
+      } catch {
+        // сервер ещё поднимается
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
   try {
     for (const check of runtimeChecks) {
       const scriptPath = path.join(options.site, '_verify_runtime.php');
@@ -1506,6 +1602,12 @@ ${check.script}
   } finally {
     if (configBackup) {
       fs.writeFileSync(configPath, configBackup);
+    }
+    if (oauthServer) {
+      oauthServer.kill();
+    }
+    if (oauthMockDir) {
+      fs.rmSync(oauthMockDir, { recursive: true, force: true });
     }
   }
 
@@ -1765,7 +1867,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|component|webhook|external_api|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|component|webhook|external_api|oauth|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');

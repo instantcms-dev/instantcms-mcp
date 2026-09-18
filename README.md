@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `component`, `webhook`, `external_api`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `template_override`, `admin_partial`, `import_export`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `component`, `webhook`, `external_api`, `oauth`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `template_override`, `admin_partial`, `import_export`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -178,14 +178,14 @@ git push && git push --tags
 | `scaffold_component`                                                                                      | рантайм: multi-controller пакет, классы по конвенции ядра, фронтенд и модель |
 | `scaffold_webhook`                                                                                        | рантайм: приём подписанного веб-хука, очередь на `cmsModel` и cron-обработка |
 | `scaffold_external_api`                                                                                   | рантайм: cURL-клиент, auth-заголовки, rate limiting и кэш на `cmsCache`      |
-| `scaffold_oauth`                                                                                          | **прототип**: механизм не подтверждён, см. `limitations` в ответе инструмента |
+| `scaffold_oauth`                                                                                          | рантайм: OAuth-обмен кода на токен через cURL, PKCE и токены в БД            |
 | `scaffold_migration`, `generate_migration`, `scaffold_lang`, `scaffold_hook`                          | рантайм: таблица создаётся из SQL, `install_package()` и хук вызываются ядром |
 | `scaffold_test`                                                                                           | только статически: нужны PHPUnit/Codeception                              |
 | `scaffold_template`, `scaffold_complete_template`                                                         | только статически: активация темы затрагивает весь сайт                     |
 
 «Только статически» означает: `php -l`, проверка символов против реального исходника, соответствие структуре каталогов. Поведение в рантайме для этих генераторов не подтверждено.
 
-**Прототипы.** `scaffold_oauth` возвращает `scaffold_status: 'experimental'` и перечисляет в `limitations` конкретные расхождения с ICMS2 (выдуманные методы, несуществующие каталоги, классы без `require`, неверные пути и имена классов). Его вывод нельзя ставить на сайт без правки; аудит и переработка запланированы.
+Все генераторы либо проверены в рантайме, либо помечены как «только статически» (см. выше): прототипов с `scaffold_status: 'experimental'` больше не осталось.
 
 ## Основные MCP-инструменты
 
