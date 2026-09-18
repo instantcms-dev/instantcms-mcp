@@ -4,6 +4,13 @@
 
 - **Unsupported generator options now fail loudly instead of being ignored.** `scaffold_crud` (`use_tags`, `use_comments`, `use_rating`, `use_moderation`, `use_seo`, `use_content`, `list_template`), `scaffold_api` (`use_rate_limit`), `scaffold_filter` (`use_ajax`, `use_url_params`), `scaffold_form` (`generate_rules`) and `scaffold_migration` (`permissions`) accepted options they never used, so callers could believe they requested behaviour that was never generated. Each now throws an actionable error; explicit `false` is still accepted. `generate_migration` gained a working `ifNotExists` flag, and `scaffold_crud` reports `supported_options` plus `options_applied` in its result. Covered by `src/__tests__/generator-options.test.ts`.
 
+- **Reworked `scaffold_permission`, `scaffold_seo` and `scaffold_filter` to real InstantCMS mechanisms.** They previously produced files in directories that do not exist (`system/hooks/`, `system/config/permissions/`), used invent-shaped classes that were not ICMS2 hooks (no `cmsAction`, no `run()`), and called methods the framework does not have (`setPageDescription`, `setPageKeywords`, `can()`).
+  - `scaffold_permission` now registers rules in `install_package()` through `cmsPermissions::addRule()`, emits the `LANG_RULE_<CONTROLLER>_<RULE>` constants the admin reads, and ships an optional checker built on `cmsUser::isAllowed()`; the admin UI lists the rules without a custom backend. Verified live: rules are registered and returned by `cmsPermissions::getRulesList()`.
+  - `scaffold_seo` now generates a real `render_page` hook (plus `sitemap_urls_list_<controller>` when requested) and a pure `<Name>Seo` helper. Verified live: a material page returns 200 with Open Graph tags and Schema.org JSON-LD built from the item.
+  - `scaffold_filter` now generates a genuine backend grid function whose columns use the real filter types (`like`, `exact`, `range`, `range_date`). Verified live: the grid renders in the admin with its filters.
+  - `use_ajax`, `use_url_params`, `save_filters`, `auto_generation`, `fields` and `withCategories` are rejected with explanations instead of being ignored.
+- Added a generator verification matrix to the README listing which generators are confirmed at runtime and which are covered only statically.
+
 ## 1.3.0
 
 **Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.

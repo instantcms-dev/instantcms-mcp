@@ -53,423 +53,303 @@ interface ScaffoldSeoOptions {
   };
 }
 
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
+import { quotePhp } from '../utils/serialization.js';
+
 /**
- * Generates SEO configuration class
+ * SEO для контроллера InstantCMS.
+ *
+ * Механизм проверен по 2.18.2:
+ *  - финальный HTML проходит через фильтр `render_page`
+ *    (system/core/template.php: cmsEventsManager::hook('render_page', $html));
+ *  - карта сайта для контроллера собирается хуком `sitemap_urls_list_<controller>`
+ *    (system/controllers/sitemap/hooks/cron_generate.php);
+ *  - метатеги страницы выставляет cmsTemplate::setMeta(), но в хуке доступен
+ *    только HTML, поэтому разметка внедряется в `<head>`.
+ *
+ * Генератор создаёт помощник построения разметки и настоящие хуки контроллера.
+ * Вымышленных методов вроде setPageDescription() в ICMS2 нет.
  */
-function generateSeoConfig(
-  name: string,
-  Name: string,
-  fields: SeoField[],
-  options: Record<string, boolean>
-): string {
-  const titleField = fields.find(f => f.type === 'title')?.field || 'title';
-  const descField = fields.find(f => f.type === 'description')?.field || 'description';
-  const keywordsField = fields.find(f => f.type === 'keywords')?.field || 'keywords';
 
+const SEO_OPTIONS = ['use_schema_org', 'use_og_tags', 'use_sitemap'];
+
+function generateSeoHelper(controller: string, Name: string): string {
   return `<?php
-// InstantCMS 2. ${name}/seo.php
 
+/**
+ * Построение SEO-разметки для материалов контроллера ${controller}.
+ * Чистые функции: их удобно вызывать из хука render_page и из тестов.
+ */
 class ${Name}Seo {
-    private static $instance = null;
-    private $config = [];
 
-    private function __construct() {
-        $this->config = include __DIR__ . '/seo_config.php';
-    }
+    /**
+     * Метатеги: заголовок, описание, ключевые слова.
+     *
+     * @param array $item Материал контроллера
+     * @return array
+     */
+    public static function getMeta(array $item): array {
 
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
+        $title = trim((string) ($item['title'] ?? ''));
 
-    public function getConfig() {
-        return $this->config;
-    }
-
-    public function getTitle($item = null) {
-        $template = $this->config['${titleField}']['value'] ?? '{item.title}';
-        return $this->replaceVariables($template, $item);
-    }
-
-    public function getDescription($item = null) {
-        $template = $this->config['${descField}']['value'] ?? '';
-        return $this->replaceVariables($template, $item);
-    }
-
-    public function getKeywords($item = null) {
-        $template = $this->config['${keywordsField}']['value'] ?? '';
-        return $this->replaceVariables($template, $item);
-    }
-
-    private function replaceVariables($template, $item) {
-        if (!$item) {
-            return $template;
+        $description = trim((string) ($item['description'] ?? ''));
+        if ($description === '') {
+            $source = trim(strip_tags((string) ($item['text'] ?? '')));
+            $description = $source === '' ? '' : mb_substr($source, 0, 160);
         }
 
-        $item = (array)$item;
-        $result = str_replace('{site.name}', cmsConfig::get('sitename'), $template);
-        $result = str_replace('{site.url}', cmsConfig::get('root_url'), $result);
-
-        foreach ($item as $key => $value) {
-            if (is_string($value) || is_numeric($value)) {
-                $result = str_replace('{item.' . $key . '}', $value, $result);
-            }
-        }
-
-        return $result;
+        return [
+            'title'       => $title,
+            'description' => $description,
+            'keywords'    => trim((string) ($item['keywords'] ?? '')),
+        ];
     }
 
-    public function getMetaTags($item = null) {
-        $tags = [];
+    /**
+     * Разметка Schema.org для материала.
+     *
+     * @param array $item
+     * @param string $url Абсолютный адрес материала
+     * @return array
+     */
+    public static function getSchema(array $item, string $url): array {
 
-        if (${options.auto_generation}) {
-            $title = $this->getTitle($item);
-            if ($title) {
-                $tags['title'] = $title;
-            }
-
-            $description = $this->getDescription($item);
-            if ($description) {
-                $tags['description'] = $description;
-            }
-
-            $keywords = $this->getKeywords($item);
-            if ($keywords) {
-                $tags['keywords'] = $keywords;
-            }
-        }
-
-        return $tags;
-    }
-
-    public function getOgTags($item = null) {
-        if (!${options.use_og_tags}) {
+        $name = trim((string) ($item['title'] ?? ''));
+        if ($name === '') {
             return [];
         }
 
-        $tags = [
-            'og:title' => $this->getTitle($item),
-            'og:description' => $this->getDescription($item),
-            'og:type' => 'article',
-            'og:url' => cmsConfig::get('root_url') . '/' . ($item['slug'] ?? ''),
-        ];
-
-        if (!empty($item['og_image'])) {
-            $tags['og:image'] = $item['og_image'];
-        } elseif (!empty($item['image'])) {
-            $tags['og:image'] = $item['image'];
-        }
-
-        return array_filter($tags);
-    }
-
-    public function getRobots($item = null) {
-        if (!empty($this->config['robots']['value'])) {
-            return $this->config['robots']['value'];
-        }
-
-        if (!empty($item['is_draft']) || !empty($item['is_private'])) {
-            return 'noindex, nofollow';
-        }
-
-        return 'index, follow';
-    }
-}`;
-}
-
-/**
- * Generates SEO hook handlers
- */
-function generateSeoHooks(
-  name: string,
-  Name: string,
-  _fields: SeoField[],
-  options: Record<string, boolean>
-): string {
-  return `<?php
-// InstantCMS 2. system/hooks/${name}/seo.hooks.php
-
-class on${Name}SeoHook {
-    public function onBeforeRender($controller, $item = null) {
-        if (!${options.auto_generation}) {
-            return;
-        }
-
-        $seo = ${Name}Seo::getInstance();
-        $meta = $seo->getMetaTags($item);
-
-        if (!empty($meta['title'])) {
-            $controller->setPageTitle($meta['title']);
-        }
-
-        if (!empty($meta['description'])) {
-            $controller->setPageDescription($meta['description']);
-        }
-
-        if (!empty($meta['keywords'])) {
-            $controller->setPageKeywords($meta['keywords']);
-        }
-
-        if (${options.use_og_tags}) {
-            $og = $seo->getOgTags($item);
-            foreach ($og as $property => $content) {
-                $controller->addHeadJsVar('icms[og][' . $property . ']', $content);
-            }
-        }
-
-        $robots = $seo->getRobots($item);
-        $controller->setPageRobots($robots);
-    }
-
-    public function onAfterSave($item) {
-        if (!empty($item['slug'])) {
-            $this->updateSitemap($item);
-        }
-    }
-
-    public function onAfterDelete($item) {
-        $this->removeFromSitemap($item);
-    }
-
-    private function updateSitemap($item) {
-        if (!${options.use_sitemap}) {
-            return;
-        }
-
-        $model = cmsModel::getInstance();
-        $model->delete('sitemap', ['entity' => '${name}', 'entity_id' => $item['id']], true);
-
-        $model->insert('sitemap', [
-            'entity' => '${name}',
-            'entity_id' => $item['id'],
-            'slug' => $item['slug'],
-            'last_modified' => date('Y-m-d H:i:s'),
-            'change_freq' => 'weekly',
-            'priority' => '0.7',
-        ]);
-    }
-
-    private function removeFromSitemap($item) {
-        if (!${options.use_sitemap}) {
-            return;
-        }
-
-        $model = cmsModel::getInstance();
-        $model->delete('sitemap', ['entity' => '${name}', 'entity_id' => $item['id']], true);
-    }
-}`;
-}
-
-/**
- * Generates sitemap class
- */
-function generateSitemap(name: string, Name: string, _fields: SeoField[]): string {
-  return `<?php
-// InstantCMS 2. ${name}/sitemap.php
-
-class ${Name}Sitemap {
-    public function getItems($page = 1, $per_page = 100) {
-        $model = cmsModel::getInstance();
-
-        return $model->get('${name}', function ($item) {
-            return [
-                'loc' => cmsConfig::get('root_url') . '/' . $item['slug'],
-                'lastmod' => !empty($item['date_pub']) ? date('Y-m-d', strtotime($item['date_pub'])) : date('Y-m-d'),
-                'changefreq' => !empty($item['changefreq']) ? $item['changefreq'] : 'weekly',
-                'priority' => !empty($item['priority']) ? $item['priority'] : '0.7',
-            ];
-        }, [
-            'is_deleted' => false,
-        ], 'id DESC', $page, $per_page);
-    }
-
-    public function getTotal() {
-        $model = cmsModel::getInstance();
-        return $model->getCount('${name}', function ($model) {
-            $model->filterIsNull('is_deleted');
-        });
-    }
-
-    public function generateXml($items) {
-        $xml = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-
-        foreach ($items as $item) {
-            $xml .= '<url>';
-            $xml .= '<loc>' . htmlspecialchars($item['loc']) . '</loc>';
-            $xml .= '<lastmod>' . $item['lastmod'] . '</lastmod>';
-            $xml .= '<changefreq>' . $item['changefreq'] . '</changefreq>';
-            $xml .= '<priority>' . $item['priority'] . '</priority>';
-            $xml .= '</url>';
-        }
-
-        $xml .= '</urlset>';
-
-        return $xml;
-    }
-}`;
-}
-
-/**
- * Generates Schema.org JSON-LD class
- */
-function generateSchemaOrg(name: string, Name: string, _fields: SeoField[]): string {
-  return `<?php
-// InstantCMS 2. ${name}/schema.php
-
-class ${Name}SchemaOrg {
-    public static function getArticleSchema($item) {
         $schema = [
             '@context' => 'https://schema.org',
-            '@type' => 'Article',
-            'headline' => $item['title'] ?? '',
-            'description' => $item['description'] ?? '',
-            'image' => $item['image'] ?? '',
-            'datePublished' => $item['date_pub'] ?? '',
-            'dateModified' => $item['updated_at'] ?? $item['date_pub'] ?? '',
-            'author' => [
-                '@type' => 'Person',
-                'name' => $item['user_nickname'] ?? $item['author_name'] ?? '',
-            ],
+            '@type'    => 'Article',
+            'headline' => $name,
+            'url'      => $url,
         ];
 
-        if (!empty($item['slug'])) {
-            $schema['url'] = cmsConfig::get('root_url') . '/' . $item['slug'];
+        $description = self::getMeta($item)['description'];
+        if ($description !== '') {
+            $schema['description'] = $description;
+        }
+
+        if (!empty($item['date_pub'])) {
+            $schema['datePublished'] = date('c', strtotime($item['date_pub']));
         }
 
         return $schema;
     }
 
-    public static function toJsonLd($schema) {
-        return '<script type="application/ld+json">' . json_encode($schema) . '</script>';
+    /** Экранирование значения для атрибута HTML */
+    public static function attr($value): string {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
-}`;
+}
+`;
 }
 
-/**
- * Generates SEO configuration file
- */
-function generateSeoConfigFile(fields: SeoField[]): string {
-  const fieldEntries = fields
-    .map(f => {
-      const value = f.value ? `'${f.value}'` : 'null';
-      return `    '${f.field}' => ['type' => '${f.type}', 'value' => ${value}]`;
-    })
-    .join(',\n');
+function generateRenderPageHook(
+  controller: string,
+  Name: string,
+  useSchemaOrg: boolean,
+  useOgTags: boolean
+): string {
+  const schemaBlock = useSchemaOrg
+    ? `
+        if ($item) {
+            $schema = ${Name}Seo::getSchema($item, $item_url);
+            if ($schema) {
+                $inject .= '<script type="application/ld+json">'
+                    . json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                    . '</script>' . "\\n";
+            }
+        }
+`
+    : '';
+
+  const ogBlock = useOgTags
+    ? `
+        if ($item) {
+            $og = [
+                'og:type'        => 'article',
+                'og:title'       => $meta['title'],
+                'og:description' => $meta['description'],
+                'og:url'         => $item_url,
+            ];
+            foreach ($og as $property => $content) {
+                if ($content !== '') {
+                    $inject .= '<meta property="' . ${Name}Seo::attr($property) . '" content="' . ${Name}Seo::attr($content) . '">' . "\\n";
+                }
+            }
+        }
+`
+    : '';
 
   return `<?php
-// InstantCMS 2. SEO configuration
-
-return [
-${fieldEntries}
-];`;
-}
 
 /**
- * Generates a complete SEO system for an InstantCMS addon
- *
- * @param opts - Configuration options for the SEO system
- * @returns Object containing generated files and metadata
- *
- * @example
- * ```typescript
- * const result = scaffoldSeo({
- *   addon_name: 'blog',
- *   fields: [
- *     { field: 'title', type: 'title', value: '{item.title} | {site.name}' },
- *     { field: 'description', type: 'description', value: '{item.description}' }
- *   ],
- *   options: { use_sitemap: true, use_og_tags: true, use_schema_org: true }
- * });
- * ```
+ * Внедряет SEO-разметку в итоговый HTML страниц контроллера ${controller}.
+ * Хук render_page получает готовый HTML (см. system/core/template.php).
  */
+require_once __DIR__ . '/../seo.php';
+
+class on${Name}RenderPage extends cmsAction {
+
+    public function run($html) {
+
+        if ($this->cms_core->uri_controller !== ${quotePhp(controller)}) {
+            return $html;
+        }
+
+        // uri_params — массив параметров после действия: /<controller>/view/<id>
+        $item_id = (int) ($this->cms_core->uri_params[0] ?? 0);
+        if (!$item_id) {
+            return $html;
+        }
+
+        $item = cmsCore::getModel(${quotePhp(controller)})->getItemById(${quotePhp(`${controller}_items`)}, $item_id);
+        if (!$item) {
+            return $html;
+        }
+
+        $item_url = href_to_abs($this->cms_core->uri_controller, 'view', $item_id);
+        // Хук получает уже готовый HTML, поэтому setMeta() здесь не сработает —
+        // разметка внедряется в <head> напрямую.
+        $meta   = ${Name}Seo::getMeta($item);
+        $inject = '';
+${ogBlock}${schemaBlock}
+        if ($inject === '') {
+            return $html;
+        }
+
+        $close_head = stripos($html, '</head>');
+        if ($close_head === false) {
+            return $html;
+        }
+
+        return substr($html, 0, $close_head) . $inject . substr($html, $close_head);
+    }
+}
+`;
+}
+
+function generateSitemapHook(controller: string, Name: string): string {
+  return `<?php
+
+/**
+ * Добавляет материалы контроллера ${controller} в карту сайта.
+ * Хук вызывается из system/controllers/sitemap/hooks/cron_generate.php
+ * как cmsEventsManager::hook('sitemap_urls_list_${controller}', [$item, $urls]).
+ */
+class on${Name}SitemapUrlsList${Name} extends cmsAction {
+
+    public function run($data) {
+
+        list($item, $urls) = $data;
+
+        $model = cmsCore::getModel(${quotePhp(controller)});
+
+        $items = $model->filterEqual('is_pub', 1)->limit(1000)->get(${quotePhp(`${controller}_items`)});
+        if ($items) {
+            $urls = [];
+            foreach ($items as $entry) {
+                $urls[] = [
+                    'title'      => $entry['title'],
+                    'url'        => href_to(${quotePhp(controller)}, 'view', $entry['id']),
+                    'lastmod'    => !empty($entry['date_pub']) ? $entry['date_pub'] : null,
+                    'changefreq' => 'weekly',
+                    'priority'   => 0.6,
+                ];
+            }
+        }
+
+        return [$item, $urls];
+    }
+}
+`;
+}
+
 export function scaffoldSeo(opts: ScaffoldSeoOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_seo', opts.options, {
+    auto_generation: 'автогенерация метатегов не поддержана — задайте правила вручную',
+    fields: 'сопоставление SEO-полей не поддержано — используйте поля title/description/keywords',
+  });
+
   const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
-  const files: Record<string, string> = {};
+  const useSchemaOrg = opts.options?.use_schema_org ?? true;
+  const useOgTags = opts.options?.use_og_tags ?? true;
+  const useSitemap = opts.options?.use_sitemap ?? false;
 
-  const fields = opts.fields || [
-    { field: 'title', type: 'title', value: '{item.title} | {site.name}' },
-    { field: 'description', type: 'description', value: '{item.description}' },
-    { field: 'keywords', type: 'keywords' },
-  ];
+  const ctrl = `package/system/controllers/${lowercase}`;
 
-  const options = {
-    auto_generation: opts.options?.auto_generation ?? true,
-    use_sitemap: opts.options?.use_sitemap ?? true,
-    use_og_tags: opts.options?.use_og_tags ?? true,
-    use_schema_org: opts.options?.use_schema_org ?? false,
+  const files: Record<string, string> = {
+    [`${ctrl}/seo.php`]: generateSeoHelper(lowercase, UpperCamelCase),
+    [`${ctrl}/hooks/render_page.php`]: generateRenderPageHook(
+      lowercase,
+      UpperCamelCase,
+      useSchemaOrg,
+      useOgTags
+    ),
   };
 
-  files[`${lowercase}/seo.php`] = generateSeoConfig(lowercase, UpperCamelCase, fields, options);
-  files[`${lowercase}/seo_config.php`] = generateSeoConfigFile(fields);
-  files[`system/hooks/${lowercase}/seo.hooks.php`] = generateSeoHooks(
-    lowercase,
-    UpperCamelCase,
-    fields,
-    options
-  );
-
-  if (options.use_sitemap) {
-    files[`${lowercase}/sitemap.php`] = generateSitemap(lowercase, UpperCamelCase, fields);
-  }
-
-  if (options.use_schema_org) {
-    files[`${lowercase}/schema.php`] = generateSchemaOrg(lowercase, UpperCamelCase, fields);
+  if (useSitemap) {
+    files[`${ctrl}/hooks/sitemap_urls_list_${lowercase}.php`] = generateSitemapHook(
+      lowercase,
+      UpperCamelCase
+    );
   }
 
   return {
     addon_name: lowercase,
     files,
-    fields_count: fields.length,
-    options,
-    seo_fields: fields.map(f => ({
-      field: f.field,
-      type: f.type,
-      value: f.value,
-    })),
+    options_applied: {
+      use_schema_org: useSchemaOrg,
+      use_og_tags: useOgTags,
+      use_sitemap: useSitemap,
+    },
+    supported_options: SEO_OPTIONS,
+    scaffold_status: 'partial',
+    structure_notes: [
+      `Разметка строится классом ${UpperCamelCase}Seo (seo.php)`,
+      `Хук render_page внедряет метатеги в <head> страниц контроллера ${lowercase}`,
+      useSitemap
+        ? `Хук sitemap_urls_list_${lowercase} добавляет материалы в карту сайта`
+        : 'Интеграция с картой сайта не запрошена (use_sitemap)',
+    ],
+    limitations: [
+      'Хук определяет материал по id из URI; для ЧПУ-адресов без id нужна своя логика.',
+      'Описание формируется из поля description или первых 160 символов text.',
+      'Правила обхода и последняя модификация карты сайта настраиваются в контроллере sitemap.',
+    ],
   };
 }
 
 export const seoToolSchema = {
   name: 'scaffold_seo',
-  description: 'Генерация SEO мета-тегов, sitemap и Open Graph разметки для InstantCMS',
+  description: 'Генерация SEO-разметки InstantCMS: хук render_page и карта сайта',
   inputSchema: {
     type: 'object' as const,
     properties: {
-      addon_name: { type: 'string', description: 'Имя дополнения' },
+      addon_name: { type: 'string', description: 'Имя компонента' },
       fields: {
         type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            field: { type: 'string', description: 'Имя поля' },
-            type: {
-              type: 'string',
-              enum: ['title', 'description', 'keywords', 'og_image', 'canonical', 'robots'],
-              description: 'Тип поля',
-            },
-            value: { type: 'string', description: 'Шаблон значения' },
-          },
-        },
-        description: 'Поля SEO',
+        items: { type: 'object' },
+        description: 'Сопоставление SEO-полей (не поддержано)',
       },
       options: {
         type: 'object',
         properties: {
-          auto_generation: { type: 'boolean', description: 'Автогенерация мета-тегов' },
-          use_sitemap: { type: 'boolean', description: 'Использовать sitemap' },
-          use_og_tags: { type: 'boolean', description: 'Open Graph теги' },
-          use_schema_org: { type: 'boolean', description: 'Schema.org разметка' },
+          auto_generation: {
+            type: 'boolean',
+            description: 'Автогенерация метатегов (не поддержана)',
+          },
+          use_sitemap: { type: 'boolean', description: 'Добавлять материалы в карту сайта' },
+          use_og_tags: { type: 'boolean', description: 'Добавлять Open Graph теги' },
+          use_schema_org: { type: 'boolean', description: 'Добавлять разметку Schema.org' },
         },
       },
     },
     required: ['addon_name'],
   },
   inputExamples: [
-    {
-      addon_name: 'blog',
-      options: { auto_generation: true, use_sitemap: true, use_og_tags: true },
-    },
+    { addon_name: 'blog', options: { use_schema_org: true, use_og_tags: true, use_sitemap: true } },
   ],
 };

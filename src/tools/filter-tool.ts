@@ -60,351 +60,145 @@ interface ScaffoldFilterOptions {
 /**
  * Normalizes filter field with defaults
  */
-function normalizeField(f: FilterField): FilterField {
-  return {
-    field: f.field,
-    type: f.type,
-    label: f.label || f.field,
-    options: f.options || [],
-    placeholder: f.placeholder || '',
-  };
+/**
+ * Фильтры грида InstantCMS.
+ *
+ * Механизм проверен по 2.18.2: фильтрация бэкенд-грида задаётся в его колонках
+ * (`'filter' => 'like' | 'exact' | 'range' | 'range_date' | 'date'`) и включается
+ * опцией `'is_filter' => true`. Отдельных таблиц или хуков для фильтров в ядре нет,
+ * поэтому генератор создаёт настоящую функцию грида, которую подключает экшен.
+ */
+
+const FILTER_TYPES: Record<FilterType, string | null> = {
+  text: 'like',
+  select: 'exact',
+  multiselect: 'exact',
+  range: 'range',
+  date: 'range_date',
+  daterange: 'range_date',
+  checkbox: null,
+};
+
+function filterTitle(NAME: string, field: string): string {
+  return `LANG_${NAME}_${field.toUpperCase()}`;
 }
 
-/**
- * Generates the main filter class
- */
-function generateFilterClass(name: string, Name: string, fields: FilterField[]): string {
-  const filterInit = fields
-    .map(f => {
-      return `        '${f.field}' => [
-            'type' => '${f.type}',
-            'label' => '${f.label}',
-            'options' => [${(f.options || []).map(o => `'${o.value}' => '${o.label}'`).join(', ')}],
-        ]`;
-    })
-    .join(',\n');
-
-  const applyConditions = fields
-    .map(f => {
-      switch (f.type) {
-        case 'text':
-          return `        if (!empty($filters['${f.field}'])) {
-            $where[] = "${f.field} LIKE '%" . db::escapeLike($filters['${f.field}']) . "%'";
-        }`;
-        case 'select':
-          return `        if (!empty($filters['${f.field}'])) {
-            $where[] = "${f.field} = '" . db::escape($filters['${f.field}']) . "'";
-        }`;
-        case 'multiselect':
-          return `        if (!empty($filters['${f.field}']) && is_array($filters['${f.field}'])) {
-            $ids = array_map('intval', $filters['${f.field}']);
-            $where[] = "${f.field} IN (" . implode(',', $ids) . ")";
-        }`;
-        case 'checkbox':
-          return `        if (isset($filters['${f.field}'])) {
-            $where[] = "${f.field} = " . (int)$filters['${f.field}'];
-        }`;
-        case 'range':
-          return `        if (!empty($filters['${f.field}_from'])) {
-            $where[] = "${f.field} >= " . (float)$filters['${f.field}_from'];
-        }
-        if (!empty($filters['${f.field}_to'])) {
-            $where[] = "${f.field} <= " . (float)$filters['${f.field}_to'];
-        }`;
-        case 'date':
-          return `        if (!empty($filters['${f.field}'])) {
-            $where[] = "DATE(${f.field}) = '" . db::escape($filters['${f.field}']) . "'";
-        }`;
-        case 'daterange':
-          return `        if (!empty($filters['${f.field}_from'])) {
-            $where[] = "${f.field} >= '" . db::escape($filters['${f.field}_from']) . "'";
-        }
-        if (!empty($filters['${f.field}_to'])) {
-            $where[] = "${f.field} <= '" . db::escape($filters['${f.field}_to']) . "'";
-        }`;
-        default:
-          return '';
+function generateGridFunction(gridName: string, NAME: string, fields: FilterField[]): string {
+  const columns = fields
+    .map(field => {
+      const lines = [
+        `        '${field.field}' => [`,
+        `            'title'  => ${filterTitle(NAME, field.field)},`,
+      ];
+      const filter = FILTER_TYPES[field.type];
+      if (filter) {
+        lines.push(`            'filter' => '${filter}',`);
       }
+      lines.push('        ],');
+      return lines.join('\n');
     })
     .join('\n');
 
   return `<?php
-// InstantCMS 2. ${name}/filters.php
-
-class ${Name}Filter {
-    private static $instance = null;
-    private $filters = [];
-
-    private function __construct() {
-        $this->filters = $this->getDefaultFilters();
-    }
-
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    public function getDefaultFilters() {
-        return [
-${filterInit}
-        ];
-    }
-
-    public function apply($model, $filters = []) {
-        if (empty($filters)) {
-            return $model;
-        }
-
-        $where = [];
-${applyConditions}
-
-        if (!empty($where)) {
-            $model->where(implode(' AND ', $where));
-        }
-
-        return $model;
-    }
-
-    public function getFromRequest($request) {
-        $filters = [];
-        foreach ($this->filters as $field => $config) {
-            $value = $request->get($field);
-            if ($value !== null && $value !== '') {
-                $filters[$field] = $value;
-            }
-        }
-        return $filters;
-    }
-
-    public function validate($filters) {
-        $errors = [];
-
-        foreach ($filters as $field => $value) {
-            if (!isset($this->filters[$field])) {
-                continue;
-            }
-
-            $config = $this->filters[$field];
-
-            switch ($config['type']) {
-                case 'text':
-                    if (strlen($value) > 255) {
-                        $errors[$field] = 'Слишком длинное значение';
-                    }
-                    break;
-                case 'select':
-                    if (!isset($config['options'][$value])) {
-                        $errors[$field] = 'Недопустимое значение';
-                    }
-                    break;
-                case 'multiselect':
-                    if (!is_array($value)) {
-                        $errors[$field] = 'Ожидался массив';
-                    }
-                    break;
-                case 'range':
-                case 'daterange':
-                    if (!is_numeric($value) && !strtotime($value)) {
-                        $errors[$field] = 'Недопустимое значение';
-                    }
-                    break;
-            }
-        }
-
-        return $errors;
-    }
-}`;
-}
 
 /**
- * Generates the filter form class
+ * Грид с фильтрами.
+ * Подключается экшеном: $this->grid_name = '${gridName}';
  */
-function generateFilterForm(name: string, Name: string, fields: FilterField[]): string {
-  const formFields = fields
-    .map(f => {
-      const placeholder = f.placeholder ? `, 'placeholder' => '${f.placeholder}'` : '';
+function grid_${gridName}($controller) {
 
-      switch (f.type) {
-        case 'text':
-          return `        $form->addField('${f.field}', new fieldString('${f.label}', [${placeholder}]));`;
-        case 'select': {
-          const opts =
-            (f.options || []).length > 0
-              ? `['options' => [${(f.options || []).map(o => `'${o.value}' => '${o.label}'`).join(', ')}]]`
-              : '';
-          return `        $form->addField('${f.field}', new fieldList('${f.label}', ${opts}));`;
-        }
-        case 'multiselect': {
-          const multiOpts =
-            (f.options || []).length > 0
-              ? `['options' => [${(f.options || []).map(o => `'${o.value}' => '${o.label}'`).join(', ')}]]`
-              : '';
-          return `        $form->addField('${f.field}', new fieldList('${f.label}', ['is_multiple' => true${multiOpts ? ', ' + multiOpts : ''}]));`;
-        }
-        case 'checkbox':
-          return `        $form->addField('${f.field}', new fieldCheckbox('${f.label}'));`;
-        case 'range':
-          return `        $form->addField('${f.field}_from', new fieldNumber('${f.label} (от)'));
-        $form->addField('${f.field}_to', new fieldNumber('${f.label} (до)'));`;
-        case 'date':
-          return `        $form->addField('${f.field}', new fieldDate('${f.label}'));`;
-        case 'daterange':
-          return `        $form->addField('${f.field}_from', new fieldDate('${f.label} (от)'));
-        $form->addField('${f.field}_to', new fieldDate('${f.label} (до)'));`;
-        default:
-          return '';
-      }
+    $options = [
+        'is_sortable'   => true,
+        'is_filter'     => true,
+        'is_pagination' => true,
+        'order_by'      => 'date_pub',
+        'order_to'      => 'desc',
+    ];
+
+    $columns = [
+        'id' => [
+            'title' => 'ID',
+            'width' => 60,
+        ],
+${columns}
+    ];
+
+    return [
+        'options' => $options,
+        'columns' => $columns,
+    ];
+}
+`;
+}
+
+function generateLang(NAME: string, fields: FilterField[]): string {
+  const lines = fields
+    .map(field => {
+      const title = field.label || field.field;
+      return `define('${filterTitle(NAME, field.field)}', '${title.replace(/'/g, "\\'")}');`;
     })
     .join('\n');
 
   return `<?php
-// InstantCMS 2. ${name}/filter.form.php
+// Заголовки колонок фильтра. Перенесите константы в языковой файл контроллера.
 
-class ${Name}FilterForm {
-    public function __construct($form) {
-${formFields}
-    }
-
-    public static function create($form) {
-        return new self($form);
-    }
-}`;
+${lines}
+`;
 }
 
-/**
- * Generates hook handlers for filter integration
- */
-function generateFilterHooks(name: string, Name: string, _fields: FilterField[]): string {
-  return `<?php
-// InstantCMS 2. system/hooks/${name}/filter.hooks.php
-
-class on${Name}FilterHook {
-    public function onBeforeLoadModel($model) {
-        $request = cmsCore::getInstance()->request;
-        $filters = ${Name}Filter::getInstance()->getFromRequest($request);
-
-        if (!empty($filters)) {
-            ${Name}Filter::getInstance()->apply($model, $filters);
-
-            // Сохраняем в сессию
-            cmsUser::sessionSet('${name}_filters', $filters);
-        }
-    }
-
-    public function onBeforeRender($controller) {
-        $filters = cmsUser::sessionGet('${name}_filters', []);
-        $controller->renderTemplate('filter', [
-            'filters' => ${Name}Filter::getInstance()->getDefaultFilters(),
-            'values' => $filters,
-        ]);
-    }
-}`;
-}
-
-/**
- * Generates saved filters feature
- */
-function generateSavedFilters(name: string, Name: string, _fields: FilterField[]): string {
-  return `<?php
-// InstantCMS 2. ${name}/saved_filters.php
-
-class ${Name}SavedFilters {
-    public static function save($user_id, $name, $filters) {
-        $model = cmsModel::getInstance();
-
-        $model->insert('saved_filters', [
-            'user_id' => $user_id,
-            'name' => $name,
-            'filters' => json_encode($filters),
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
-    }
-
-    public static function load($user_id, $filter_id) {
-        $model = cmsModel::getInstance();
-        return $model->getItemById('saved_filters', $filter_id, false, function ($item) {
-            $item['filters'] = json_decode($item['filters'], true);
-            return $item;
-        });
-    }
-
-    public static function getAll($user_id) {
-        $model = cmsModel::getInstance();
-        return $model->get('saved_filters', function ($item) {
-            $item['filters'] = json_decode($item['filters'], true);
-            return $item;
-        }, [
-            'user_id' => $user_id,
-        ]);
-    }
-
-    public static function delete($user_id, $filter_id) {
-        $model = cmsModel::getInstance();
-        return $model->delete('saved_filters', $filter_id, ['user_id' => $user_id]);
-    }
-}`;
-}
-
-/**
- * Generates a complete filtering system for an InstantCMS addon
- *
- * @param opts - Configuration options for the filter system
- * @returns Object containing generated files and metadata
- *
- * @example
- * ```typescript
- * const result = scaffoldFilter({
- *   addon_name: 'catalog',
- *   fields: [
- *     { field: 'price', type: 'range', label: 'Цена' },
- *     { field: 'category_id', type: 'select', label: 'Категория' }
- *   ],
- *   options: { use_ajax: true, save_filters: true }
- * });
- * ```
- */
 export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
   rejectUnsupportedOptions('scaffold_filter', opts.options, {
-    use_ajax: 'AJAX-фильтрация не генерируется — доработайте JS контроллера',
-    use_url_params: 'разбор параметров из URL не генерируется',
+    use_ajax: 'грид ICMS2 фильтрует без перезагрузки сам — отдельная AJAX-реализация не нужна',
+    use_url_params: 'параметры фильтра грид разбирает из URL автоматически',
+    save_filters: 'сохранение пользовательских фильтров в ICMS2 не поддержано',
   });
 
-  const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
-  const files: Record<string, string> = {};
-
-  const filterFields = opts.fields.map(normalizeField);
-
-  files[`${lowercase}/filters.php`] = generateFilterClass(lowercase, UpperCamelCase, filterFields);
-  files[`${lowercase}/filter.form.php`] = generateFilterForm(
-    lowercase,
-    UpperCamelCase,
-    filterFields
-  );
-  files[`system/hooks/${lowercase}/filter.hooks.php`] = generateFilterHooks(
-    lowercase,
-    UpperCamelCase,
-    filterFields
-  );
-
-  if (opts.options?.save_filters) {
-    files[`${lowercase}/saved_filters.php`] = generateSavedFilters(
-      lowercase,
-      UpperCamelCase,
-      filterFields
-    );
+  if (!opts.fields?.length) {
+    throw new Error('scaffold_filter: нужен хотя бы один фильтруемый столбец');
   }
+
+  for (const field of opts.fields) {
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(field.field)) {
+      throw new Error(`scaffold_filter: недопустимое имя поля ${field.field}`);
+    }
+  }
+
+  const { lowercase } = normalizeAddonName(opts.addon_name);
+  const NAME = lowercase.toUpperCase();
+  const gridName = lowercase;
+
+  const filterFields = opts.fields.map(field => ({
+    field: field.field,
+    type: field.type,
+    filter: FILTER_TYPES[field.type],
+  }));
+
+  const files: Record<string, string> = {
+    [`package/system/controllers/${lowercase}/backend/grids/grid_${gridName}.php`]:
+      generateGridFunction(gridName, NAME, opts.fields),
+    [`package/system/languages/ru/controllers/${lowercase}/${lowercase}.php`]: generateLang(
+      NAME,
+      opts.fields
+    ),
+  };
 
   return {
     addon_name: lowercase,
-    filters_count: filterFields.length,
-    options: opts.options || {},
+    grid_name: gridName,
+    function_name: `grid_${gridName}`,
+    filter_fields: filterFields,
+    scaffold_status: 'partial',
     files,
-    filters: filterFields.map(f => ({
-      field: f.field,
-      type: f.type,
-      label: f.label,
-    })),
+    structure_notes: [
+      `Функция грида: grid_${gridName}($controller) в backend/grids/grid_${gridName}.php`,
+      `Экшен подключает грид через $this->grid_name = '${gridName}';`,
+      `Заголовки колонок: константы LANG_${NAME}_* в языковом файле контроллера`,
+      'Колонки без поддержанного типа фильтрации (checkbox) получают обычный столбец',
+    ],
+    limitations: [
+      'Тип фильтра checkbox не поддержан — используйте колонку-флаг (flag) без фильтра.',
+      'Языковой файл может перезаписать существующий — перенесите константы в свой файл.',
+      'Грид показывает только указанные столбцы: объедините их с остальными вручную.',
+    ],
   };
 }
