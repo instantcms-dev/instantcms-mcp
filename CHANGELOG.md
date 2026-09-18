@@ -11,6 +11,8 @@
   - `use_ajax`, `use_url_params`, `save_filters`, `auto_generation`, `fields` and `withCategories` are rejected with explanations instead of being ignored.
 - Added a generator verification matrix to the README listing which generators are confirmed at runtime and which are covered only statically.
 
+- **Reworked `scaffold_cron` to the real scheduler mechanism.** ICMS2 has no per-controller `cron.php`: tasks live in `cms_scheduler_tasks` and the site's `cron.php` runs them with `$controller->runHook('cron_<hook>')`. The generator now emits one hook per task (`hooks/cron_<name>.php`, class `on<Controller>Cron<Name> extends cmsAction`) and registers the tasks in `install_package()` through `cmsCore::getModel('admin')->addSchedulerTask()`. The previous output defined a wrong bootstrap path (`system/controllers/core/bootstrap.php`), used `cmsConfig` before the core was loaded, and called undefined task functions. Cron schedules are translated to the interval ICMS2 stores (minutes). `use_lock_file` and `log_execution` are rejected: the core already locks tasks through `consistent_run`. Verified live: a registered task runs through the site's `cron.php`, updates `date_last_run` and stays enabled. `npm run verify:generated` gained a `cron` scenario.
+
 ## 1.3.0
 
 **Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.

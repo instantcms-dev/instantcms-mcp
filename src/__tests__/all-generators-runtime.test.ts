@@ -308,7 +308,6 @@ const cases: Case[] = [
         scaffoldCron({
           addon_name: 'gencron',
           tasks: [{ name: 'cleanup', schedule: { minute: '0' }, action: 'taskCleanup' }],
-          options: { use_lock_file: true, log_execution: true },
         })
       ),
   },

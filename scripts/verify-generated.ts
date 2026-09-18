@@ -23,6 +23,7 @@ import * as path from 'node:path';
 import { scaffoldAddon } from '../src/tools/scaffold-tool.js';
 import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
+import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
 
@@ -64,6 +65,8 @@ interface Artifact {
   sql: string[];
   /** Строка в cms_controllers, если контроллер нужно зарегистрировать. */
   controller?: { name: string; title: string; isBackend: number };
+  /** Задача планировщика, если создан cron-хук. */
+  schedulerTask?: { hook: string; period: number; title: string };
   /** Строка в cms_widgets, если создан виджет. */
   widget?: { controller: string; name: string; title: string };
   /** Опциональная привязка виджета к позиции. */
@@ -229,6 +232,42 @@ function buildArtifact(options: Options): Artifact {
         ],
       };
     }
+    case 'cron': {
+      // Планировщик вызывает runHook() у контроллера — значит, контроллер нужен.
+      const crud = scaffoldCrud({
+        addon_name: options.name,
+        fields: [{ name: 'description', type: 'text', title: 'Описание' }],
+        options: { theme: options.theme },
+      }) as { files: Record<string, string> };
+      put(crud.files);
+
+      const result = scaffoldCron({
+        addon_name: options.name,
+        tasks: [
+          {
+            name: 'cleanup',
+            schedule: { minute: '0', hour: '*' },
+            description: 'Очистка',
+            action: 'taskCleanup',
+          },
+        ],
+      }) as { files: Record<string, string> };
+      for (const [rawPath, content] of Object.entries(result.files)) {
+        if (rawPath.startsWith('[pkg] ')) {
+          files[`.verify/${rawPath.replace('[pkg] ', '')}`] = content;
+          continue;
+        }
+        files[rawPath.replace(/^package\//, '')] = content;
+      }
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify cron', isBackend: 1 },
+        schedulerTask: { hook: 'cleanup', period: 60, title: 'Очистка' },
+      };
+    }
     case 'widget': {
       // Виджету нужен контроллер с моделью — иначе cmsCore::getModel() не найдёт класс.
       const crud = scaffoldCrud({
@@ -287,6 +326,13 @@ function registerRows(options: Options, artifact: Artifact): void {
       options,
       `INSERT INTO cms_controllers (title,name,slug,is_enabled,author,url,version,is_backend)
        VALUES ('${artifact.controller.title}','${artifact.controller.name}',NULL,1,'verify','','1.0.0',${artifact.controller.isBackend});`
+    );
+  }
+  if (artifact.schedulerTask) {
+    mysql(
+      options,
+      `INSERT INTO cms_events (event,listener,ordering,is_enabled)
+       VALUES ('cron_${artifact.schedulerTask.hook}','${artifact.controller?.name}',1,1);`
     );
   }
   if (artifact.widget) {
@@ -379,6 +425,13 @@ function cleanup(options: Options, artifact: Artifact, deployed: Deployed): void
       options,
       `DELETE FROM cms_widgets WHERE controller='${artifact.widget.controller}' AND name='${artifact.widget.name}';`
     );
+  }
+  if (artifact.schedulerTask) {
+    mysql(
+      options,
+      `DELETE FROM cms_scheduler_tasks WHERE controller='${artifact.controller?.name}';`
+    );
+    mysql(options, `DELETE FROM cms_events WHERE listener='${artifact.controller?.name}';`);
   }
   for (const table of artifact.tables) {
     mysql(options, `DROP TABLE IF EXISTS \`${table}\`;`);
@@ -478,6 +531,55 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     add(`GET /${name}/view/99999`, 404, missing.status);
   }
 
+  if (options.scenario === 'cron') {
+    const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
+
+    // Регистрируем задачу так же, как это делает сгенерированный install_package().
+    const registerScript = `<?php
+if (PHP_SAPI !== 'cli') { die('404'); }
+require_once __DIR__ . '/bootstrap.php';
+chdir(PATH);
+$core->initLanguage();
+cmsTemplate::getInstance();
+$id = cmsCore::getModel('admin')->addSchedulerTask([
+    'title'      => '${artifact.schedulerTask?.title ?? hookName}',
+    'controller' => '${name}',
+    'hook'       => '${hookName}',
+    'period'     => ${artifact.schedulerTask?.period ?? 60},
+    'is_active'  => 1,
+]);
+echo $id;
+`;
+    const scriptPath = path.join(options.site, '_verify_cron.php');
+    fs.writeFileSync(scriptPath, registerScript);
+
+    let taskId = 0;
+    try {
+      const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
+      taskId = Number((executed.stdout || '').trim()) || 0;
+    } finally {
+      fs.rmSync(scriptPath, { force: true });
+    }
+    add('задача планировщика зарегистрирована', 1, taskId > 0 ? 1 : 0);
+
+    if (taskId) {
+      const cron = spawnSync(
+        'php',
+        [path.join(options.site, 'cron.php'), 'verify', String(taskId)],
+        {
+          encoding: 'utf8',
+        }
+      );
+      add('cron.php выполнился без ошибок', 0, cron.status ?? 1);
+
+      const row = mysql(
+        options,
+        `SELECT is_active, date_last_run IS NOT NULL AS ran FROM cms_scheduler_tasks WHERE id=${taskId};`
+      );
+      add('задача не отключена после запуска', 1, /\t1\t1|\(1,\s*1\)|1\s+1/.test(row) ? 1 : 0);
+    }
+  }
+
   if (options.scenario === 'widget') {
     const home = await httpStatus(options, `${base}/`);
     add('GET /', 200, home.status);
@@ -492,7 +594,7 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget');
+    die('укажите --scenario crud|api|addon|widget|cron');
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {
