@@ -4,6 +4,18 @@
  */
 
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
+import { hookClassName } from '../utils/hook-class.js';
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
+
+/**
+ * Пофайловые хуки кэша: ядро грузит system/controllers/<name>/hooks/<event>.php
+ * и вызывает run($data). События совпадают с теми, что эмитит scaffold_crud.
+ */
+const CACHE_HOOK_EVENTS: Array<{ event: string; comment: string }> = [
+  { event: 'after_add', comment: 'добавление материала' },
+  { event: 'after_update', comment: 'сохранение материала' },
+  { event: 'after_delete', comment: 'удаление материала' },
+];
 
 /**
  * Options for cache generation
@@ -28,9 +40,13 @@ interface ScaffoldCacheOptions {
  * Generates cache class
  */
 function generateCacheClass(name: string, Name: string, options: Record<string, unknown>): string {
-  return `<?php
-// InstantCMS 2. ${name}/cache.php
+  // Драйвер кэша задаётся в конфиге сайта (cache_method), cmsCache::getInstance()
+  // аргументов не принимает (проверено по 2.18.2: system/core/cache.php).
+  const tagsRequire = options.use_tags ? `require_once __DIR__ . '/cache.tags.php';\n` : '';
 
+  return `<?php
+// InstantCMS 2. system/controllers/${name}/cache.php
+${tagsRequire}
 class ${Name}Cache {
     private static $instance = null;
     private $cache = null;
@@ -49,13 +65,7 @@ class ${Name}Cache {
     }
 
     private function initCache() {
-        if (${options.use_redis}) {
-            $this->cache = cmsCache::getInstance('redis');
-        } elseif (${options.use_memcached}) {
-            $this->cache = cmsCache::getInstance('memcached');
-        } else {
-            $this->cache = cmsCache::getInstance();
-        }
+        $this->cache = cmsCache::getInstance();
     }
 
     public function get($key, $callback = null, $ttl = null) {
@@ -123,7 +133,7 @@ class ${Name}Cache {
         $this->delete('list_page_1');
 
         if (${options.use_tags}) {
-            $this->deleteTag('item:' . $item_id);
+            ${Name}CacheTags::getInstance()->invalidateTag('item:' . $item_id);
         }
     }
 
@@ -132,7 +142,7 @@ class ${Name}Cache {
         $this->delete('list_all');
 
         if (${options.use_tags}) {
-            $this->deleteTag('list');
+            ${Name}CacheTags::getInstance()->invalidateTag('list');
         }
     }
 
@@ -266,56 +276,53 @@ class ${Name}CacheTags {
 /**
  * Generates cache hook handlers
  */
-function generateCacheHooks(name: string, Name: string, options: Record<string, unknown>): string {
-  return `<?php
-// InstantCMS 2. system/hooks/${name}/cache.hooks.php
+/**
+ * Пофайловые хуки кэша.
+ *
+ * ICMS2 не знает каталога `system/hooks/` и грузит хуки только из
+ * `system/controllers/<listener>/hooks/<event>.php`, по одному событию на файл,
+ * с классом `on<Listener><Event>` и методом `run($data)`
+ * (system/core/controller.php, runExternalHook).
+ */
+function generateCacheHookFiles(
+  name: string,
+  Name: string,
+  options: Record<string, unknown>
+): Record<string, string> {
+  const files: Record<string, string> = {};
 
-class on${Name}CacheHook {
-    public function onAfterSave($item) {
+  for (const { event, comment } of CACHE_HOOK_EVENTS) {
+    const fullEvent = `${name}_${event}`;
+    const className = hookClassName(name, fullEvent);
+    const tagsBlock = options.use_tags
+      ? `
+        ${Name}CacheTags::getInstance()->invalidateTag('item:' . $item['id']);
+        ${Name}CacheTags::getInstance()->invalidateTag('list');
+`
+      : '';
+
+    files[`package/system/controllers/${name}/hooks/${fullEvent}.php`] = `<?php
+
+/**
+ * Инвалидация кэша при событии ${fullEvent} (${comment}).
+ * Хук вызывается ядром: cmsEventsManager::hook('${fullEvent}', $item).
+ */
+require_once __DIR__ . '/../cache.php';
+
+class ${className} extends cmsAction {
+
+    public function run($item) {
+
         ${Name}Cache::getInstance()->invalidateItem($item['id']);
         ${Name}Cache::getInstance()->invalidateList();
-
-        if (${options.use_tags}) {
-            ${Name}CacheTags::getInstance()->invalidateTag('item:' . $item['id']);
-            ${Name}CacheTags::getInstance()->invalidateTag('list');
-        }
+${tagsBlock}
+        return $item;
     }
 
-    public function onAfterDelete($item) {
-        ${Name}Cache::getInstance()->invalidateItem($item['id']);
-        ${Name}Cache::getInstance()->invalidateList();
-
-        if (${options.use_tags}) {
-            ${Name}CacheTags::getInstance()->invalidateTag('item:' . $item['id']);
-            ${Name}CacheTags::getInstance()->invalidateTag('list');
-        }
-    }
-
-    public function onAfterPublish($item) {
-        ${Name}Cache::getInstance()->invalidateItem($item['id']);
-        ${Name}Cache::getInstance()->invalidateList();
-    }
-
-    public function onAfterUnpublish($item) {
-        ${Name}Cache::getInstance()->invalidateItem($item['id']);
-        ${Name}Cache::getInstance()->invalidateList();
-    }
-
-    public function onAfterBulkUpdate($ids) {
-        foreach ($ids as $id) {
-            ${Name}Cache::getInstance()->invalidateItem($id);
-        }
-        ${Name}Cache::getInstance()->invalidateList();
-    }
-
-    public function onClearCache() {
-        ${Name}Cache::getInstance()->clear();
-
-        if (${options.use_tags}) {
-            ${Name}CacheTags::getInstance()->flushAll();
-        }
-    }
 }`;
+  }
+
+  return files;
 }
 
 /**
@@ -333,32 +340,54 @@ class on${Name}CacheHook {
  * ```
  */
 export function scaffoldCache(opts: ScaffoldCacheOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_cache', opts.options, {
+    use_memcached:
+      'драйвер кэша задаётся в настройках сайта (cache_method); cmsCache::getInstance() аргументов не принимает',
+    use_redis:
+      'драйвер кэша задаётся в настройках сайта (cache_method); cmsCache::getInstance() аргументов не принимает',
+  });
+
   const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
+  const ctrl = `package/system/controllers/${lowercase}`;
   const files: Record<string, string> = {};
 
   const options = {
-    use_memcached: opts.options?.use_memcached ?? false,
-    use_redis: opts.options?.use_redis ?? false,
     default_ttl: opts.options?.default_ttl ?? 3600,
     use_tags: opts.options?.use_tags ?? true,
   };
 
-  files[`${lowercase}/cache.php`] = generateCacheClass(lowercase, UpperCamelCase, options);
+  files[`${ctrl}/cache.php`] = generateCacheClass(lowercase, UpperCamelCase, options);
 
   if (options.use_tags) {
-    files[`${lowercase}/cache.tags.php`] = generateCacheTags(lowercase, UpperCamelCase, options);
+    files[`${ctrl}/cache.tags.php`] = generateCacheTags(lowercase, UpperCamelCase, options);
   }
 
-  files[`system/hooks/${lowercase}/cache.hooks.php`] = generateCacheHooks(
-    lowercase,
-    UpperCamelCase,
-    options
-  );
+  Object.assign(files, generateCacheHookFiles(lowercase, UpperCamelCase, options));
+
+  const hookEvents = CACHE_HOOK_EVENTS.map(({ event }) => `${lowercase}_${event}`);
 
   return {
     addon_name: lowercase,
     files,
     options,
+    hook_events: hookEvents,
+    manifest_xml: `<hooks>
+${hookEvents.map(event => `    <hook controller="${lowercase}" name="${event}" />`).join('\n')}
+</hooks>`,
+    supported_options: ['default_ttl', 'use_tags'],
+    options_applied: { default_ttl: options.default_ttl, use_tags: options.use_tags },
+    structure_notes: [
+      `Класс кэша: ${UpperCamelCase}Cache в system/controllers/${lowercase}/cache.php`,
+      `Хуки кэша: system/controllers/${lowercase}/hooks/${lowercase}_after_{add,update,delete}.php`,
+      'Драйвер кэша берётся из настроек сайта (cache_method), а не из опций генератора',
+    ],
+    limitations: [
+      'События хуков совпадают с scaffold_crud (<controller>_after_add/_update/_delete); для другого контроллера переименуйте хуки и зарегистрируйте их в cms_events.',
+      'Хуки начинают работать после регистрации в cms_events (manifest.xml дополнения) — иначе ядро их не вызовет.',
+      options.use_tags
+        ? 'Тег-инвалидация работает через отдельный индекс в кэше: при большом числе ключей проверяйте стоимость flushByTag.'
+        : 'Тег-инвалидация отключена (use_tags: false).',
+    ],
   };
 }
 

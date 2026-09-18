@@ -359,10 +359,7 @@ const cases: Case[] = [
   },
   {
     name: 'scaffold_cache',
-    run: () =>
-      asFiles(
-        scaffoldCache({ addon_name: 'gencache', options: { use_tags: true, use_redis: true } })
-      ),
+    run: () => asFiles(scaffoldCache({ addon_name: 'gencache', options: { use_tags: true } })),
   },
   { name: 'scaffold_webhook', run: () => asFiles(scaffoldWebhookSafe()) },
   {
