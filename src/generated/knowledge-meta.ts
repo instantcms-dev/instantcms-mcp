@@ -105,12 +105,20 @@ export const knowledgeCatalog = {
       "confidence": "verified",
       "provenance": "generated",
       "verified_at": "2026-08-26"
+    },
+    {
+      "id": "generated-version-api",
+      "runtime_file": "src/generated/version-api.ts",
+      "domain": "versions",
+      "confidence": "verified",
+      "provenance": "generated",
+      "verified_at": "2026-09-18"
     }
   ]
 } as const;
 export const knowledgeSummary = {
-  "total": 12,
-  "verified": 9,
+  "total": 13,
+  "verified": 10,
   "inferred": 3,
   "legacy": 0,
   "inferred_domains": [

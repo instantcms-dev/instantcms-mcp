@@ -12,6 +12,7 @@ import { registerExtensionTools } from './registry/extension-tools.js';
 import { registerResources } from './registry/resources.js';
 import { registerProjectTools } from './registry/project-tools.js';
 import { registerTemplateDevelopmentTools } from './registry/template-development-tools.js';
+import { trackRegisteredTools } from './utils/tool-registry.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -19,8 +20,9 @@ export function createServer(): McpServer {
     version: getServerVersion(),
     description: 'MCP сервер для разработки дополнений и шаблонов InstantCMS 2',
   });
+  const getToolsCount = trackRegisteredTools(server);
 
-  registerMetaTools(server);
+  registerMetaTools(server, getToolsCount);
   registerGeneratorTools(server);
   registerKnowledgeTools(server);
   registerDatabaseTools(server);

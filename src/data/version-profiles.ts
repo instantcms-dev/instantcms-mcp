@@ -1,3 +1,5 @@
+import { compareVersionApi } from '../utils/version-api.js';
+
 export interface InstantCmsVersionProfile {
   version: string;
   php_min: string;
@@ -35,9 +37,17 @@ export const instantCmsVersionProfiles: InstantCmsVersionProfile[] = [
 export function compareVersionProfiles(from: string, to: string) {
   const fromProfile = instantCmsVersionProfiles.find(profile => profile.version === from);
   const toProfile = instantCmsVersionProfiles.find(profile => profile.version === to);
+  const versionApi = compareVersionApi(from, to);
   return {
     from: fromProfile ?? null,
     to: toProfile ?? null,
+    version_api: versionApi
+      ? {
+          provenance: versionApi.provenance,
+          hooks: versionApi.hooks,
+          methods: versionApi.methods,
+        }
+      : null,
     warnings:
       !fromProfile || !toProfile
         ? ['Одна из версий не имеет документированного профиля']

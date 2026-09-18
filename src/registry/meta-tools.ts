@@ -93,7 +93,7 @@ const toolCatalog = [
   },
 ];
 
-export function registerMetaTools(server: McpServer): void {
+export function registerMetaTools(server: McpServer, getToolsCount: () => number): void {
   defineTool(
     server,
     'get_server_capabilities',
@@ -101,7 +101,7 @@ export function registerMetaTools(server: McpServer): void {
     {},
     () => ({
       server_version: getServerVersion(),
-      tools_count: 100,
+      tools_count: getToolsCount(),
       instantcms_profiles: instantCmsVersionProfiles,
       knowledge: {
         hooks: hooks.length,

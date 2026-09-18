@@ -235,6 +235,22 @@ git push && git push --tags
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
+- RU: Для небольших ответов читайте `instantcms://hooks/page/first` (50 записей) или `instantcms://components/page/first` (10 записей). Используйте `page.next_cursor` в конце URI следующей страницы. Прежние полные URI остаются доступны.
+- EN: For smaller responses, read `instantcms://hooks/page/first` (50 entries) or `instantcms://components/page/first` (10 entries). Append `page.next_cursor` to the page URI for the next page. The existing full URIs remain available.
+- 中文：如需较小响应，请读取 `instantcms://hooks/page/first`（50 条）或 `instantcms://components/page/first`（10 条）。将 `page.next_cursor` 放到下一页 URI 末尾。原有完整 URI 仍可使用。
+
+### Языки инструкций / Instruction languages / 说明语言
+
+- RU: Новые и изменённые инструкции проекта публикуются на русском, английском и упрощённом китайском. Быстрый старт доступен как MCP resource `instantcms://quickstart`.
+- EN: New and updated project instructions are published in Russian, English, and Simplified Chinese. The quickstart is available as the MCP resource `instantcms://quickstart`.
+- 中文：新增和更新的项目说明以俄语、英语及简体中文发布。快速入门可通过 MCP 资源 `instantcms://quickstart` 获取。
+
+### Сравнение версий API / API version comparison / API 版本比较
+
+- RU: `compare_instantcms_versions` и `plan_instantcms_upgrade` используют снимки хуков и публичных методов для профилей 2.16, 2.17, 2.18.1 и 2.18.2. Ответ содержит теги и SHA исходников. Для неизвестной версии сравнение по исходникам недоступно.
+- EN: `compare_instantcms_versions` and `plan_instantcms_upgrade` use hook and public method snapshots for profiles 2.16, 2.17, 2.18.1, and 2.18.2. Responses include source tags and SHAs. Source-backed comparison is unavailable for unknown versions.
+- 中文：`compare_instantcms_versions` 和 `plan_instantcms_upgrade` 使用 2.16、2.17、2.18.1、2.18.2 的钩子与公开方法快照。响应包含源码标签和 SHA。未知版本无法进行基于源码的比较。
+
 ### Группы инструментов
 
 | Registry                     | Количество | Что входит                                                                       |

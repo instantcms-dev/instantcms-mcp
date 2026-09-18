@@ -1,5 +1,11 @@
 # Instructions for coding agents
 
+## Language policy / Языковая политика / 语言规则
+
+- RU: Новые и изменённые инструкции и сообщения коммитов пишите на русском, английском и упрощённом китайском. Имена API, пути и код не переводите.
+- EN: Write new and changed instructions and commit messages in Russian, English, and Simplified Chinese. Keep API names, paths, and code unchanged.
+- 中文：新增或修改的说明和提交信息须使用俄语、英语及简体中文。API 名称、路径和代码保持原样。
+
 This repository implements an MCP server for InstantCMS 2. Before changing generators, validation, or knowledge data, review the relevant sources in `src/` and the provenance layer in `knowledge/`.
 
 ## Required checks

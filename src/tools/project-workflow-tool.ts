@@ -4,6 +4,7 @@ import { compareVersionProfiles } from '../data/version-profiles.js';
 import { components } from '../data/components.js';
 import { hooks } from '../data/hooks.js';
 import { createProjectPatch } from './project-patch-tool.js';
+import { compareVersionApi } from '../utils/version-api.js';
 
 export interface ProjectDiagnostic extends ArtifactDiagnostic {
   suggestion?: string;
@@ -183,34 +184,64 @@ export function explainInstantCmsProject(files: Record<string, string>) {
 
 export function planInstantCmsUpgrade(files: Record<string, string>, from: string, to: string) {
   const comparison = compareVersionProfiles(from, to);
+  const versionApi = compareVersionApi(from, to);
   const audit = auditInstantCmsProject(files);
   const code = Object.values(files).join('\n');
   const referencedHooks = [
     ...new Set([...code.matchAll(/['"]([a-z][a-z0-9_]+)['"]/g)].map(m => m[1])),
   ]
     .filter(name => name.includes('_'))
-    .filter(name => hooks.some(hook => hook.name === name));
+    .filter(name =>
+      versionApi
+        ? versionApi.source_hooks.has(name) || versionApi.target_hooks.has(name)
+        : hooks.some(hook => hook.name === name)
+    );
   const referencedMethods = [
     ...new Set([...code.matchAll(/->([a-zA-Z_]\w*)\s*\(/g)].map(m => m[1])),
   ];
   const knownMethods = new Set(
     components.flatMap(component => component.methods.map(method => method.name))
   );
-  const unknownMethods = referencedMethods.filter(method => !knownMethods.has(method));
+  const unknownMethods = referencedMethods.filter(method =>
+    versionApi ? !versionApi.target_method_names.has(method) : !knownMethods.has(method)
+  );
+  const referencedHookNames = new Set(referencedHooks);
+  const referencedMethodNames = new Set(referencedMethods);
   return {
     from,
     to,
     comparison,
+    version_api: versionApi
+      ? {
+          provenance: versionApi.provenance,
+          hook_changes_in_project: {
+            added: versionApi.hooks.added.filter(item => referencedHookNames.has(item.name)),
+            removed: versionApi.hooks.removed.filter(item => referencedHookNames.has(item.name)),
+          },
+          method_changes_in_project: {
+            added: versionApi.methods.added.filter(item => referencedMethodNames.has(item.name)),
+            removed: versionApi.methods.removed.filter(item =>
+              referencedMethodNames.has(item.name)
+            ),
+          },
+          referenced_hooks_missing_in_target: referencedHooks.filter(
+            name => !versionApi.target_hooks.has(name)
+          ),
+          referenced_method_names_missing_in_target: referencedMethods.filter(
+            name => !versionApi.target_method_names.has(name)
+          ),
+        }
+      : null,
     audit,
     compatibility: {
       referenced_hooks: referencedHooks,
       unknown_method_candidates: unknownMethods,
     },
     checklist: [
-      'Повторно проверьте manifest.xml и minimum supported version.',
-      'Запустите audit_instantcms_project после изменений.',
-      'Проверьте install/uninstall на чистой целевой InstantCMS.',
-      'Перепроверьте hooks и методы с unknown_method_candidates вручную.',
+      'Проверьте manifest.xml и минимальную версию / Check manifest.xml and minimum version / 检查 manifest.xml 和最低版本。',
+      'Запустите audit_instantcms_project / Run audit_instantcms_project / 运行 audit_instantcms_project。',
+      'Проверьте установку на чистой целевой версии / Test installation on a clean target version / 在全新目标版本上测试安装。',
+      'Проверьте отмеченные хуки и методы вручную / Review flagged hooks and methods manually / 人工检查标记的钩子和方法。',
     ],
   };
 }

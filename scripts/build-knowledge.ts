@@ -33,6 +33,7 @@ const schema = z.object({
           'traits',
           'fields',
           'core',
+          'versions',
         ]),
         confidence: z.enum(['verified', 'inferred', 'legacy']),
         provenance: z.enum(['generated', 'curated']),
