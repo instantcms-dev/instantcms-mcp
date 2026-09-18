@@ -1,3 +1,5 @@
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
+
 interface FormField {
   name: string;
   type: string;
@@ -19,6 +21,10 @@ interface ScaffoldFormOptions {
 }
 
 export function scaffoldForm(opts: ScaffoldFormOptions): object {
+  rejectUnsupportedOptions('scaffold_form', opts.options, {
+    generate_rules: 'автогенерация правил валидации не поддержана — задайте rules у поля вручную',
+  });
+
   const name = opts.addon_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
   const Name = name.split('_').map(capitalize).join('');
   const formName = opts.form_name || 'item';

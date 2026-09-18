@@ -1,4 +1,5 @@
 import { phpValue, quotePhp } from '../utils/serialization.js';
+import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
 
 interface CrdField {
   name: string;
@@ -37,6 +38,16 @@ const SYSTEM_FIELDS = new Set(['id', 'title', 'user_id', 'date_pub', 'is_pub', '
  * cmsBackend::getForm() с префиксом backend/.
  */
 export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
+  rejectUnsupportedOptions('scaffold_crud', opts.options, {
+    use_tags: 'теги контента не генерируются — добавьте таблицу и хук вручную',
+    use_comments: 'подключите контроллер comments через хук content_after_add_approve',
+    use_rating: 'рейтинг настраивается на уровне контент-типа, генератор его не создаёт',
+    use_moderation: 'модерация требует отдельного экшена и прав — не генерируется',
+    use_seo: 'SEO-поля и метатеги добавляются вручную',
+    use_content: 'регистрация типа контента не автоматизирована',
+    list_template: 'вариант шаблона списка не генерируется — правьте index.tpl.php вручную',
+  });
+
   const name = opts.addon_name;
   if (!/^[a-z][a-z0-9_]{1,63}$/.test(name)) throw new Error('Invalid addon name');
   if (opts.fields.length === 0) throw new Error('At least one field is required');
@@ -128,6 +139,8 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
       'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     options: opts.options || {},
+    supported_options: ['theme', 'use_category'],
+    options_applied: appliedOptions(opts.options, ['theme', 'use_category']),
   };
 }
 
