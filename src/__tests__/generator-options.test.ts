@@ -1,5 +1,6 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
 import { scaffoldApi } from '../tools/api-tool.js';
+import { scaffoldHook } from '../tools/addon-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldFilter } from '../tools/filter-tool.js';
 import { scaffoldForm } from '../tools/form-tool.js';
@@ -263,6 +264,20 @@ describe('unsupported generator options', () => {
     expect(indexOf('table')).toContain('<table');
     expect(indexOf('list')).toContain('list-group-item');
     expect(indexOf('grid')).toContain('card h-100');
+  });
+
+  test('scaffoldHook строит имя класса хука как ядро (CamelCase для подчёркиваний)', () => {
+    const underscored = scaffoldHook({
+      addon_name: 'ci_core_artifacts',
+      hook_name: 'render_page',
+    }) as { class_name: string; code: string };
+    expect(underscored.class_name).toBe('onCiCoreArtifactsRenderPage');
+    expect(underscored.code).toContain('class onCiCoreArtifactsRenderPage extends cmsAction');
+
+    const plain = scaffoldHook({ addon_name: 'blog', hook_name: 'user_login' }) as {
+      class_name: string;
+    };
+    expect(plain.class_name).toBe('onBlogUserLogin');
   });
 
   test('rejectUnsupportedOptions игнорирует undefined, null и false', () => {

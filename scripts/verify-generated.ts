@@ -592,7 +592,7 @@ echo count($none) . '|' . count($titleRows) . '|' . count($priceRows);`,
 
       const migration = scaffoldMigration({
         addon_name: options.name,
-        table_name: `${options.name}_items`,
+        table_name: `${options.name}_migrated`,
         fields: [
           { name: 'id', type: 'int(10) unsigned', nullable: false, extra: 'AUTO_INCREMENT' },
           { name: 'title', type: 'varchar(255)', nullable: false, default: '' },
@@ -640,7 +640,7 @@ echo function_exists('install_package') && install_package([]) === true ? 'ok' :
           {
             note: 'SQL scaffold_migration создал таблицу',
             script: `$model = cmsCore::getModel('${options.name}');
-echo (int) $model->getCount('${options.name}_items') === 0 ? 'ok' : 'fail';`,
+echo (int) $model->getCount('${options.name}_migrated') === 0 ? 'ok' : 'fail';`,
             expect: output => output.trim() === 'ok',
           },
           {
