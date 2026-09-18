@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The published package no longer ships the test suite.** `npm run build` compiled `src/__tests__` into `dist/__tests__`, so 30 compiled test files travelled in the npm tarball (123 files, 512 kB). The build now uses `tsconfig.build.json`, which excludes tests while `npm run typecheck` keeps checking them, and `files` also excludes `dist/__tests__` defensively. The tarball is down to 93 files and 393 kB, and the built server was smoke-tested over stdio (initialize + `tools/list` returning 100 tools). The README documents the release flow and the `next` dist-tag for prereleases.
+
 ## 1.4.0
 
 ### Breaking changes

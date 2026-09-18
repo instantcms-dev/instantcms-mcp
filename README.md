@@ -97,6 +97,19 @@ npm run verify:generated -- \
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
 
+## Выпуск релиза
+
+Релиз запускается тегом, совпадающим с версией в `package.json`:
+
+```bash
+npm version minor          # или patch / major
+git push && git push --tags
+```
+
+`release.yml` проверит, что тег, `package.json` и `package-lock.json` согласованы, прогонит проверки, соберёт ZIP для GitHub Release и опубликует пакет в npm через Trusted Publishing (OIDC). Версия с дефисом (например `1.5.0-beta.1`) публикуется под dist-tag `next`, остальные — под `latest`.
+
+Публикуемый пакет содержит только `dist` без тестов, `README.md` и `LICENSE`: сборка идёт по `tsconfig.build.json`, а `npm run typecheck` проверяет весь код, включая тесты.
+
 ## Безопасность работы с базой данных
 
 Инструменты `maria_*` работают с чужой базой, поэтому по умолчанию разрешено только чтение:
