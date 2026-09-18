@@ -21,6 +21,8 @@
 
 - **Database tools are read-only by default.** The `maria_*` tools work against someone else's database, so `maria_execute_query` now runs only `SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` and `WITH`; changing data requires an explicit `allow_write: true`. Statements that read or write server files (`INTO OUTFILE`/`DUMPFILE`, `LOAD_FILE`, `LOAD DATA`), manage accounts or privileges (`GRANT`, `REVOKE`, `CREATE USER`), change global settings (`SET GLOBAL`) or stop the server are rejected outright, as are multi-statement payloads. Results are capped (1000 rows by default, reported through `truncated`) and queries have a client-side timeout (10 s by default). Error text is passed through a redactor that masks passwords, bearer tokens and query-string tokens, and `DB_READONLY=1` blocks writes even when `allow_write` is set. The guard, redaction, row cap and timeout are covered by `src/__tests__/sql-safety.test.ts` and verified against a live database.
 
+- **Stabilised the performance smoke tests.** `performance-baseline.test.ts` measured a single wall-clock run against tight thresholds (50 ms for `listHooks`, 5 ms for `paginate`), so it failed intermittently on a loaded machine — once during this work. Each case now warms up and takes the best of five runs, thresholds carry an order-of-magnitude headroom (250/500/25/100 ms) and the results are asserted to be non-empty, so the tests catch pathological regressions such as accidental O(n²) work instead of scheduling jitter. Verified stable over repeated runs and while four CPU hogs were running.
+
 ## 1.3.0
 
 **Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.
