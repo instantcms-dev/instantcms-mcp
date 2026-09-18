@@ -3,7 +3,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createServer } from '../server.js';
 import { closePool, getTableInfo, listTables } from '../tools/mariadb.js';
-import { mariaGetTableData } from '../tools/maria-tool.js';
+import { mariaExecuteQuery, mariaGetTableData } from '../tools/maria-tool.js';
 
 jest.mock('mysql2/promise', () => ({ createPool: jest.fn() }));
 const execute = jest.fn();
@@ -43,6 +43,33 @@ describe('MariaDB bindings and errors (no live database)', () => {
     }
     expect(await mariaGetTableData('cms_users', { filter: { title: {} } })).toHaveProperty('error');
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  test('secret columns are masked by default and returned only on request', async () => {
+    const rows = [{ id: 1, login: 'admin', password: 'hash', api_token: 'tok' }];
+    const fields = [{ name: 'id' }, { name: 'login' }, { name: 'password' }, { name: 'api_token' }];
+
+    execute.mockResolvedValue([rows, fields]);
+    const masked = await mariaExecuteQuery('SELECT * FROM cms_users');
+    expect(masked.rows).toEqual([{ id: 1, login: 'admin', password: '***', api_token: '***' }]);
+    expect(masked.redacted_columns).toEqual(['password', 'api_token']);
+
+    execute.mockResolvedValue([rows, fields]);
+    const raw = await mariaExecuteQuery('SELECT * FROM cms_users', { includeSensitive: true });
+    expect(raw.rows).toEqual(rows);
+    expect(raw.redacted_columns).toEqual([]);
+
+    execute.mockResolvedValue([rows, fields]);
+    const tableData = await mariaGetTableData('cms_users');
+    expect((tableData.rows as Record<string, unknown>[])[0].password).toBe('***');
+    expect(tableData.redacted_columns).toEqual(['password', 'api_token']);
+  });
+
+  test('the echoed query is redacted', async () => {
+    execute.mockResolvedValue([[], []]);
+    const result = await mariaExecuteQuery("SELECT * FROM cms_users WHERE password = 'hunter2'");
+    expect(result.query).toContain("password = '***'");
+    expect(String(result.query)).not.toContain('hunter2');
   });
 
   test('table metadata binds the table name in both information_schema queries', async () => {

@@ -17,6 +17,7 @@
 
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 function parseArgs(argv) {
@@ -45,13 +46,47 @@ function die(message) {
   process.exit(1);
 }
 
+/**
+ * Пароль не передаётся аргументом командной строки: `-p<password>` виден
+ * другим пользователям в `ps`. Вместо этого — временный option-файл MySQL
+ * с правами 0600, который удаляется при выходе.
+ */
+function createMysqlDefaults(options) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'icms-mysql-'));
+  const file = path.join(dir, 'client.cnf');
+  const value = raw => `"${String(raw).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+
+  fs.writeFileSync(
+    file,
+    [
+      '[client]',
+      `host=${value(options.dbHost)}`,
+      `port=${value(options.dbPort)}`,
+      `user=${value(options.dbUser)}`,
+      `password=${value(options.dbPassword)}`,
+      '',
+    ].join('\n'),
+    { mode: 0o600 }
+  );
+
+  const cleanup = () => fs.rmSync(dir, { recursive: true, force: true });
+  process.once('exit', cleanup);
+  process.once('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.once('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
+
+  return file;
+}
+
 function mysql(options, { database = '', input = null, sql = '' } = {}) {
   const args = [
+    `--defaults-extra-file=${options.mysqlDefaultsFile}`,
     '-N',
-    `-h${options.dbHost}`,
-    `-P${options.dbPort}`,
-    `-u${options.dbUser}`,
-    options.dbPassword ? `-p${options.dbPassword}` : '',
     database,
     ...(sql ? ['-e', sql] : []),
   ].filter(Boolean);
@@ -63,6 +98,7 @@ function mysql(options, { database = '', input = null, sql = '' } = {}) {
 }
 
 const options = parseArgs(process.argv.slice(2));
+options.mysqlDefaultsFile = createMysqlDefaults(options);
 
 if (!fs.existsSync(path.join(options.source, 'index.php'))) {
   die(`в источнике нет index.php: ${options.source}`);

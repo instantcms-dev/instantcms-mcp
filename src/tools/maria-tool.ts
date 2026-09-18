@@ -7,29 +7,43 @@ import {
   type ExecuteOptions,
   type QueryParameter,
 } from './mariadb.js';
+import { redactSecrets, redactSensitiveRows } from '../utils/sql-safety.js';
+
+export interface MariaQueryOptions extends ExecuteOptions {
+  /** Вернуть значения колонок-секретов как есть (по умолчанию маскируются). */
+  includeSensitive?: boolean;
+}
 
 export async function mariaExecuteQuery(
   sql: string,
-  options: ExecuteOptions = {}
+  options: MariaQueryOptions = {}
 ): Promise<Record<string, unknown>> {
-  const result = await executeQuery(sql, [], options);
+  const { includeSensitive = false, ...executeOptions } = options;
+  const result = await executeQuery(sql, [], executeOptions);
 
   if (result.error) {
     return {
       success: false,
       error: result.error,
-      query: result.query,
+      query: redactSecrets(result.query),
       executionTime: result.executionTime,
     };
   }
 
+  const { rows, redactedColumns } = redactSensitiveRows(
+    result.columns,
+    result.rows,
+    includeSensitive
+  );
+
   return {
     success: true,
     columns: result.columns,
-    rows: result.rows,
-    rowCount: result.rowCount,
+    rows,
+    rowCount: rows.length,
     truncated: result.truncated ?? false,
-    query: result.query,
+    redacted_columns: redactedColumns,
+    query: redactSecrets(result.query),
     executionTime: result.executionTime,
   };
 }
@@ -113,6 +127,7 @@ export async function mariaGetTableData(
     orderBy?: string;
     orderDir?: 'ASC' | 'DESC';
     filter?: Record<string, unknown>;
+    includeSensitive?: boolean;
   }
 ): Promise<Record<string, unknown>> {
   const limit = options?.limit ?? 20;
@@ -171,22 +186,29 @@ export async function mariaGetTableData(
   if (result.error) {
     return {
       error: result.error,
-      query: result.query,
+      query: redactSecrets(result.query),
     };
   }
+
+  const { rows, redactedColumns } = redactSensitiveRows(
+    result.columns,
+    result.rows,
+    options?.includeSensitive
+  );
 
   return {
     table: tableName,
     columns: result.columns,
-    rows: result.rows,
-    rowCount: result.rowCount,
+    rows,
+    rowCount: rows.length,
+    redacted_columns: redactedColumns,
     pagination: {
       limit,
       offset,
       orderBy,
       orderDir,
     },
-    query: result.query,
+    query: redactSecrets(result.query),
     executionTime: result.executionTime,
   };
 }
