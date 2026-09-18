@@ -399,7 +399,7 @@ const cases: Case[] = [
         scaffoldComponent({
           addon_name: 'gencomp',
           controllers: [{ name: 'items', actions: ['index', 'view'], use_model: true }],
-          options: { with_routes: true, with_menu: true },
+          options: { with_routes: true },
         })
       ),
   },

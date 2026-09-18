@@ -1,6 +1,5 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
 import { scaffoldApi } from '../tools/api-tool.js';
-import { scaffoldComponent } from '../tools/component-tool.js';
 import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
 import { scaffoldOAuth } from '../tools/oauth-tool.js';
@@ -308,14 +307,6 @@ describe('unsupported generator options', () => {
  */
 describe('экспериментальные генераторы помечают себя и причины', () => {
   const cases: Array<[string, () => unknown]> = [
-    [
-      'scaffold_component',
-      () =>
-        scaffoldComponent({
-          addon_name: 'gencomp',
-          controllers: [{ name: 'items', actions: ['index'] }],
-        }),
-    ],
     [
       'scaffold_webhook',
       () => scaffoldWebhook({ addon_name: 'genwh', events: ['user.registered'] }),
