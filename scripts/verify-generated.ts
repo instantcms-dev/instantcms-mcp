@@ -25,6 +25,7 @@ import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
+import { scaffoldEmail } from '../src/tools/email-tool.js';
 import { scaffoldCache } from '../src/tools/cache-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
 import { scaffoldHook } from '../src/tools/addon-tool.js';
@@ -624,6 +625,12 @@ echo count($none) . '|' . count($titleRows) . '|' . count($priceRows);`,
       }) as { code: string };
       files[`system/controllers/${options.name}/hooks/render_page.php`] = hook.code;
 
+      const email = scaffoldEmail({
+        addon_name: options.name,
+        templates: [{ name: 'welcome', subject: 'Тест {site}', body: 'Привет, {nickname}!' }],
+      }) as { files: Record<string, string> };
+      put(email.files);
+
       const NAME = options.name.toUpperCase();
 
       return {
@@ -664,6 +671,16 @@ echo defined('LANG_${NAME}_TITLE') ? 'ok' : 'missing';`,
 $result = $controller->runHook('render_page', ['ping']);
 echo is_string($result) ? $result : json_encode($result);`,
             expect: output => output.trim() === 'ping',
+          },
+          {
+            note: 'письмо scaffold_email читается ядром',
+            script: `$text = cmsCore::getLanguageTextFile('letters/${options.name}_welcome');
+$replaced = string_replace_keys_values($text, ['nickname' => 'Мир', 'site' => 'ICMS']);
+$hasSubject = (bool) preg_match('/\\[subject:(.+)\\]/iu', $replaced, $matches);
+echo $hasSubject && strpos($replaced, 'Привет, Мир!') !== false && $matches[1] === 'Тест ICMS'
+    ? 'ok'
+    : 'fail:' . $replaced;`,
+            expect: output => output.trim() === 'ok',
           },
         ],
       };

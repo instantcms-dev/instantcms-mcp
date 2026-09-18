@@ -398,14 +398,14 @@ export function registerGeneratorTools(server: McpServer): void {
   // ── 2.6. Генерация email шаблонов ───────────────────────────────────────
   server.tool(
     'scaffold_email',
-    'Генерирует HTML email шаблоны для уведомлений InstantCMS с переменными и стилями',
+    'Генерирует письма InstantCMS в формате system/languages/<lang>/letters/*.txt ([subject:...] и {плейсхолдеры})',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_addon'),
       templates: z
         .array(
           z.object({
             name: z.string().describe('Имя шаблона. Пример: welcome, notification, reminder'),
-            subject: z.string().describe('Тема письма'),
+            subject: z.string().describe('Тема письма (одна строка)'),
             body: z
               .string()
               .describe('Тело письма с поддержкой переменных {user_name}, {site_name}, etc.'),
@@ -421,15 +421,17 @@ export function registerGeneratorTools(server: McpServer): void {
               .describe('Список переменных в шаблоне'),
           })
         )
-        .describe('Список email шаблонов'),
+        .describe('Список писем'),
       options: z
         .object({
-          use_html: z.boolean().optional().default(true).describe('Использовать HTML разметку'),
-          base_template: z
-            .enum(['default', 'minimal', 'notifications'])
+          use_html: z
+            .boolean()
             .optional()
-            .default('default')
-            .describe('Базовый шаблон стилей'),
+            .describe('Не поддерживается: HTML пишется прямо в теле письма'),
+          base_template: z
+            .string()
+            .optional()
+            .describe('Не поддерживается: у писем ICMS2 нет HTML-каркаса'),
         })
         .optional()
         .describe('Опции email'),

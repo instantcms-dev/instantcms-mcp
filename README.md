@@ -170,7 +170,8 @@ git push && git push --tags
 | `scaffold_form`                                                                                           | рантайм: класс формы загружается и собирает структуру                       |
 | `scaffold_grid`                                                                                           | рантайм: функция грида возвращает колонки с фильтрами                       |
 | `scaffold_cron`                                                                                           | рантайм: задача планировщика регистрируется и выполняется                   |
-| `scaffold_email`, `scaffold_admin_partial`, `scaffold_layout_override`                                    | только статически                                                           |
+| `scaffold_email`                                                                                          | рантайм: письмо читается `getLanguageTextFile`, `{плейсхолдеры}` подставляются |
+| `scaffold_admin_partial`, `scaffold_layout_override`                                                      | только статически                                                           |
 | `scaffold_cache`                                                                                          | рантайм: класс кэша и хук `<controller>_after_add` вызывается ядром         |
 | `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth` | только статически                                                           |
 | `scaffold_migration`, `generate_migration`, `scaffold_lang`, `scaffold_hook`                          | рантайм: таблица создаётся из SQL, `install_package()` и хук вызываются ядром |
