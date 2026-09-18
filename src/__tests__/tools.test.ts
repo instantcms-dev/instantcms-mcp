@@ -1433,11 +1433,12 @@ describe('External API Tool', () => {
     expect(result).toHaveProperty('addon_name', 'payment_api');
     expect(result).toHaveProperty('base_url', 'https://api.payment.com/v1');
     expect(result).toHaveProperty('endpoints_count', 2);
-    expect('payment_api/api/client.php' in result.files).toBe(true);
-    expect('payment_api/api/request.php' in result.files).toBe(true);
+    expect('package/system/controllers/payment_api/api/client.php' in result.files).toBe(true);
+    expect('package/system/controllers/payment_api/api/request.php' in result.files).toBe(true);
+    expect(Object.keys(result.files).some((p: string) => p.includes('system/hooks/'))).toBe(false);
   });
 
-  test('scaffoldExternalApi generates API client with methods', () => {
+  test('scaffoldExternalApi generates client that requires its siblings', () => {
     const result = scaffoldExternalApi({
       addon_name: 'weather',
       base_url: 'https://api.weather.com',
@@ -1445,11 +1446,30 @@ describe('External API Tool', () => {
         { path: '/forecast', method: 'GET' },
         { path: '/alerts', method: 'POST' },
       ],
+      options: { use_auth: true, use_rate_limit: true, use_cache: true },
     }) as any;
-    const clientFile = result.files['weather/api/client.php'];
-    expect(clientFile).toContain('WeatherApiClient');
-    expect(clientFile).toContain('function get_forecast(');
-    expect(clientFile).toContain('function post_alerts(');
+    const clientFile = result.files['package/system/controllers/weather/api/client.php'];
+    expect(clientFile).toContain('class WeatherApiClient');
+    expect(clientFile).toContain("require_once __DIR__ . '/request.php'");
+    expect(clientFile).toContain("require_once __DIR__ . '/auth.php'");
+    expect(clientFile).toContain('function api_get_forecast(');
+    expect(clientFile).toContain('function api_post_alerts(');
+    expect(clientFile).not.toContain('system/config/api');
+  });
+
+  test('scaffoldExternalApi request uses real cURL', () => {
+    const result = scaffoldExternalApi({
+      addon_name: 'plain',
+      base_url: 'https://api.example.com',
+      endpoints: [{ path: '/data', method: 'GET' }],
+      options: { use_auth: false, use_rate_limit: false, use_cache: false },
+    }) as any;
+    const request = result.files['package/system/controllers/plain/api/request.php'];
+    expect(request).toContain('curl_init()');
+    expect(request).toContain('CURLOPT_TIMEOUT');
+    expect(request).not.toContain('cmsDatabase');
+    expect(result.files['package/system/controllers/plain/api/auth.php']).toBeUndefined();
+    expect(result.files['package/system/controllers/plain/api/rate_limiter.php']).toBeUndefined();
   });
 
   test('scaffoldExternalApi with auth enabled generates auth file', () => {
@@ -1459,10 +1479,10 @@ describe('External API Tool', () => {
       endpoints: [{ path: '/data', method: 'GET' }],
       options: { use_auth: true, auth_type: 'bearer' },
     }) as any;
-    expect('secure_api/api/auth.php' in result.files).toBe(true);
-    const authFile = result.files['secure_api/api/auth.php'];
-    expect(authFile).toContain('SecureApiApiAuth');
+    const authFile = result.files['package/system/controllers/secure_api/api/auth.php'];
+    expect(authFile).toContain('class SecureApiApiAuth');
     expect(authFile).toContain('function getHeaders(');
+    expect(authFile).not.toContain('system/config/api');
   });
 
   test('scaffoldExternalApi with rate limit generates limiter', () => {
@@ -1472,10 +1492,10 @@ describe('External API Tool', () => {
       endpoints: [{ path: '/search', method: 'GET' }],
       options: { use_rate_limit: true, rate_limit: 30 },
     }) as any;
-    expect('limited_api/api/rate_limiter.php' in result.files).toBe(true);
-    const limiterFile = result.files['limited_api/api/rate_limiter.php'];
+    const limiterFile = result.files['package/system/controllers/limited_api/api/rate_limiter.php'];
     expect(limiterFile).toContain('LimitedApiApiRateLimiter');
     expect(limiterFile).toContain('function canMakeRequest(');
+    expect(limiterFile).toContain('cmsCache::getInstance()');
   });
 
   test('scaffoldExternalApi with cache enabled generates cache', () => {
@@ -1485,11 +1505,28 @@ describe('External API Tool', () => {
       endpoints: [{ path: '/status', method: 'GET' }],
       options: { use_cache: true },
     }) as any;
-    expect('cached_api/api/cache.php' in result.files).toBe(true);
-    const cacheFile = result.files['cached_api/api/cache.php'];
+    const cacheFile = result.files['package/system/controllers/cached_api/api/cache.php'];
     expect(cacheFile).toContain('CachedApiApiCache');
     expect(cacheFile).toContain('function get(');
     expect(cacheFile).toContain('function set(');
+  });
+
+  test('scaffoldExternalApi rejects oauth2 and bad base_url', () => {
+    expect(() =>
+      scaffoldExternalApi({
+        addon_name: 'with_oauth',
+        base_url: 'https://api.example.com',
+        endpoints: [{ path: '/data', method: 'GET' }],
+        options: { auth_type: 'oauth2' as never },
+      })
+    ).toThrow(/oauth2/);
+    expect(() =>
+      scaffoldExternalApi({
+        addon_name: 'bad_url',
+        base_url: 'api.example.com',
+        endpoints: [{ path: '/data', method: 'GET' }],
+      })
+    ).toThrow(/base_url/);
   });
 });
 

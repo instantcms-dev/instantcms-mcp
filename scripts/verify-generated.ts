@@ -29,6 +29,7 @@ import { scaffoldComponent } from '../src/tools/component-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldEmail } from '../src/tools/email-tool.js';
+import { scaffoldExternalApi } from '../src/tools/external-api-tool.js';
 import { scaffoldCache } from '../src/tools/cache-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
 import { scaffoldImportExport } from '../src/tools/import-export-tool.js';
@@ -39,6 +40,7 @@ import { scaffoldMigration } from '../src/tools/migration-tool.js';
 import { generateMigration } from '../src/tools/migration-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
+import { quotePhp } from '../src/utils/serialization.js';
 import { scaffoldSeo } from '../src/tools/seo-tool.js';
 import { scaffoldWebhook } from '../src/tools/webhook-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
@@ -955,6 +957,80 @@ echo $valid && !$invalid
         },
       };
     }
+    case 'external_api': {
+      // Клиент ходит по HTTP на собственный сайт: внешняя сеть не нужна.
+      const result = scaffoldExternalApi({
+        addon_name: options.name,
+        base_url: options.baseUrl,
+        endpoints: [
+          { path: '/', method: 'GET' },
+          { path: '/data', method: 'GET' },
+        ],
+        options: {
+          use_auth: true,
+          auth_type: 'bearer',
+          use_rate_limit: true,
+          rate_limit: 3,
+          use_cache: true,
+        },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const Name = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        runtimePhp: {
+          note: 'cURL-клиент, лимитер и кэш работают',
+          script: `require_once PATH . '/system/controllers/${options.name}/api/client.php';
+
+$client = new ${Name}ApiClient([
+    'base_url' => ${quotePhp(`${options.baseUrl}/`)},
+    'timeout'  => 10,
+    'auth'     => ['type' => 'bearer', 'token' => 'test'],
+]);
+
+$home = $client->get('');
+
+$not_found = 0;
+try {
+    $client->get('definitely-missing-${options.name}');
+} catch (${Name}ApiHttpException $e) {
+    $not_found = $e->getStatusCode();
+}
+
+$limiter = new ${Name}ApiRateLimiter(2);
+$limiter->reset();
+$limiter->recordRequest();
+$limiter->recordRequest();
+$blocked = !$limiter->canMakeRequest();
+
+$cache = new ${Name}ApiCache();
+$cache->set('probe', ['v' => 1]);
+$cached = $cache->get('probe');
+
+$auth = new ${Name}ApiAuth(['type' => 'basic', 'api_key' => 'u', 'api_secret' => 'p']);
+$headers = $auth->getHeaders();
+
+echo !empty($home['success'])
+    && (int) $home['status_code'] === 200
+    && $not_found === 404
+    && $blocked
+    && is_array($cached) && ($cached['v'] ?? null) === 1
+    && !empty($headers['Authorization'])
+    ? 'ok'
+    : 'fail:' . json_encode([$home['status_code'] ?? null, $not_found, $blocked, $cached, $headers]);`,
+          // Проверки идут на боевом ядре: PHP может печатать предупреждения,
+          // поэтому результат — последняя значимая строка вывода.
+          expect: output => output.trim().split('\n').pop() === 'ok',
+        },
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1387,9 +1463,22 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
       ? [artifact.runtimePhp]
       : [];
 
-  for (const check of runtimeChecks) {
-    const scriptPath = path.join(options.site, '_verify_runtime.php');
-    const body = `<?php
+  // Кэш на тестовом сайте выключен (cache_enabled = 0), а cmsCache тогда
+  // возвращает false и ничего не хранит. Чтобы проверить кэш по-настоящему,
+  // включаем его только на время проверок и возвращаем как было.
+  const configPath = path.join(options.site, 'system', 'config', 'config.php');
+  const configBackup =
+    options.scenario === 'external_api' && fs.existsSync(configPath)
+      ? fs.readFileSync(configPath, 'utf8')
+      : '';
+  if (configBackup) {
+    fs.writeFileSync(configPath, configBackup.replace(/('cache_enabled'\s*=>\s*)0/, '$11'));
+  }
+
+  try {
+    for (const check of runtimeChecks) {
+      const scriptPath = path.join(options.site, '_verify_runtime.php');
+      const body = `<?php
 if (PHP_SAPI !== 'cli') { die('404'); }
 require_once __DIR__ . '/bootstrap.php';
 chdir(PATH);
@@ -1397,21 +1486,26 @@ $core->initLanguage();
 cmsTemplate::getInstance();
 ${check.script}
 `;
-    fs.writeFileSync(scriptPath, body);
+      fs.writeFileSync(scriptPath, body);
 
-    let output = '';
-    let status = 1;
-    try {
-      const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
-      output = executed.stdout || '';
-      status = executed.status ?? 1;
-    } finally {
-      fs.rmSync(scriptPath, { force: true });
+      let output = '';
+      let status = 1;
+      try {
+        const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
+        output = executed.stdout || '';
+        status = executed.status ?? 1;
+      } finally {
+        fs.rmSync(scriptPath, { force: true });
+      }
+
+      add(`${check.note}: PHP без ошибок`, 0, status);
+      if (status === 0) {
+        add(`${check.note}: результат`, 1, check.expect(output) ? 1 : 0);
+      }
     }
-
-    add(`${check.note}: PHP без ошибок`, 0, status);
-    if (status === 0) {
-      add(`${check.note}: результат`, 1, check.expect(output) ? 1 : 0);
+  } finally {
+    if (configBackup) {
+      fs.writeFileSync(configPath, configBackup);
     }
   }
 
@@ -1671,7 +1765,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|component|webhook|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|component|webhook|external_api|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
