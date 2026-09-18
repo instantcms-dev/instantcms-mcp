@@ -4,6 +4,8 @@
 
 - **The published package no longer ships the test suite.** `npm run build` compiled `src/__tests__` into `dist/__tests__`, so 30 compiled test files travelled in the npm tarball (123 files, 512 kB). The build now uses `tsconfig.build.json`, which excludes tests while `npm run typecheck` keeps checking them, and `files` also excludes `dist/__tests__` defensively. The tarball is down to 93 files and 393 kB, and the built server was smoke-tested over stdio (initialize + `tools/list` returning 100 tools). The README documents the release flow and the `next` dist-tag for prereleases.
 
+- **Every generator scenario now runs against a live InstantCMS in CI.** `scripts/install-instantcms.mjs` (aliased as `npm run verify:install-icms`) performs a headless install: it copies the pinned upstream, creates the database from `install/languages/ru/sql/base.sql` (schema plus controllers, widgets, events, groups and the admin user) and `widgets_bind_modern.sql` (without it the theme renders pages empty because the "page body" widget is not bound), then writes `config.php`. A new CI job starts MariaDB, installs the site, serves it with `php -S` and runs all eight `verify:generated` scenarios — 35 checks on `crud`, `api`, `addon`, `widget`, `cron`, `form`, `grid` and `integration`. Previously those checks were manual and local only.
+
 ## 1.4.0
 
 ### Breaking changes
