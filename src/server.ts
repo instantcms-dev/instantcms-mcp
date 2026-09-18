@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
+import { getServerVersion } from './version.js';
+
 import { registerMetaTools } from './registry/meta-tools.js';
 import { registerGeneratorTools } from './registry/generator-tools.js';
 import { registerKnowledgeTools } from './registry/knowledge-tools.js';
@@ -14,7 +16,7 @@ import { registerTemplateDevelopmentTools } from './registry/template-developmen
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'instantcms-mcp',
-    version: '1.4.0',
+    version: getServerVersion(),
     description: 'MCP сервер для разработки дополнений и шаблонов InstantCMS 2',
   });
 
