@@ -7,6 +7,9 @@
 - **Fixed MariaDB parameter binding.** `executeQuery` now passes query parameters to `pool.execute`, so the `information_schema` `?` placeholders actually bind; `maria_get_table_data` validates table/column identifiers and checks integer limit/offset before building SQL and binds filters/pagination. Database connection errors are no longer disguised as empty metadata.
 - **Unified MCP result contract for database tools.** `maria_*` tools now return `content + structuredContent` via the shared `defineTool` wrapper (errors surface as `isError` results instead of text-only payloads).
 - Added `src/utils/serialization.ts#phpValue` (strings, numbers, booleans, null, lists, associative arrays; arbitrary expressions are deliberately unsupported) and a regression suite `src/__tests__/generator-regression.test.ts` that lints generated CRUD/API PHP with a real PHP interpreter through `validateGeneratedArtifacts`.
+- **Fixed runtime-only defects in `scaffold_crud`, found by installing the generated addon into a real InstantCMS 2.18.2 site.** Syntax checks cannot see these: the frontend `index` action called the non-existent `cmsPagination::getInstance()` (real API is `html_pagebar()`/`cmsPaginator`), `view` called the non-existent `html_uid()`, the backend delete action used the non-existent `icms\traits\controllers\actions\delete\backend` trait (real one is `deleteItem`), actions called `cmsTemplate::setTitle()`/`setMetaDescription()` instead of `setPageTitle()`/`setMeta()`, the grid and form referenced undefined `LANG_IS_PUB`/`LANG_DELETE_CONFIRM`, grid row links pointed at `items` instead of `items_edit`/`items_delete`, add/edit redirected to `/controller/{id}` (unreachable for a controller without routes), and `login_required` referenced a template that was never generated. The generated model narrowed `cmsModel::$table` to `protected` and overrode `cmsModel::getItem()` with an incompatible signature, and `getPublished(): array` returned `bool` when the query was empty.
+- **`scaffold_crud` now also generates the frontend theme templates** (`index`, `view`, `add`, `edit`, `delete`, optional `category`) for the selected theme (`options.theme`, default `modern`) plus `[pkg] install.sql`, a separate frontend form (`forms/form_item_public.php`) so frontend actions stop loading the backend-only form, category model methods, and an honest `scaffold_status: 'partial'` with `limitations`.
+- Added `src/__tests__/instantcms-api-contract.test.ts`, which validates generated code against a real InstantCMS source tree (from `ICMS_SOURCE`, `~/Sites/idev.test` or `.cache/icms2`; skipped when none is present). It checks context-aware `LANG_*` availability, existing traits, `cmsTemplate`/`cmsModel`/`cmsRequest` methods, inherited property visibility, method-override compatibility and `get()` return handling. All four checks were verified to fail on the corresponding regressions.
 
 ## 1.2.4
 
@@ -21,7 +24,7 @@
 
 ## 1.2.2 (failed publish, kept for history)
 
-- **Attempted npm publish fix:** the package was renamed to `@maxisoft-git/instantcms-mcp`, an *unregistered* scope, which npm rejected with `404 Scope not found`. Replaced by `1.2.3`.
+- **Attempted npm publish fix:** the package was renamed to `@maxisoft-git/instantcms-mcp`, an _unregistered_ scope, which npm rejected with `404 Scope not found`. Replaced by `1.2.3`.
 - GitHub Release ZIP and GitHub tarball install paths still work; see release notes.
 
 ## 1.2.1 (first test-harness release, failed publish)

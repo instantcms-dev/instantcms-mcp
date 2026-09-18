@@ -22,12 +22,25 @@ interface ScaffoldCrudOptions {
     use_seo?: boolean;
     use_content?: boolean;
     list_template?: 'grid' | 'list' | 'table';
+    theme?: string;
   };
 }
 
+const SYSTEM_FIELDS = new Set(['id', 'title', 'user_id', 'date_pub', 'is_pub', 'category_id']);
+
+/**
+ * Генерирует CRUD-дополнение InstantCMS.
+ *
+ * Совместимость проверена по исходникам InstantCMS 2.18.2:
+ * cmsModel::limit($from, $howmany), cmsTemplate::setPageTitle/setMeta,
+ * html_pagebar(), icms\traits\controllers\actions\{listgrid,formItem,deleteItem},
+ * cmsBackend::getForm() с префиксом backend/.
+ */
 export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   const name = opts.addon_name;
   if (!/^[a-z][a-z0-9_]{1,63}$/.test(name)) throw new Error('Invalid addon name');
+  if (opts.fields.length === 0) throw new Error('At least one field is required');
+
   const fieldNames = new Set<string>();
   for (const field of opts.fields) {
     if (!/^[a-z][a-z0-9_]{0,63}$/.test(field.name) || fieldNames.has(field.name)) {
@@ -35,33 +48,43 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     }
     fieldNames.add(field.name);
   }
+
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
+  const useCategory = Boolean(opts.options?.use_category);
+  const theme = opts.options?.theme || 'modern';
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(theme)) throw new Error('Invalid theme name');
 
   const files: Record<string, string> = {};
 
   const ctrl = `package/system/controllers/${name}`;
 
-  files[`${ctrl}/model.php`] = generateModel(name, Name, opts.fields);
-  files[`${ctrl}/frontend.php`] = generateFrontend(name, Name);
+  files[`${ctrl}/model.php`] = generateModel(name, Name, useCategory);
+  files[`${ctrl}/frontend.php`] = generateFrontend(name);
   files[`${ctrl}/actions/index.php`] = generateActionIndex(name, Name, NAME);
   files[`${ctrl}/actions/view.php`] = generateActionView(name, Name, NAME);
   files[`${ctrl}/actions/add.php`] = generateActionAdd(name, Name, NAME);
   files[`${ctrl}/actions/edit.php`] = generateActionEdit(name, Name, NAME);
-  files[`${ctrl}/actions/delete.php`] = generateActionDelete(name, Name);
+  files[`${ctrl}/actions/delete.php`] = generateActionDelete(name, Name, NAME);
 
-  if (opts.options?.use_category) {
+  if (useCategory) {
     files[`${ctrl}/actions/category.php`] = generateActionCategory(name, Name, NAME);
   }
 
   files[`${ctrl}/backend.php`] = generateBackend(name, Name, NAME);
-  files[`${ctrl}/backend/actions/index.php`] = generateBackendIndex(name, Name, NAME);
+  files[`${ctrl}/backend/actions/index.php`] = generateBackendIndex(Name);
   files[`${ctrl}/backend/actions/items.php`] = generateBackendItems(name, Name, NAME);
   files[`${ctrl}/backend/actions/items_add.php`] = generateBackendItemsAdd(name, Name, NAME);
   files[`${ctrl}/backend/actions/items_edit.php`] = generateBackendItemsEdit(name, Name, NAME);
   files[`${ctrl}/backend/actions/items_delete.php`] = generateBackendItemsDelete(name, Name);
-  files[`${ctrl}/backend/grids/grid_items.php`] = generateGridItems(name, Name, NAME);
-  files[`${ctrl}/backend/forms/form_item.php`] = generateFormItem(opts.fields, Name, NAME);
+  files[`${ctrl}/backend/grids/grid_items.php`] = generateGridItems(name, NAME);
+  files[`${ctrl}/backend/forms/form_item.php`] = generateFormItem(opts.fields, Name, NAME, 'Item');
+  files[`${ctrl}/forms/form_item_public.php`] = generateFormItem(
+    opts.fields,
+    Name,
+    NAME,
+    'ItemPublic'
+  );
 
   files[`package/system/languages/ru/controllers/${name}/${name}.php`] = generateLang(
     name,
@@ -69,17 +92,40 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     opts.fields
   );
 
+  const tpl = `package/templates/${theme}/controllers/${name}`;
+  files[`${tpl}/index.tpl.php`] = generateTplIndex(name, NAME);
+  files[`${tpl}/view.tpl.php`] = generateTplView(name, NAME);
+  files[`${tpl}/add.tpl.php`] = generateTplForm(NAME, '_ADD');
+  files[`${tpl}/edit.tpl.php`] = generateTplForm(NAME, '_EDIT');
+  files[`${tpl}/delete.tpl.php`] = generateTplDelete(NAME);
+  if (useCategory) {
+    files[`${tpl}/category.tpl.php`] = generateTplCategory(name, NAME);
+  }
+
+  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory);
+
   return {
     addon_name: name,
     addon_class: Name,
     files_count: Object.keys(files).length,
     files,
+    scaffold_status: 'partial',
     structure_notes: [
       `CRUD для контент-типа: ${name}`,
-      `backend.php содержит getBackendMenu() + before()`,
-      `Используется trait listgrid + trait formItem`,
+      `backend.php: getBackendMenu() + before()`,
+      `Экшены используют traits listgrid + formItem + deleteItem`,
       `Языковой файл: /system/languages/ru/controllers/${name}/${name}.php`,
+      `Шаблоны темы: /templates/${theme}/controllers/${name}/`,
       `Таблица: ${name}_items`,
+    ],
+    limitations: [
+      'install.sql создаёт таблицу с префиксом cms_ — замените префикс на реальный из system/config/config.php.',
+      'Маршрут контроллера не создаётся: добавьте routes.php или используйте адреса вида /{controller}/view/{id}.',
+      'Права доступа и модерация не генерируются.',
+      useCategory
+        ? 'Режим категорий создаёт действия и модель, но таблицу категорий нужно создать отдельно.'
+        : 'Категории не используются.',
+      'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     options: opts.options || {},
   };
@@ -89,50 +135,42 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function generateModel(name: string, Name: string, fields: CrdField[]): string {
-  const basicFields = fields.filter(f => !f.is_system && f.type !== 'text' && f.type !== 'html');
+function generateModel(name: string, Name: string, useCategory: boolean): string {
+  const categoryMethods = useCategory
+    ? `
+    public function getCategoryBySlug(string $slug) {
+        return $this->getItemByField('${name}_categories', 'slug', $slug);
+    }
 
-  let modelCode = `<?php
+    public function getCountByCategory(int $category_id): int {
+        return (int) $this->filterEqual('category_id', $category_id)
+                           ->filterEqual('is_pub', 1)
+                           ->getCount('${name}_items');
+    }
+
+    public function getByCategory(int $category_id, int $limit = 10, int $offset = 0): array {
+        return $this->filterEqual('category_id', $category_id)
+                    ->filterEqual('is_pub', 1)
+                    ->orderBy('date_pub', 'desc')
+                    ->limit($offset, $limit)
+                    ->get('${name}_items') ?: [];
+    }
+`
+    : '';
+
+  return `<?php
 
 class model${Name} extends cmsModel {
 
-    protected $table = '${name}_items';
-
-`;
-
-  if (basicFields.length > 0) {
-    modelCode += `    // Геттеры для полей
-`;
-    for (const field of basicFields) {
-      const methodName = field.name.replace(/_([a-z])/g, (_, l) => l.toUpperCase());
-      modelCode += `    public function get${capitalize(methodName)}($value) {
-        return $this->filterEqual('${field.name}', $value);
-    }
-
-`;
-    }
-  }
-
-  modelCode += `    public function getPublished(int $limit = 10, int $offset = 0): array {
+    public function getPublished(int $limit = 10, int $offset = 0): array {
         return $this->filterEqual('is_pub', 1)
                     ->orderBy('date_pub', 'desc')
                     ->limit($offset, $limit)
-                    ->get('${name}_items');
-    }
-
-    public function getByUser(int $user_id, int $limit = 10): array {
-        return $this->filterEqual('user_id', $user_id)
-                    ->orderBy('date_pub', 'desc')
-                    ->limit($limit)
-                    ->get('${name}_items');
+                    ->get('${name}_items') ?: [];
     }
 
     public function getCountPublished(): int {
         return (int) $this->filterEqual('is_pub', 1)->getCount('${name}_items');
-    }
-
-    public function getItem($id) {
-        return $this->getItemById('${name}_items', $id);
     }
 
     public function addItem(array $item) {
@@ -146,12 +184,11 @@ class model${Name} extends cmsModel {
     public function deleteItem($id) {
         return $this->delete('${name}_items', $id);
     }
-
+${categoryMethods}
 }`;
-  return modelCode;
 }
 
-function generateFrontend(name: string, _Name: string): string {
+function generateFrontend(name: string): string {
   return `<?php
 
 class ${name} extends cmsFrontend {
@@ -164,8 +201,7 @@ class ${name} extends cmsFrontend {
         return $this->redirect(href_to(${name}::ROUTE_NAME));
     }
 
-}
-`;
+}`;
 }
 
 function generateActionIndex(name: string, Name: string, NAME: string): string {
@@ -174,22 +210,22 @@ function generateActionIndex(name: string, Name: string, NAME: string): string {
 class action${Name}Index extends cmsAction {
 
     public function run($page = 1) {
-        $perpage = $this->options['perpage'] ?? 10;
+
+        $perpage = !empty($this->options['perpage']) ? (int) $this->options['perpage'] : 10;
+        $page    = max(1, (int) $page);
 
         $total = $this->model->getCountPublished();
         $items = $this->model->getPublished($perpage, ($page - 1) * $perpage);
 
-        $pagination = cmsPagination::getInstance($total, $perpage, $page);
-
-        $this->cms_template->setTitle(LANG_${NAME}_TITLE);
+        $this->cms_template->setPageTitle(LANG_${NAME}_TITLE);
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE);
 
         return $this->cms_template->render('index', [
-            'items'      => $items,
-            'total'      => $total,
-            'pagination' => $pagination,
-            'page'       => (int) $page,
-            'perpage'    => $perpage,
+            'items'    => $items,
+            'total'    => $total,
+            'page'     => $page,
+            'perpage'  => $perpage,
+            'page_url' => href_to(${name}::ROUTE_NAME),
         ]);
     }
 
@@ -201,21 +237,18 @@ function generateActionView(name: string, Name: string, NAME: string): string {
 
 class action${Name}View extends cmsAction {
 
-    public function run($id = 0, $slug = '') {
-        $item = $this->model->getItem((int) $id);
+    public function run($id = 0) {
 
-        if (!$item || !$item['is_pub']) {
-            return cmsCore::error404();
-        }
+        $item = $this->model->getItemById('${name}_items', (int) $id);
 
-        if ($slug && $slug !== html_uid($item['title'])) {
+        if (!$item || empty($item['is_pub'])) {
             return cmsCore::error404();
         }
 
         $item = cmsEventsManager::hook('${name}_before_item', $item);
 
-        $this->cms_template->setTitle($item['title']);
-        $this->cms_template->setMetaDescription($item['description'] ?? '');
+        $this->cms_template->setPageTitle($item['title']);
+        $this->cms_template->setMeta('', $item['description'] ?? '');
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb($item['title']);
 
@@ -233,37 +266,39 @@ function generateActionAdd(name: string, Name: string, NAME: string): string {
 class action${Name}Add extends cmsAction {
 
     public function run() {
+
         if (!$this->cms_user->is_logged) {
-            return $this->cms_template->render('login_required', [
-                'login_url' => href_to('auth', 'login'),
-            ]);
+            return $this->redirectToLogin(href_to(${name}::ROUTE_NAME));
         }
 
-        $form = $this->getForm('item');
-
+        $form   = $this->getForm('item_public');
         $errors = [];
+        $item   = [];
 
         if ($this->request->has('submit')) {
-            $data = $form->parse($this->request, $errors);
+
+            $item = $form->parse($this->request, $errors);
 
             if (!$errors) {
-                $data['user_id'] = $this->cms_user->id;
-                $data['date_pub'] = date("Y-m-d H:i:s");
 
-                $id = $this->model->addItem($data);
+                $item['user_id']  = $this->cms_user->id;
+                $item['date_pub'] = date('Y-m-d H:i:s');
 
-                cmsEventsManager::hook('${name}_after_add', $id, $data);
+                $id = $this->model->addItem($item);
 
-                $this->redirect(href_to(${name}::ROUTE_NAME, $id));
+                cmsEventsManager::hook('${name}_after_add', $item, $id);
+
+                return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));
             }
         }
 
-        $this->cms_template->setTitle(LANG_${NAME}_ADD);
+        $this->cms_template->setPageTitle(LANG_${NAME}_ADD);
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb(LANG_${NAME}_ADD);
 
         return $this->cms_template->render('add', [
             'form'   => $form,
+            'item'   => $item,
             'errors' => $errors,
         ]);
     }
@@ -276,34 +311,36 @@ function generateActionEdit(name: string, Name: string, NAME: string): string {
 
 class action${Name}Edit extends cmsAction {
 
-    public function run($id) {
-        $item = $this->model->getItem((int) $id);
+    public function run($id = 0) {
+
+        $item = $this->model->getItemById('${name}_items', (int) $id);
 
         if (!$item) {
             return cmsCore::error404();
         }
 
-        if ($item['user_id'] !== $this->cms_user->id && !$this->cms_user->is_admin) {
+        if ($item['user_id'] != $this->cms_user->id && !$this->cms_user->is_admin) {
             return cmsCore::error404();
         }
 
-        $form = $this->getForm('item');
-
+        $form   = $this->getForm('item_public');
         $errors = [];
 
         if ($this->request->has('submit')) {
-            $data = $form->parse($this->request, $errors);
+
+            $item = array_merge($item, $form->parse($this->request, $errors));
 
             if (!$errors) {
-                $this->model->updateItem($id, $data);
 
-                cmsEventsManager::hook('${name}_after_update', $id, $data);
+                $this->model->updateItem($id, $item);
 
-                $this->redirect(href_to(${name}::ROUTE_NAME, $id));
+                cmsEventsManager::hook('${name}_after_update', $item, $id);
+
+                return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));
             }
         }
 
-        $this->cms_template->setTitle(LANG_${NAME}_EDIT);
+        $this->cms_template->setPageTitle(LANG_${NAME}_EDIT);
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb(LANG_${NAME}_EDIT);
 
@@ -317,29 +354,41 @@ class action${Name}Edit extends cmsAction {
 }`;
 }
 
-function generateActionDelete(name: string, Name: string): string {
+function generateActionDelete(name: string, Name: string, NAME: string): string {
   return `<?php
 
 class action${Name}Delete extends cmsAction {
 
-    public function run($id) {
-        $item = $this->model->getItem((int) $id);
+    public function run($id = 0) {
+
+        $item = $this->model->getItemById('${name}_items', (int) $id);
 
         if (!$item) {
             return cmsCore::error404();
         }
 
-        if ($item['user_id'] !== $this->cms_user->id && !$this->cms_user->is_admin) {
+        if ($item['user_id'] != $this->cms_user->id && !$this->cms_user->is_admin) {
             return cmsCore::error404();
         }
 
         if ($this->request->has('submit')) {
-            $this->model->deleteItem($id);
 
-            cmsEventsManager::hook('${name}_after_delete', $id);
+            if (!cmsForm::validateCSRFToken($this->request->get('csrf_token', ''))) {
+                return cmsCore::error404();
+            }
 
-            $this->redirect(href_to(${name}::ROUTE_NAME));
+            $this->model->deleteItem($item['id']);
+
+            cmsEventsManager::hook('${name}_after_delete', $item);
+
+            cmsUser::addSessionMessage(LANG_${NAME}_DELETE_SUCCESS, 'success');
+
+            return $this->redirect(href_to(${name}::ROUTE_NAME));
         }
+
+        $this->cms_template->setPageTitle(LANG_${NAME}_DELETE);
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_DELETE);
 
         return $this->cms_template->render('delete', [
             'item' => $item,
@@ -355,28 +404,30 @@ function generateActionCategory(name: string, Name: string, NAME: string): strin
 class action${Name}Category extends cmsAction {
 
     public function run($slug = '') {
-        $category = $this->model->getCategoryBySlug($slug);
+
+        $category = $this->model->getCategoryBySlug((string) $slug);
 
         if (!$category) {
             return cmsCore::error404();
         }
 
-        $page = $this->request->get('page', 1);
-        $perpage = $this->options['perpage'] ?? 10;
+        $perpage = !empty($this->options['perpage']) ? (int) $this->options['perpage'] : 10;
+        $page    = max(1, (int) $this->request->get('page', 1));
 
         $total = $this->model->getCountByCategory($category['id']);
         $items = $this->model->getByCategory($category['id'], $perpage, ($page - 1) * $perpage);
 
-        $this->cms_template->setTitle($category['title']);
+        $this->cms_template->setPageTitle($category['title']);
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb($category['title']);
 
         return $this->cms_template->render('category', [
-            'category'   => $category,
-            'items'      => $items,
-            'total'      => $total,
-            'page'       => (int) $page,
-            'perpage'    => $perpage,
+            'category' => $category,
+            'items'    => $items,
+            'total'    => $total,
+            'page'     => $page,
+            'perpage'  => $perpage,
+            'page_url' => href_to(${name}::ROUTE_NAME, 'category', $category['slug']),
         ]);
     }
 
@@ -390,13 +441,6 @@ class backend${Name} extends cmsBackend {
 
     public $useDefaultOptionsAction = true;
     protected $useOptions = true;
-
-    public function before($action_name) {
-        if (!parent::before($action_name)) {
-            return false;
-        }
-        return true;
-    }
 
     public function getBackendMenu() {
         return [
@@ -416,24 +460,18 @@ class backend${Name} extends cmsBackend {
 }`;
 }
 
-function generateBackendIndex(name: string, Name: string, _NAME: string): string {
+function generateBackendIndex(Name: string): string {
   return `<?php
 
 class action${Name}Index extends cmsAction {
 
     public function run($do = false) {
+
         if ($do) {
             return $this->runAction('index_' . $do);
         }
 
-        $stats = [
-            'total'     => $this->model->getCount('${name}_items'),
-            'published' => $this->model->getCountPublished(),
-        ];
-
-        return $this->cms_template->render('backend/index', [
-            'stats' => $stats,
-        ]);
+        return $this->redirect(href_to($this->root_url, 'items'));
     }
 
 }`;
@@ -457,7 +495,7 @@ class action${Name}Items extends cmsAction {
             [
                 'class' => 'add',
                 'title' => LANG_${NAME}_CP_ADD,
-                'href'  => $this->cms_template->href_to('items', 'add'),
+                'href'  => href_to($this->root_url, 'items_add'),
             ],
         ];
     }
@@ -477,15 +515,15 @@ class action${Name}ItemsAdd extends cmsAction {
 
         $this->table_name  = '${name}_items';
         $this->form_name   = 'item';
-        $this->success_url = $this->cms_template->href_to('items');
+        $this->success_url = href_to($this->root_url, 'items');
 
         $this->title = [
             'add'  => LANG_${NAME}_CP_ADD,
-            'edit' => '{title}',
+            'edit' => LANG_${NAME}_CP_EDIT,
         ];
 
         $this->breadcrumbs = [
-            [LANG_${NAME}_CP_ITEMS, $this->cms_template->href_to('items')],
+            [LANG_${NAME}_CP_ITEMS, href_to($this->root_url, 'items')],
             LANG_${NAME}_CP_ADD,
         ];
 
@@ -493,7 +531,7 @@ class action${Name}ItemsAdd extends cmsAction {
 
         $this->default_item = [
             'is_pub'   => 1,
-            'date_pub' => date("Y-m-d H:i:s"),
+            'date_pub' => date('Y-m-d H:i:s'),
         ];
     }
 
@@ -512,15 +550,15 @@ class action${Name}ItemsEdit extends cmsAction {
 
         $this->table_name  = '${name}_items';
         $this->form_name   = 'item';
-        $this->success_url = $this->cms_template->href_to('items');
+        $this->success_url = href_to($this->root_url, 'items');
 
         $this->title = [
             'add'  => LANG_${NAME}_CP_ADD,
-            'edit' => '{title}',
+            'edit' => LANG_${NAME}_CP_EDIT,
         ];
 
         $this->breadcrumbs = [
-            [LANG_${NAME}_CP_ITEMS, $this->cms_template->href_to('items')],
+            [LANG_${NAME}_CP_ITEMS, href_to($this->root_url, 'items')],
             LANG_${NAME}_CP_EDIT,
         ];
 
@@ -535,46 +573,46 @@ function generateBackendItemsDelete(name: string, Name: string): string {
 
 class action${Name}ItemsDelete extends cmsAction {
 
-    use icms\\traits\\controllers\\actions\\delete\\backend;
+    use icms\\traits\\controllers\\actions\\deleteItem;
 
     public function __construct($controller, $params = []) {
         parent::__construct($controller, $params);
 
         $this->table_name  = '${name}_items';
-        $this->success_url = $this->cms_template->href_to('items');
+        $this->success_url = href_to($this->root_url, 'items');
     }
 
 }`;
 }
 
-function generateGridItems(name: string, _Name: string, _NAME: string): string {
+function generateGridItems(name: string, NAME: string): string {
   return `<?php
 
 function grid_items($controller) {
+
     $columns = [
         'id' => [
-            'title'   => 'ID',
-            'width'   => 60,
-            'show'    => true,
+            'title' => 'ID',
+            'width' => 60,
         ],
         'title' => [
-            'title'   => LANG_TITLE,
-            'filter'  => 'like',
-            'href'    => href_to($controller->root_url, 'items', ['edit', '{id}']),
+            'title'  => LANG_TITLE,
+            'filter' => 'like',
+            'href'   => href_to($controller->root_url, 'items_edit', ['{id}']),
         ],
         'date_pub' => [
-            'title'   => LANG_DATE_PUB,
-            'width'   => 150,
-            'filter'  => 'date',
+            'title'  => LANG_DATE_PUB,
+            'width'  => 150,
+            'filter' => 'date',
         ],
         'user_id' => [
-            'title'   => LANG_AUTHOR,
-            'width'   => 120,
+            'title' => LANG_AUTHOR,
+            'width' => 120,
         ],
         'is_pub' => [
-            'title'   => LANG_IS_PUB,
-            'width'   => 80,
-            'flag'    => true,
+            'title'       => LANG_${NAME}_IS_PUB,
+            'width'       => 80,
+            'flag'        => true,
             'flag_toggle' => href_to($controller->root_url, 'toggle_item', ['{id}', '${name}_items', 'is_pub']),
         ],
     ];
@@ -583,14 +621,14 @@ function grid_items($controller) {
         [
             'title' => LANG_EDIT,
             'icon'  => 'pen',
-            'href'  => href_to($controller->root_url, 'items', ['edit', '{id}']),
+            'href'  => href_to($controller->root_url, 'items_edit', ['{id}']),
         ],
         [
             'title'   => LANG_DELETE,
             'class'   => 'text-danger',
             'icon'    => 'times-circle',
-            'confirm' => LANG_DELETE_CONFIRM,
-            'href'    => href_to($controller->root_url, 'items', ['delete', '{id}']),
+            'confirm' => LANG_${NAME}_DELETE_CONFIRM,
+            'href'    => href_to($controller->root_url, 'items_delete', ['{id}']),
         ],
     ];
 
@@ -609,18 +647,21 @@ function grid_items($controller) {
 }`;
 }
 
-function generateFormItem(fields: CrdField[], Name: string, _NAME: string): string {
+function generateFormItem(
+  fields: CrdField[],
+  Name: string,
+  NAME: string,
+  formClassSuffix: string
+): string {
   let formCode = `<?php
 
-class form${Name}Item extends cmsForm {
+class form${Name}${formClassSuffix} extends cmsForm {
 
-    public function init($do) {
-
-        $is_edit = ($do === 'edit');
+    public function init($do = 'add') {
 
         return [
             'basic' => [
-                'title'  => LANG_CP_BASIC,
+                'title'  => LANG_${NAME}_BASIC,
                 'type'   => 'fieldset',
                 'childs' => [
                     new fieldString('title', [
@@ -633,7 +674,7 @@ class form${Name}Item extends cmsForm {
 `;
 
   for (const field of fields) {
-    if (field.name === 'title' || field.is_system) {
+    if (SYSTEM_FIELDS.has(field.name) || field.is_system) {
       continue;
     }
 
@@ -642,7 +683,7 @@ class form${Name}Item extends cmsForm {
       title: field.title || capitalize(field.name.replace(/_/g, ' ')),
     };
 
-    if (field.type === 'varchar' || field.type === 'text') {
+    if (field.type === 'varchar') {
       fieldOptions.rules = [['max_length', 255]];
     }
 
@@ -650,19 +691,16 @@ class form${Name}Item extends cmsForm {
       fieldOptions.default = field.default;
     }
 
-    const optionsStr = phpValue(fieldOptions);
-
-    formCode += `                    new ${fieldClass}('${field.name}', ${optionsStr}),
+    formCode += `                    new ${fieldClass}('${field.name}', ${phpValue(fieldOptions)}),
 `;
   }
 
   formCode += `                    new fieldCheckbox('is_pub', [
-                        'title'   => LANG_IS_PUB,
+                        'title'   => LANG_${NAME}_IS_PUB,
                         'default' => 1,
                     ]),
                     new fieldDate('date_pub', [
-                        'title'   => LANG_DATE_PUB,
-                        'default' => date("Y-m-d H:i:s"),
+                        'title' => LANG_DATE_PUB,
                     ]),
                 ],
             ],
@@ -698,38 +736,220 @@ function getFieldClass(type: string): string {
   return map[type] || 'fieldString';
 }
 
+function sqlType(type: string): string {
+  const map: Record<string, string> = {
+    varchar: `varchar(255) NOT NULL DEFAULT ''`,
+    text: 'text',
+    html: 'mediumtext',
+    int: 'int(11) NOT NULL DEFAULT 0',
+    tinyint: 'tinyint(1) NOT NULL DEFAULT 0',
+    decimal: 'decimal(10,2) NOT NULL DEFAULT 0.00',
+    float: 'decimal(10,2) NOT NULL DEFAULT 0.00',
+    date: 'datetime',
+    datetime: 'datetime',
+    timestamp: 'datetime',
+  };
+  return map[type] || `varchar(255) NOT NULL DEFAULT ''`;
+}
+
+function sqlColumnName(field: CrdField): string {
+  return field.name.replace(/[^a-z0-9_]/g, '_');
+}
+
+function generateSql(name: string, fields: CrdField[], useCategory: boolean): string {
+  const custom = fields
+    .filter(field => !SYSTEM_FIELDS.has(field.name) && !field.is_system)
+    .map(field => `    \`${sqlColumnName(field)}\` ${sqlType(field.type)},`);
+
+  const categoryColumn = useCategory
+    ? `    \`category_id\` int(10) unsigned NOT NULL DEFAULT 0,`
+    : '';
+
+  const categoryTable = useCategory
+    ? `
+CREATE TABLE IF NOT EXISTS \`cms_${name}_categories\` (
+    \`id\`       int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`parent_id\` int(10) unsigned NOT NULL DEFAULT 0,
+    \`title\`    varchar(255) NOT NULL DEFAULT '',
+    \`slug\`     varchar(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (\`id\`),
+    KEY \`slug\` (\`slug\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`
+    : '';
+
+  return `-- Замените cms_ на реальный префикс БД из system/config/config.php
+CREATE TABLE IF NOT EXISTS \`cms_${name}_items\` (
+    \`id\`       int(10) unsigned NOT NULL AUTO_INCREMENT,
+${categoryColumn}
+    \`user_id\`  int(10) unsigned NOT NULL DEFAULT 0,
+    \`title\`    varchar(255) NOT NULL DEFAULT '',
+${custom.join('\n')}
+    \`date_pub\` datetime NOT NULL,
+    \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT 1,
+    PRIMARY KEY (\`id\`),
+    KEY \`user_id\` (\`user_id\`),
+    KEY \`is_pub\` (\`is_pub\`),
+    KEY \`date_pub\` (\`date_pub\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+${categoryTable}`;
+}
+
 function generateLang(name: string, NAME: string, fields: CrdField[]): string {
   let lang = `<?php
 
-define('LANG_${NAME}_TITLE',     '${capitalize(name.replace(/_/g, ' '))}');
-define('LANG_${NAME}_ADD',       'Добавить');
-define('LANG_${NAME}_EDIT',      'Редактировать');
-define('LANG_${NAME}_DELETE',    'Удалить');
-define('LANG_${NAME}_NOT_FOUND', 'Ничего не найдено');
+define('LANG_${NAME}_TITLE', ${quotePhp(capitalize(name.replace(/_/g, ' ')))});
+define('LANG_${NAME}_ADD', ${quotePhp('Добавить')});
+define('LANG_${NAME}_EDIT', ${quotePhp('Редактировать')});
+define('LANG_${NAME}_DELETE', ${quotePhp('Удалить')});
+define('LANG_${NAME}_DELETE_SUCCESS', ${quotePhp('Запись успешно удалена')});
+define('LANG_${NAME}_NOT_FOUND', ${quotePhp('Ничего не найдено')});
+define('LANG_${NAME}_IS_PUB', ${quotePhp('Опубликовано')});
+define('LANG_${NAME}_BASIC', ${quotePhp('Основное')});
+define('LANG_${NAME}_DELETE_CONFIRM', ${quotePhp('Удалить запись?')});
 
-define('LANG_${NAME}_CP_TITLE',  'Управление');
-define('LANG_${NAME}_CP_ITEMS',  'Элементы');
-define('LANG_${NAME}_CP_ADD',    'Добавить элемент');
-define('LANG_${NAME}_CP_EDIT',   'Редактирование элемента');
-define('LANG_${NAME}_CP_DELETE',  'Удаление элемента');
+define('LANG_${NAME}_CP_TITLE', ${quotePhp('Управление')});
+define('LANG_${NAME}_CP_ITEMS', ${quotePhp('Элементы')});
+define('LANG_${NAME}_CP_ADD', ${quotePhp('Добавить элемент')});
+define('LANG_${NAME}_CP_EDIT', ${quotePhp('Редактирование элемента')});
+define('LANG_${NAME}_CP_DELETE', ${quotePhp('Удаление элемента')});
 
 `;
 
   for (const field of fields) {
-    if (field.is_system) {
+    if (field.is_system || SYSTEM_FIELDS.has(field.name)) {
       continue;
     }
-    const key = `LANG_${NAME}_${field.name.toUpperCase().replace(/_/g, '_')}`;
+    const key = `LANG_${NAME}_${field.name.toUpperCase()}`;
     const value = field.title || capitalize(field.name.replace(/_/g, ' '));
     lang += `define(${quotePhp(key)}, ${quotePhp(value)});
 `;
   }
 
-  lang += `
-define('LANG_${NAME}_PERPAGE', 'Элементов на странице');
-define('LANG_${NAME}_DATE_FROM', 'Дата от');
-define('LANG_${NAME}_DATE_TO', 'Дата до');
-`;
-
   return lang;
+}
+
+function generateTplIndex(name: string, NAME: string): string {
+  return `<?php
+/**
+ * @var array  $items
+ * @var int    $total
+ * @var int    $page
+ * @var int    $perpage
+ * @var string $page_url
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_TITLE); ?></h1>
+
+<?php if ($items) { ?>
+    <div class="row">
+        <?php foreach ($items as $item) { ?>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h5 mb-2">
+                            <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                                <?php echo html($item['title']); ?>
+                            </a>
+                        </h2>
+                        <div class="text-muted small"><?php echo html_date($item['date_pub'], true); ?></div>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
+
+    <?php echo html_pagebar($page, $perpage, $total, $page_url); ?>
+<?php } else { ?>
+    <p class="text-muted"><?php echo html(LANG_${NAME}_NOT_FOUND); ?></p>
+<?php } ?>
+`;
+}
+
+function generateTplView(name: string, NAME: string): string {
+  return `<?php
+/**
+ * @var array $item
+ */
+?>
+<article>
+    <h1><?php echo html($item['title']); ?></h1>
+
+    <div class="text-muted small mb-3"><?php echo html_date($item['date_pub'], true); ?></div>
+
+    <?php if (!empty($item['description'])) { ?>
+        <div class="mb-4"><?php echo html($item['description']); ?></div>
+    <?php } ?>
+
+    <p>
+        <a href="<?php echo href_to('${name}'); ?>"><?php echo html(LANG_${NAME}_TITLE); ?></a>
+    </p>
+</article>
+`;
+}
+
+function generateTplForm(NAME: string, suffix: '_ADD' | '_EDIT'): string {
+  return `<?php
+/**
+ * @var cmsForm $form
+ * @var array   $item
+ * @var array   $errors
+ */
+?>
+<h1><?php echo html(LANG_${NAME}${suffix}); ?></h1>
+
+<?php $this->renderForm($form, $item, [
+    'action' => '',
+    'method' => 'post',
+], $errors); ?>
+`;
+}
+
+function generateTplDelete(NAME: string): string {
+  return `<?php
+/**
+ * @var array $item
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_DELETE); ?></h1>
+
+<form action="" method="post">
+    <?php echo html_csrf_token(); ?>
+    <p><?php echo html($item['title']); ?></p>
+    <button type="submit" name="submit" value="1" class="btn btn-danger">
+        <?php echo html(LANG_DELETE); ?>
+    </button>
+</form>
+`;
+}
+
+function generateTplCategory(name: string, NAME: string): string {
+  return `<?php
+/**
+ * @var array  $category
+ * @var array  $items
+ * @var int    $total
+ * @var int    $page
+ * @var int    $perpage
+ * @var string $page_url
+ */
+?>
+<h1><?php echo html($category['title']); ?></h1>
+
+<?php if ($items) { ?>
+    <ul>
+        <?php foreach ($items as $item) { ?>
+            <li>
+                <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                    <?php echo html($item['title']); ?>
+                </a>
+            </li>
+        <?php } ?>
+    </ul>
+
+    <?php echo html_pagebar($page, $perpage, $total, $page_url); ?>
+<?php } else { ?>
+    <p class="text-muted"><?php echo html(LANG_${NAME}_NOT_FOUND); ?></p>
+<?php } ?>
+`;
 }
