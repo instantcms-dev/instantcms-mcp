@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `template_override`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -171,7 +171,8 @@ git push && git push --tags
 | `scaffold_grid`                                                                                           | рантайм: функция грида возвращает колонки с фильтрами                       |
 | `scaffold_cron`                                                                                           | рантайм: задача планировщика регистрируется и выполняется                   |
 | `scaffold_email`                                                                                          | рантайм: письмо читается `getLanguageTextFile`, `{плейсхолдеры}` подставляются |
-| `scaffold_admin_partial`, `scaffold_layout_override`                                                      | только статически                                                           |
+| `scaffold_layout_override`                                                                                | рантайм: шаблон темы рендерится через `getTemplateFileName()`               |
+| `scaffold_admin_partial`                                                                                  | **прототип**: см. `limitations` в ответе инструмента                        |
 | `scaffold_cache`                                                                                          | рантайм: класс кэша и хук `<controller>_after_add` вызывается ядром         |
 | `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth`, `scaffold_component` | **прототип**: механизм не подтверждён, см. `limitations` в ответе инструмента |
 | `scaffold_migration`, `generate_migration`, `scaffold_lang`, `scaffold_hook`                          | рантайм: таблица создаётся из SQL, `install_package()` и хук вызываются ядром |
@@ -180,7 +181,7 @@ git push && git push --tags
 
 «Только статически» означает: `php -l`, проверка символов против реального исходника, соответствие структуре каталогов. Поведение в рантайме для этих генераторов не подтверждено.
 
-**Прототипы.** `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth`, `scaffold_component` и `scaffold_admin_partial`/`scaffold_layout_override` возвращают `scaffold_status: 'experimental'` и перечисляют в `limitations` конкретные расхождения с ICMS2 (выдуманные методы, несуществующие каталоги, классы без `require`, неверные пути и имена классов). Их вывод нельзя ставить на сайт без правки; аудит и переработка запланированы.
+**Прототипы.** `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth`, `scaffold_component` и `scaffold_admin_partial` возвращают `scaffold_status: 'experimental'` и перечисляют в `limitations` конкретные расхождения с ICMS2 (выдуманные методы, несуществующие каталоги, классы без `require`, неверные пути и имена классов). Их вывод нельзя ставить на сайт без правки; аудит и переработка запланированы.
 
 ## Основные MCP-инструменты
 

@@ -5,7 +5,6 @@ import { scaffoldComponent } from '../tools/component-tool.js';
 import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
 import { scaffoldImportExport } from '../tools/import-export-tool.js';
-import { scaffoldLayoutOverride } from '../tools/layout-override-tool.js';
 import { scaffoldOAuth } from '../tools/oauth-tool.js';
 import { scaffoldWebhook } from '../tools/webhook-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
@@ -317,14 +316,6 @@ describe('экспериментальные генераторы помечаю
         scaffoldAdminPartial({
           addon_name: 'genpart',
           partials: [{ name: 'menu', type: 'sidebar' }],
-        }),
-    ],
-    [
-      'scaffold_layout_override',
-      () =>
-        scaffoldLayoutOverride({
-          addon_name: 'genlay',
-          overrides: [{ controller: 'content', template: 'modern', action: 'view' }],
         }),
     ],
     [

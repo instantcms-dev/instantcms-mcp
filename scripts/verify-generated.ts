@@ -28,6 +28,7 @@ import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldEmail } from '../src/tools/email-tool.js';
 import { scaffoldCache } from '../src/tools/cache-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
+import { scaffoldLayoutOverride } from '../src/tools/layout-override-tool.js';
 import { scaffoldHook } from '../src/tools/addon-tool.js';
 import { scaffoldLang } from '../src/tools/lang-tool.js';
 import { scaffoldMigration } from '../src/tools/migration-tool.js';
@@ -685,6 +686,41 @@ echo $hasSubject && strpos($replaced, 'Привет, Мир!') !== false && $mat
         ],
       };
     }
+    case 'template_override': {
+      // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
+      const result = scaffoldLayoutOverride({
+        addon_name: options.name,
+        overrides: [{ controller: options.name, template: options.theme, action: 'view' }],
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        runtimePhp: {
+          note: 'переопределённый шаблон рендерится ядром',
+          script: `$template = cmsTemplate::getInstance();
+$path = $template->getTemplateFileName('controllers/${options.name}/view', true);
+if (!$path) { echo 'missing'; return; }
+
+$item = ['title' => 'Материал', 'content' => 'Тело'];
+
+$render = Closure::bind(function () use ($path, $item) {
+    ob_start();
+    include $path;
+    return ob_get_clean();
+}, $template, get_class($template));
+
+$html = $render();
+
+echo strpos($html, 'Материал') !== false && strpos($html, 'Array') === false
+    ? 'ok'
+    : 'fail:' . $html;`,
+          expect: output => output.trim() === 'ok',
+        },
+      };
+    }
     case 'cache': {
       // Кэш-класс и хуки: ядро вызывает хук события <controller>_after_add.
       const addon = scaffoldAddon({
@@ -1280,7 +1316,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
