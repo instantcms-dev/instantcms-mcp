@@ -579,6 +579,12 @@ export function scaffoldImportExport(opts: ScaffoldImportExportOptions): Scaffol
   }
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Файлы кладутся в <name>/ вместо system/controllers/<name>/.',
+      'Классы не подключают друг друга (нет require): ApiImport не найдёт Import/Export.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: lowercase,
     files,
     fields_count: fields.length,

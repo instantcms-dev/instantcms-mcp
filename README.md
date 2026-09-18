@@ -173,12 +173,14 @@ git push && git push --tags
 | `scaffold_email`                                                                                          | рантайм: письмо читается `getLanguageTextFile`, `{плейсхолдеры}` подставляются |
 | `scaffold_admin_partial`, `scaffold_layout_override`                                                      | только статически                                                           |
 | `scaffold_cache`                                                                                          | рантайм: класс кэша и хук `<controller>_after_add` вызывается ядром         |
-| `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth` | только статически                                                           |
+| `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth`, `scaffold_component` | **прототип**: механизм не подтверждён, см. `limitations` в ответе инструмента |
 | `scaffold_migration`, `generate_migration`, `scaffold_lang`, `scaffold_hook`                          | рантайм: таблица создаётся из SQL, `install_package()` и хук вызываются ядром |
-| `scaffold_test`, `scaffold_component`                                                                     | только статически                                                           |
+| `scaffold_test`                                                                                           | только статически: нужны PHPUnit/Codeception                              |
 | `scaffold_template`, `scaffold_complete_template`                                                         | только статически: активация темы затрагивает весь сайт                     |
 
 «Только статически» означает: `php -l`, проверка символов против реального исходника, соответствие структуре каталогов. Поведение в рантайме для этих генераторов не подтверждено.
+
+**Прототипы.** `scaffold_import_export`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth`, `scaffold_component` и `scaffold_admin_partial`/`scaffold_layout_override` возвращают `scaffold_status: 'experimental'` и перечисляют в `limitations` конкретные расхождения с ICMS2 (выдуманные методы, несуществующие каталоги, классы без `require`, неверные пути и имена классов). Их вывод нельзя ставить на сайт без правки; аудит и переработка запланированы.
 
 ## Основные MCP-инструменты
 

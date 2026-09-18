@@ -471,6 +471,15 @@ export function scaffoldWebhook(opts: ScaffoldWebhookOptions): ScaffoldResult {
   }
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Ссылается на ${Name}WebhookLogger, которого генератор не создаёт.',
+      'Очередь вызывает cmsDatabase::get(): такого метода нет, нужен cmsModel.',
+      'Конфиг ищется в system/config/webhooks/ — такого каталога в ICMS2 нет.',
+      'Хуки пишутся в несуществующий system/hooks/; ядро читает system/controllers/<listener>/hooks/<event>.php.',
+      'Нет SQL для таблицы <name>_webhook_queue.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: lowercase,
     files,
     events_count: events.length,
