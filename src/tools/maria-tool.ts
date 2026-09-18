@@ -4,11 +4,15 @@ import {
   listTables,
   getDatabaseInfo,
   showIndexes,
+  type ExecuteOptions,
   type QueryParameter,
 } from './mariadb.js';
 
-export async function mariaExecuteQuery(sql: string): Promise<Record<string, unknown>> {
-  const result = await executeQuery(sql);
+export async function mariaExecuteQuery(
+  sql: string,
+  options: ExecuteOptions = {}
+): Promise<Record<string, unknown>> {
+  const result = await executeQuery(sql, [], options);
 
   if (result.error) {
     return {
@@ -24,6 +28,7 @@ export async function mariaExecuteQuery(sql: string): Promise<Record<string, unk
     columns: result.columns,
     rows: result.rows,
     rowCount: result.rowCount,
+    truncated: result.truncated ?? false,
     query: result.query,
     executionTime: result.executionTime,
   };

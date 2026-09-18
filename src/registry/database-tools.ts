@@ -28,8 +28,16 @@ export function registerDatabaseTools(server: McpServer): void {
       sql: z
         .string()
         .describe('SQL запрос для выполнения. Пример: SELECT * FROM cms_users LIMIT 10'),
+      allow_write: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          'Подтверждение изменения данных. По умолчанию разрешено только чтение; при DB_READONLY=1 запись запрещена всегда'
+        ),
     },
-    async ({ sql }) => databaseResult(mariaExecuteQuery(String(sql)))
+    async ({ sql, allow_write }) =>
+      databaseResult(mariaExecuteQuery(String(sql), { allowWrite: Boolean(allow_write) }))
   );
 
   defineTool(

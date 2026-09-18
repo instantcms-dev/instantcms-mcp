@@ -28,7 +28,10 @@ describe('MariaDB bindings and errors (no live database)', () => {
       filter: { title: "Author's page", deleted_at: null },
     });
     expect(execute).toHaveBeenCalledWith(
-      'SELECT * FROM `cms_users` WHERE `title` = ? AND `deleted_at` IS NULL ORDER BY `id` DESC LIMIT ? OFFSET ?',
+      {
+        sql: 'SELECT * FROM `cms_users` WHERE `title` = ? AND `deleted_at` IS NULL ORDER BY `id` DESC LIMIT ? OFFSET ?',
+        timeout: expect.any(Number),
+      },
       ["Author's page", 10, 20]
     );
     expect(result.rowCount).toBe(1);
