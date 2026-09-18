@@ -238,6 +238,33 @@ function buildArtifact(options: Options): Artifact {
         ],
       };
     }
+    case 'crud_options': {
+      // Опции CRUD: вариант шаблона списка и SEO-поля.
+      const result = scaffoldCrud({
+        addon_name: options.name,
+        fields: [
+          { name: 'description', type: 'text', title: 'Описание' },
+          { name: 'price', type: 'int', title: 'Цена' },
+        ],
+        options: { theme: options.theme, use_seo: true, list_template: 'table' },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify CRUD options', isBackend: 1 },
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns:
+              'user_id,title,description,price,meta_title,meta_description,meta_keywords,date_pub,is_pub',
+            values: `1,'Материал с SEO','Описание',10,'SEO заголовок','SEO описание','seo, ключи',NOW(),1`,
+          },
+        ],
+      };
+    }
     case 'routes': {
       // Дополнение с ЧПУ: routes.php плюс route() в контроллере.
       const result = scaffoldAddon({
@@ -658,9 +685,14 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
   };
 
   // Таблица items есть только у сценариев, которые её создают.
-  const hasItemsTable = ['crud', 'addon', 'widget', 'integration', 'routes'].includes(
-    options.scenario
-  );
+  const hasItemsTable = [
+    'crud',
+    'addon',
+    'widget',
+    'integration',
+    'routes',
+    'crud_options',
+  ].includes(options.scenario);
   const first = hasItemsTable ? idOf('is_pub=1') : 0;
   const hidden = hasItemsTable ? idOf('is_pub=0') : 0;
 
@@ -748,6 +780,21 @@ ${artifact.runtimePhp.script}
     if (status === 0) {
       add(`${artifact.runtimePhp.note}: результат`, 1, artifact.runtimePhp.expect(output) ? 1 : 0);
     }
+  }
+
+  if (options.scenario === 'crud_options') {
+    const index = await httpStatus(options, `${base}/${name}`);
+    add(`GET /${name} (таблица)`, 200, index.status);
+    add('шаблон списка — таблица', 1, index.body.includes('<table') ? 1 : 0);
+
+    const view = await httpStatus(options, `${base}/${name}/view/${first}`);
+    add(`GET /${name}/view/${first}`, 200, view.status);
+    add('SEO-заголовок применён', 1, view.body.includes('<title>SEO заголовок') ? 1 : 0);
+    add(
+      'SEO-описание применено',
+      1,
+      /<meta name="description" content="SEO описание"/.test(view.body) ? 1 : 0
+    );
   }
 
   if (options.scenario === 'routes') {
@@ -887,7 +934,7 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes');
+    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes|crud_options');
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {

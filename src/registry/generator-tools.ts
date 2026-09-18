@@ -112,13 +112,36 @@ export function registerGeneratorTools(server: McpServer): void {
       options: z
         .object({
           use_category: z.boolean().optional().describe('Использовать категории'),
-          use_tags: z.boolean().optional().describe('Использовать теги'),
-          use_comments: z.boolean().optional().describe('Использовать комментарии'),
-          use_rating: z.boolean().optional().describe('Использовать рейтинг'),
-          use_moderation: z.boolean().optional().describe('Использовать модерацию'),
-          use_seo: z.boolean().optional().describe('Использовать SEO'),
-          use_content: z.boolean().optional().describe('Использовать контент-тип'),
-          list_template: z.enum(['grid', 'list', 'table']).optional().describe('Шаблон списка'),
+          use_tags: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: требует хука tags_search_subjects и таблицы связей'),
+          use_comments: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: требует хука comments_targets и вывода виджета'),
+          use_rating: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: нужен реестр целей рейтинга'),
+          use_moderation: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: пре-модерация настраивается на уровне контент-типа'),
+          use_seo: z
+            .boolean()
+            .optional()
+            .describe(
+              'SEO-поля meta_title/meta_description/meta_keywords и их применение в экшене view'
+            ),
+          use_content: z
+            .boolean()
+            .optional()
+            .describe('Не поддерживается: регистрация контент-типа не автоматизирована'),
+          list_template: z
+            .enum(['grid', 'list', 'table'])
+            .optional()
+            .describe('Разметка index.tpl.php: карточки, список или таблица'),
         })
         .optional()
         .describe('Дополнительные опции'),

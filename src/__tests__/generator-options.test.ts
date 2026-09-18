@@ -32,22 +32,9 @@ describe('unsupported generator options', () => {
         scaffoldCrud({ addon_name: 'demo', fields: crudFields, options: { use_moderation: true } }),
     ],
     [
-      'use_seo',
-      () => scaffoldCrud({ addon_name: 'demo', fields: crudFields, options: { use_seo: true } }),
-    ],
-    [
       'use_content',
       () =>
         scaffoldCrud({ addon_name: 'demo', fields: crudFields, options: { use_content: true } }),
-    ],
-    [
-      'list_template',
-      () =>
-        scaffoldCrud({
-          addon_name: 'demo',
-          fields: crudFields,
-          options: { list_template: 'table' },
-        }),
     ],
     [
       'use_rate_limit',
@@ -125,7 +112,7 @@ describe('unsupported generator options', () => {
       scaffoldCrud({
         addon_name: 'demo',
         fields: crudFields,
-        options: { use_category: true, theme: 'modern' },
+        options: { use_category: true, theme: 'modern', use_seo: true, list_template: 'table' },
       })
     ).not.toThrow();
 
@@ -172,8 +159,61 @@ describe('unsupported generator options', () => {
       options: { use_category: true, theme: 'modern' },
     }) as { supported_options: string[]; options_applied: Record<string, unknown> };
 
-    expect(result.supported_options).toEqual(['theme', 'use_category', 'with_api_model']);
+    expect(result.supported_options).toEqual([
+      'theme',
+      'use_category',
+      'with_api_model',
+      'use_seo',
+      'list_template',
+    ]);
     expect(result.options_applied).toEqual({ theme: 'modern', use_category: true });
+  });
+
+  test('use_seo добавляет SEO-колонки, поля формы и метатеги в view', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields: crudFields,
+      options: { use_seo: true },
+    }) as { files: Record<string, string>; options_applied: Record<string, unknown> };
+
+    const sql = result.files['[pkg] install.sql'];
+    expect(sql).toContain('`meta_title`');
+    expect(sql).toContain('`meta_description`');
+    expect(sql).toContain('`meta_keywords`');
+
+    const form = result.files['package/system/controllers/demo/backend/forms/form_item.php'];
+    expect(form).toContain("fieldString('meta_title'");
+    expect(form).toContain("fieldString('meta_description'");
+
+    const view = result.files['package/system/controllers/demo/actions/view.php'];
+    expect(view).toContain("$item['meta_title']");
+    expect(view).toContain('setMeta');
+
+    expect(result.options_applied).toEqual({ use_seo: true });
+  });
+
+  test('без use_seo SEO-колонок нет', () => {
+    const result = scaffoldCrud({ addon_name: 'demo', fields: crudFields }) as {
+      files: Record<string, string>;
+    };
+    expect(result.files['[pkg] install.sql']).not.toContain('meta_title');
+  });
+
+  test('list_template выбирает разметку шаблона списка', () => {
+    const indexOf = (tpl: 'grid' | 'list' | 'table'): string => {
+      const result = scaffoldCrud({
+        addon_name: 'demo',
+        fields: crudFields,
+        options: { list_template: tpl },
+      }) as { files: Record<string, string> };
+
+      const key = Object.keys(result.files).find(k => k.endsWith('index.tpl.php'));
+      return key ? result.files[key] : '';
+    };
+
+    expect(indexOf('table')).toContain('<table');
+    expect(indexOf('list')).toContain('list-group-item');
+    expect(indexOf('grid')).toContain('card h-100');
   });
 
   test('rejectUnsupportedOptions игнорирует undefined, null и false', () => {
