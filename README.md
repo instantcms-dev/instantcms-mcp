@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `widget`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -158,8 +158,11 @@ git push && git push --tags
 | `scaffold_permission`                                                                                     | рантайм: правила регистрируются и читаются `cmsPermissions::getRulesList()` |
 | `scaffold_seo`                                                                                            | рантайм: хук `render_page` внедряет Open Graph и JSON-LD в страницу         |
 | `scaffold_filter`                                                                                         | рантайм: грид с фильтрами открывается в админке                             |
-| `scaffold_form`, `scaffold_grid`                                                                          | только статически: синтаксис, символы, структура                            |
-| `scaffold_cron`, `scaffold_email`, `scaffold_admin_partial`, `scaffold_layout_override`                   | только статически                                                           |
+| `scaffold_addon` (with_routes)                                                                            | рантайм: ЧПУ из `routes.php` через метод `route()`                          |
+| `scaffold_form`                                                                                           | рантайм: класс формы загружается и собирает структуру                       |
+| `scaffold_grid`                                                                                           | рантайм: функция грида возвращает колонки с фильтрами                       |
+| `scaffold_cron`                                                                                           | рантайм: задача планировщика регистрируется и выполняется                   |
+| `scaffold_email`, `scaffold_admin_partial`, `scaffold_layout_override`                                    | только статически                                                           |
 | `scaffold_import_export`, `scaffold_cache`, `scaffold_webhook`, `scaffold_external_api`, `scaffold_oauth` | только статически                                                           |
 | `scaffold_test`, `scaffold_lang`, `scaffold_hook`, `scaffold_component`, `generate_migration`             | только статически                                                           |
 | `scaffold_template`, `scaffold_complete_template`                                                         | только статически: активация темы затрагивает весь сайт                     |

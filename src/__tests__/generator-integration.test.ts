@@ -1,3 +1,4 @@
+import { scaffoldAddon } from '../tools/scaffold-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldWidget } from '../tools/widget-tool.js';
 
@@ -78,5 +79,60 @@ describe('generator integration', () => {
 
     expect(Object.keys(result.files)).toContain('[pkg] install_widget.php');
     expect(Object.keys(result.files)).not.toContain('[pkg] install.php');
+  });
+});
+
+/**
+ * ЧПУ дополнения: ядро вызывает route() только если экшен по имени не найден,
+ * поэтому одного routes.php недостаточно — нужен и метод, и чтение параметров
+ * маршрута из request (parseRoute кладёт их туда, а не в аргументы экшена).
+ */
+describe('addon routes', () => {
+  test('with_routes добавляет метод route() в контроллер', () => {
+    const result = scaffoldAddon({
+      name: 'rtdemo',
+      title: 'RT',
+      type: 'with_routes',
+    }) as { files: Record<string, string> };
+
+    const frontend = result.files['package/system/controllers/rtdemo/frontend.php'];
+    expect(frontend).toContain('public function route($uri)');
+    expect(frontend).toContain('$this->parseRoute($uri)');
+    expect(frontend).toContain('cmsCore::error404()');
+
+    const withoutRoutes = scaffoldAddon({ name: 'rtdemo', title: 'RT', type: 'basic' }) as {
+      files: Record<string, string>;
+    };
+    expect(withoutRoutes.files['package/system/controllers/rtdemo/frontend.php']).not.toContain(
+      'function route('
+    );
+  });
+
+  test('маршруты передают именованные параметры id и page', () => {
+    const result = scaffoldAddon({
+      name: 'rtdemo',
+      title: 'RT',
+      type: 'with_routes',
+    }) as { files: Record<string, string> };
+
+    const routes = result.files['package/system/controllers/rtdemo/routes.php'];
+    expect(routes).toMatch(/pattern' => '\/\^\(\\d\+\)\\\.html\$\/i'/);
+    expect(routes).toContain("1         => 'id'");
+    expect(routes).toContain("1         => 'page'");
+  });
+
+  test('экшены читают параметры маршрута из запроса', () => {
+    const result = scaffoldAddon({
+      name: 'rtdemo',
+      title: 'RT',
+      type: 'with_routes',
+    }) as { files: Record<string, string> };
+
+    expect(result.files['package/system/controllers/rtdemo/actions/index.php']).toContain(
+      "request->get('page', $page)"
+    );
+    expect(result.files['package/system/controllers/rtdemo/actions/view.php']).toContain(
+      "request->get('id', $id)"
+    );
   });
 });

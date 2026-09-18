@@ -238,6 +238,29 @@ function buildArtifact(options: Options): Artifact {
         ],
       };
     }
+    case 'routes': {
+      // Дополнение с ЧПУ: routes.php плюс route() в контроллере.
+      const result = scaffoldAddon({
+        name: options.name,
+        title: 'Verify routes',
+        type: 'with_routes',
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify routes', isBackend: 1 },
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,text,date_pub,is_pub',
+            values: `1,'Материал через маршрут','Текст',NOW(),1`,
+          },
+        ],
+      };
+    }
     case 'integration': {
       // CRUD с контрактом модели + API + виджет: проверяем, что связка работает
       // без ручных правок.
@@ -635,7 +658,9 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
   };
 
   // Таблица items есть только у сценариев, которые её создают.
-  const hasItemsTable = ['crud', 'addon', 'widget', 'integration'].includes(options.scenario);
+  const hasItemsTable = ['crud', 'addon', 'widget', 'integration', 'routes'].includes(
+    options.scenario
+  );
   const first = hasItemsTable ? idOf('is_pub=1') : 0;
   const hidden = hasItemsTable ? idOf('is_pub=0') : 0;
 
@@ -725,6 +750,24 @@ ${artifact.runtimePhp.script}
     }
   }
 
+  if (options.scenario === 'routes') {
+    const index = await httpStatus(options, `${base}/${name}/`);
+    add(`GET /${name}/ (главная)`, 200, index.status);
+
+    const page = await httpStatus(options, `${base}/${name}/page/1`);
+    add(`ЧПУ /${name}/page/1`, 200, page.status);
+
+    const routed = await httpStatus(options, `${base}/${name}/${first}.html`);
+    add(`ЧПУ /${name}/${first}.html`, 200, routed.status);
+    add('материал через маршрут найден', 1, routed.body.includes('Материал через маршрут') ? 1 : 0);
+
+    const missing = await httpStatus(options, `${base}/${name}/99999.html`);
+    add(`ЧПУ /${name}/99999.html`, 404, missing.status);
+
+    const direct = await httpStatus(options, `${base}/${name}/view/${first}`);
+    add(`прямой /${name}/view/${first}`, 200, direct.status);
+  }
+
   if (options.scenario === 'integration') {
     const index = await httpStatus(options, `${base}/${name}`);
     add(`GET /${name}`, 200, index.status);
@@ -809,7 +852,7 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration');
+    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes');
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {

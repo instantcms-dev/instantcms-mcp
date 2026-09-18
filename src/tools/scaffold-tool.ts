@@ -21,6 +21,7 @@ export function scaffoldAddon(opts: ScaffoldAddonOptions): object {
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
   const hasBackend = opts.type === 'with_admin';
+  const hasRoutes = opts.type === 'with_routes';
   const version = opts.version || '1.0.0';
   const author = opts.author || 'Author';
   const author_url = opts.author_url || 'https://example.com';
@@ -93,6 +94,26 @@ class model${Name} extends cmsModel {
 }`;
 
   // ── frontend.php ─────────────────────────────────────────────────────────────
+  const routeMethod = hasRoutes
+    ? `
+    /**
+     * Разбор ЧПУ из routes.php. Ядро вызывает route(), когда экшен по имени
+     * не найден (см. cmsController::executeAction), а parseRoute() кладёт
+     * именованные параметры маршрута в request.
+     */
+    public function route($uri) {
+
+        $action_name = $this->parseRoute($uri);
+
+        if (!$action_name) {
+            return cmsCore::error404();
+        }
+
+        return $this->runAction($action_name);
+    }
+`
+    : '';
+
   files[`${ctrl}/frontend.php`] = `<?php
 /**
  * @property \\model${Name} $model
@@ -104,7 +125,7 @@ class ${name} extends cmsFrontend {
     // Экшены размещаются в actions/*.php
     // Шаблоны — в /templates/{theme}/controllers/${name}/*.tpl.php
     // Языковой файл — /system/languages/ru/controllers/${name}/${name}.php
-
+${routeMethod}
 }`;
 
   // ── manifest.xml ─────────────────────────────────────────────────────────────
@@ -162,7 +183,8 @@ class action${Name}Index extends cmsAction {
 
     public function run($page = 1) {
 
-        $page    = max(1, (int) $page);
+        // Параметр может прийти аргументом экшена или из маршрута (routes.php).
+        $page    = max(1, (int) $this->request->get('page', $page));
         $perpage = !empty($this->options['perpage']) ? (int) $this->options['perpage'] : 10;
 
         $total = $this->model->filterEqual('is_pub', 1)->getCount('${name}_items');
@@ -193,7 +215,10 @@ class action${Name}View extends cmsAction {
 
     public function run($id = 0) {
 
-        $item = $this->model->getItemByField('${name}_items', 'id', (int) $id);
+        // Параметр может прийти аргументом экшена или из маршрута (routes.php).
+        $id = (int) $this->request->get('id', $id);
+
+        $item = $this->model->getItemByField('${name}_items', 'id', $id);
 
         if (!$item || empty($item['is_pub'])) {
             return cmsCore::error404();
@@ -226,7 +251,7 @@ class action${Name}View extends cmsAction {
   }
 
   // ── routes.php — только для with_routes ─────────────────────────────────────
-  if (opts.type === 'with_routes') {
+  if (hasRoutes) {
     files[`${ctrl}/routes.php`] = generateRoutes(name);
   }
 
@@ -863,11 +888,11 @@ function generateRoutes(name: string): string {
 function routes_${name}() {
 
     return [
-        // /myaddon/item-slug.html → action view
+        // /myaddon/12.html → action view (параметр id попадает в request)
         [
-            'pattern' => '/^([a-z0-9\\-_]+)\\.html$/i',
+            'pattern' => '/^(\\d+)\\.html$/i',
             'action'  => 'view',
-            1         => 'slug'
+            1         => 'id'
         ],
         // /myaddon/page/2 → action index с page
         [
