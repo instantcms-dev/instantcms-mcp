@@ -54,6 +54,11 @@ interface ScaffoldFilterOptions {
     use_url_params?: boolean;
     /** Enable saved filters feature */
     save_filters?: boolean;
+    /**
+     * Сгенерировать фронтенд-фильтр списка (механизм list_filter
+     * контроллера content): помощник на cmsFormField с applyFilter().
+     */
+    frontend?: boolean;
   };
 }
 
@@ -77,6 +82,20 @@ const FILTER_TYPES: Record<FilterType, string | null> = {
   date: 'range_date',
   daterange: 'range_date',
   checkbox: null,
+};
+
+/**
+ * Классы полей cmsFormField для фронтенд-фильтра.
+ * Проверены по 2.18.2: system/fields/*.php, метод applyFilter($model, $value).
+ */
+const FRONTEND_FIELD_CLASSES: Record<FilterType, string> = {
+  text: 'fieldString',
+  select: 'fieldList',
+  multiselect: 'fieldListMultiple',
+  range: 'fieldNumber',
+  date: 'fieldDate',
+  daterange: 'fieldDate',
+  checkbox: 'fieldCheckbox',
 };
 
 function filterTitle(NAME: string, field: string): string {
@@ -146,6 +165,107 @@ ${lines}
 `;
 }
 
+/**
+ * Фронтенд-фильтр списка контроллера.
+ *
+ * Механизм повторяет контроллер content (system/controllers/content/frontend.php):
+ * поля cmsFormField сами применяют значение к модели через applyFilter().
+ */
+function generateFrontendFilter(
+  lowercase: string,
+  UpperCamelCase: string,
+  NAME: string,
+  fields: FilterField[]
+): string {
+  const fieldsCode = fields
+    .map(field => {
+      const className = FRONTEND_FIELD_CLASSES[field.type];
+      const options = [`'title' => ${filterTitle(NAME, field.field)}`];
+
+      if ((field.type === 'select' || field.type === 'multiselect') && field.options?.length) {
+        const items = field.options
+          .map(option => `'${option.value}' => '${option.label.replace(/'/g, "\\'")}'`)
+          .join(', ');
+        options.push(`'items' => [${items}]`);
+      }
+
+      return `            '${field.field}' => new ${className}('${field.field}', [${options.join(', ')}]),`;
+    })
+    .join('\n');
+
+  return `<?php
+
+/**
+ * Фильтры фронтенд-списка контроллера ${lowercase}.
+ *
+ * Подключение в экшене index:
+ *
+ *     $active = ${UpperCamelCase}Filter::apply($this->model, $this->request);
+ *     $items  = $this->model->getPublished($perpage, ($page - 1) * $perpage);
+ *     ...
+ *     'filter' => [
+ *         'fields' => ${UpperCamelCase}Filter::getFields(),
+ *         'active' => $active,
+ *     ]
+ *
+ * Поля строятся на cmsFormField, поэтому применяются ядром через applyFilter()
+ * (как в system/controllers/content/frontend.php).
+ */
+class ${UpperCamelCase}Filter {
+
+    /**
+     * @return array[string]cmsFormField
+     */
+    public static function getFields(): array {
+
+        return [
+${fieldsCode}
+        ];
+    }
+
+    /**
+     * Применяет фильтры из запроса к модели.
+     *
+     * @param cmsModel   $model
+     * @param cmsRequest $request
+     * @return array активные значения по имени поля
+     */
+    public static function apply(cmsModel $model, cmsRequest $request): array {
+
+        $active = [];
+
+        foreach (self::getFields() as $name => $field) {
+
+            if (!$request->has($name)) {
+                continue;
+            }
+
+            $value = $request->get($name, false, $field->getDefaultVarType());
+            $value = $field->storeFilter($value);
+
+            if (is_empty_value($value)) {
+                continue;
+            }
+
+            if ($field->applyFilter($model, $value) !== false) {
+                $active[$name] = $value;
+            }
+        }
+
+        return $active;
+    }
+
+    /**
+     * Активные фильтры как строка запроса — для ссылок пагинации.
+     */
+    public static function getQuery(array $active): string {
+
+        return $active ? http_build_query($active) : '';
+    }
+}
+`;
+}
+
 export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
   rejectUnsupportedOptions('scaffold_filter', opts.options, {
     use_ajax: 'грид ICMS2 фильтрует без перезагрузки сам — отдельная AJAX-реализация не нужна',
@@ -163,9 +283,20 @@ export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
     }
   }
 
-  const { lowercase } = normalizeAddonName(opts.addon_name);
+  const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
   const NAME = lowercase.toUpperCase();
   const gridName = lowercase;
+  const frontend = Boolean(opts.options?.frontend);
+
+  if (frontend) {
+    for (const field of opts.fields) {
+      if ((field.type === 'select' || field.type === 'multiselect') && !field.options?.length) {
+        throw new Error(
+          `scaffold_filter: для типа ${field.type} в поле ${field.field} нужны options (значение и подпись)`
+        );
+      }
+    }
+  }
 
   const filterFields = opts.fields.map(field => ({
     field: field.field,
@@ -182,6 +313,11 @@ export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
     ),
   };
 
+  if (frontend) {
+    files[`package/system/controllers/${lowercase}/${lowercase}_filter.php`] =
+      generateFrontendFilter(lowercase, UpperCamelCase, NAME, opts.fields);
+  }
+
   return {
     addon_name: lowercase,
     grid_name: gridName,
@@ -189,16 +325,24 @@ export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
     filter_fields: filterFields,
     scaffold_status: 'partial',
     files,
+    supported_options: ['frontend'],
+    options_applied: { frontend },
     structure_notes: [
       `Функция грида: grid_${gridName}($controller) в backend/grids/grid_${gridName}.php`,
       `Экшен подключает грид через $this->grid_name = '${gridName}';`,
       `Заголовки колонок: константы LANG_${NAME}_* в языковом файле контроллера`,
       'Колонки без поддержанного типа фильтрации (checkbox) получают обычный столбец',
+      frontend
+        ? `Фронтенд-фильтр: класс ${UpperCamelCase}Filter в ${lowercase}_filter.php`
+        : 'Фронтенд-фильтр не запрошен (frontend) — генератор делает только бэкенд-грид',
     ],
     limitations: [
-      'Тип фильтра checkbox не поддержан — используйте колонку-флаг (flag) без фильтра.',
+      'Тип фильтра checkbox не поддержан в гриде — используйте колонку-флаг (flag) без фильтра.',
       'Языковой файл может перезаписать существующий — перенесите константы в свой файл.',
       'Грид показывает только указанные столбцы: объедините их с остальными вручную.',
+      frontend
+        ? `${UpperCamelCase}Filter::apply() нужно вызвать в экшене index до выборки строк; разметку формы стройте по ${UpperCamelCase}Filter::getFields().`
+        : 'Фронтенд-фильтр включается опцией frontend.',
     ],
   };
 }

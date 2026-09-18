@@ -959,6 +959,63 @@ describe('Filter Tool', () => {
       /поля|столбец/i
     );
   });
+
+  test('frontend создаёт помощник фильтра на cmsFormField', () => {
+    const result = scaffoldFilter({
+      addon_name: 'catalog',
+      fields: [
+        { field: 'title', type: 'text', label: 'Заголовок' },
+        { field: 'price', type: 'range', label: 'Цена' },
+        {
+          field: 'category_id',
+          type: 'select',
+          label: 'Категория',
+          options: [
+            { value: '1', label: 'Первая' },
+            { value: '2', label: 'Вторая' },
+          ],
+        },
+      ],
+      options: { frontend: true },
+    }) as any;
+
+    expect(result.options_applied).toEqual({ frontend: true });
+    expect(result.supported_options).toEqual(['frontend']);
+
+    const helper = result.files['package/system/controllers/catalog/catalog_filter.php'];
+    expect(helper).toContain('class CatalogFilter');
+    expect(helper).toContain('public static function getFields(): array');
+    expect(helper).toContain(
+      'public static function apply(cmsModel $model, cmsRequest $request): array'
+    );
+    expect(helper).toContain(
+      "'title' => new fieldString('title', ['title' => LANG_CATALOG_TITLE]),"
+    );
+    expect(helper).toContain("'price' => new fieldNumber('price'");
+    expect(helper).toContain("'items' => ['1' => 'Первая', '2' => 'Вторая']");
+    expect(helper).toContain('$field->applyFilter($model, $value)');
+    expect(helper).toContain('http_build_query($active)');
+  });
+
+  test('frontend без options у select падает с понятной ошибкой', () => {
+    expect(() =>
+      scaffoldFilter({
+        addon_name: 'catalog',
+        fields: [{ field: 'category_id', type: 'select', label: 'Категория' }],
+        options: { frontend: true },
+      })
+    ).toThrow(/options/);
+  });
+
+  test('без frontend помощник не создаётся', () => {
+    const result = scaffoldFilter({
+      addon_name: 'catalog',
+      fields: [{ field: 'title', type: 'text', label: 'Заголовок' }],
+    }) as any;
+
+    expect(result.files['package/system/controllers/catalog/catalog_filter.php']).toBeUndefined();
+    expect(result.options_applied).toEqual({ frontend: false });
+  });
 });
 
 describe('SEO Tool', () => {
