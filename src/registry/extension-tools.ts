@@ -247,6 +247,10 @@ export function registerExtensionTools(server: McpServer): void {
       options: z
         .object({
           auto_generation: z.boolean().optional().describe('Автогенерация мета-тегов'),
+          use_slug: z
+            .boolean()
+            .optional()
+            .describe('Материалы доступны по ЧПУ /{controller}/<slug>.html'),
           use_sitemap: z.boolean().optional().describe('Использовать sitemap'),
           use_og_tags: z.boolean().optional().describe('Open Graph теги'),
           use_schema_org: z.boolean().optional().describe('Schema.org разметка'),

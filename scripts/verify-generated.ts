@@ -27,6 +27,7 @@ import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
+import { scaffoldSeo } from '../src/tools/seo-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
 
 interface Options {
@@ -73,6 +74,8 @@ interface Artifact {
   widgetInstaller?: string;
   /** Задача планировщика, если создан cron-хук. */
   schedulerTask?: { hook: string; period: number; title: string };
+  /** Слушатели событий, которые нужно зарегистрировать в cms_events. */
+  events?: Array<{ event: string; listener?: string; ordering?: number }>;
   /** Строка в cms_widgets, если создан виджет. */
   widget?: { controller: string; name: string; title: string };
   /** Опциональная привязка виджета к позиции. */
@@ -261,6 +264,37 @@ function buildArtifact(options: Options): Artifact {
             columns:
               'user_id,title,description,price,meta_title,meta_description,meta_keywords,date_pub,is_pub',
             values: `1,'Материал с SEO','Описание',10,'SEO заголовок','SEO описание','seo, ключи',NOW(),1`,
+          },
+        ],
+      };
+    }
+    case 'crud_slug': {
+      // ЧПУ: колонка slug, routes.php, route() и поиск материала по slug.
+      const result = scaffoldCrud({
+        addon_name: options.name,
+        fields: [{ name: 'description', type: 'text', title: 'Описание' }],
+        options: { theme: options.theme, use_slug: true },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      // SEO-хук должен находить материал по slug, а не по id.
+      const seo = scaffoldSeo({
+        addon_name: options.name,
+        options: { use_slug: true, use_og_tags: true, use_schema_org: true },
+      }) as { files: Record<string, string> };
+      put(seo.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify CRUD slug', isBackend: 1 },
+        events: [{ event: 'render_page' }],
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,slug,description,date_pub,is_pub',
+            values: `1,'Материал ЧПУ','moy-material','Описание',NOW(),1`,
           },
         ],
       };
@@ -551,6 +585,13 @@ echo 'ok';
        VALUES ('cron_${artifact.schedulerTask.hook}','${artifact.controller?.name}',1,1);`
     );
   }
+  for (const event of artifact.events ?? []) {
+    mysql(
+      options,
+      `INSERT INTO cms_events (event,listener,ordering,is_enabled)
+       VALUES ('${event.event}','${event.listener ?? artifact.controller?.name}',${event.ordering ?? 99},1);`
+    );
+  }
   if (artifact.widget) {
     mysql(
       options,
@@ -692,6 +733,7 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     'integration',
     'routes',
     'crud_options',
+    'crud_slug',
   ].includes(options.scenario);
   const first = hasItemsTable ? idOf('is_pub=1') : 0;
   const hidden = hasItemsTable ? idOf('is_pub=0') : 0;
@@ -780,6 +822,24 @@ ${artifact.runtimePhp.script}
     if (status === 0) {
       add(`${artifact.runtimePhp.note}: результат`, 1, artifact.runtimePhp.expect(output) ? 1 : 0);
     }
+  }
+
+  if (options.scenario === 'crud_slug') {
+    const pretty = await httpStatus(options, `${base}/${name}/moy-material.html`);
+    add(`GET /${name}/moy-material.html (ЧПУ)`, 200, pretty.status);
+    add('ЧПУ отдаёт материал', 1, pretty.body.includes('Материал ЧПУ') ? 1 : 0);
+    add('OG-разметка по slug', 1, pretty.body.includes('og:title') ? 1 : 0);
+    add(
+      'og:url ведёт на ЧПУ',
+      1,
+      /property="og:url" content="[^"]*moy-material\.html"/.test(pretty.body) ? 1 : 0
+    );
+
+    const missing = await httpStatus(options, `${base}/${name}/net-takogo-materiala.html`);
+    add(`GET /${name}/net-takogo-materiala.html`, 404, missing.status);
+
+    const direct = await httpStatus(options, `${base}/${name}/view/${first}`);
+    add(`GET /${name}/view/${first} (id)`, 200, direct.status);
   }
 
   if (options.scenario === 'crud_options') {
@@ -934,7 +994,9 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes|crud_options');
+    die(
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes|crud_options|crud_slug'
+    );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {

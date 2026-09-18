@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `crud_options`, `crud_slug`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -161,6 +161,7 @@ git push && git push --tags
 | `scaffold_addon` (with_routes)                                                                            | рантайм: ЧПУ из `routes.php` через метод `route()`                          |
 | `scaffold_crud` (with_api_model)                                                                          | рантайм: контракт API и токены выдаются и проверяются                       |
 | `scaffold_crud` (use_seo, list_template)                                                                  | рантайм: SEO-метатеги в `<head>` и разметка списка таблицей                 |
+| `scaffold_crud` (use_slug) + `scaffold_seo` (use_slug)                                                    | рантайм: ЧПУ `/c/<slug>.html`, 404 на чужой slug, OG по slug                |
 | `scaffold_form`                                                                                           | рантайм: класс формы загружается и собирает структуру                       |
 | `scaffold_grid`                                                                                           | рантайм: функция грида возвращает колонки с фильтрами                       |
 | `scaffold_cron`                                                                                           | рантайм: задача планировщика регистрируется и выполняется                   |

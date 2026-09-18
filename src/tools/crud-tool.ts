@@ -21,6 +21,8 @@ interface ScaffoldCrudOptions {
     use_rating?: boolean;
     use_moderation?: boolean;
     use_seo?: boolean;
+    /** ЧПУ вида /{controller}/<slug>.html: колонка slug, routes.php и маршрут route(). */
+    use_slug?: boolean;
     use_content?: boolean;
     list_template?: 'grid' | 'list' | 'table';
     theme?: string;
@@ -67,6 +69,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   const useCategory = Boolean(opts.options?.use_category);
   const withApiModel = Boolean(opts.options?.with_api_model);
   const useSeo = Boolean(opts.options?.use_seo);
+  const useSlug = Boolean(opts.options?.use_slug);
   const listTemplate = opts.options?.list_template || 'grid';
   const theme = opts.options?.theme || 'modern';
   if (!/^[a-z][a-z0-9_]{0,63}$/.test(theme)) throw new Error('Invalid theme name');
@@ -75,12 +78,15 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
 
   const ctrl = `package/system/controllers/${name}`;
 
-  files[`${ctrl}/model.php`] = generateModel(name, Name, useCategory, withApiModel);
-  files[`${ctrl}/frontend.php`] = generateFrontend(name);
-  files[`${ctrl}/actions/index.php`] = generateActionIndex(name, Name, NAME);
-  files[`${ctrl}/actions/view.php`] = generateActionView(name, Name, NAME);
-  files[`${ctrl}/actions/add.php`] = generateActionAdd(name, Name, NAME);
-  files[`${ctrl}/actions/edit.php`] = generateActionEdit(name, Name, NAME);
+  files[`${ctrl}/model.php`] = generateModel(name, Name, useCategory, withApiModel, useSlug);
+  files[`${ctrl}/frontend.php`] = generateFrontend(name, Name, useSlug);
+  if (useSlug) {
+    files[`${ctrl}/routes.php`] = generateCrudRoutes(name);
+  }
+  files[`${ctrl}/actions/index.php`] = generateActionIndex(name, Name, NAME, useSlug);
+  files[`${ctrl}/actions/view.php`] = generateActionView(name, Name, NAME, useSlug);
+  files[`${ctrl}/actions/add.php`] = generateActionAdd(name, Name, NAME, useSlug);
+  files[`${ctrl}/actions/edit.php`] = generateActionEdit(name, Name, NAME, useSlug);
   files[`${ctrl}/actions/delete.php`] = generateActionDelete(name, Name, NAME);
 
   if (useCategory) {
@@ -99,14 +105,16 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     Name,
     NAME,
     'Item',
-    useSeo
+    useSeo,
+    useSlug
   );
   files[`${ctrl}/forms/form_item_public.php`] = generateFormItem(
     opts.fields,
     Name,
     NAME,
     'ItemPublic',
-    useSeo
+    useSeo,
+    useSlug
   );
 
   files[`package/system/languages/ru/controllers/${name}/${name}.php`] = generateLang(
@@ -116,16 +124,23 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   );
 
   const tpl = `package/templates/${theme}/controllers/${name}`;
-  files[`${tpl}/index.tpl.php`] = generateTplIndex(name, NAME, listTemplate);
+  files[`${tpl}/index.tpl.php`] = generateTplIndex(name, NAME, listTemplate, useSlug);
   files[`${tpl}/view.tpl.php`] = generateTplView(name, NAME);
   files[`${tpl}/add.tpl.php`] = generateTplForm(NAME, '_ADD');
   files[`${tpl}/edit.tpl.php`] = generateTplForm(NAME, '_EDIT');
   files[`${tpl}/delete.tpl.php`] = generateTplDelete(NAME);
   if (useCategory) {
-    files[`${tpl}/category.tpl.php`] = generateTplCategory(name, NAME);
+    files[`${tpl}/category.tpl.php`] = generateTplCategory(name, NAME, useSlug);
   }
 
-  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory, withApiModel, useSeo);
+  files['[pkg] install.sql'] = generateSql(
+    name,
+    opts.fields,
+    useCategory,
+    withApiModel,
+    useSeo,
+    useSlug
+  );
 
   return {
     addon_name: name,
@@ -143,7 +158,9 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     ],
     limitations: [
       'install.sql создаёт таблицу с префиксом cms_ — замените префикс на реальный из system/config/config.php.',
-      'Маршрут контроллера не создаётся: добавьте routes.php или используйте адреса вида /{controller}/view/{id}.',
+      useSlug
+        ? 'ЧПУ включены: routes.php и route() сгенерированы, ссылки ведут на /{controller}/<slug>.html.'
+        : 'Маршрут контроллера не создаётся: добавьте routes.php или используйте адреса вида /{controller}/view/{id}.',
       'Права доступа и модерация не генерируются.',
       useCategory
         ? 'Режим категорий создаёт действия и модель, но таблицу категорий нужно создать отдельно.'
@@ -154,12 +171,20 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
       'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     options: opts.options || {},
-    supported_options: ['theme', 'use_category', 'with_api_model', 'use_seo', 'list_template'],
+    supported_options: [
+      'theme',
+      'use_category',
+      'with_api_model',
+      'use_seo',
+      'use_slug',
+      'list_template',
+    ],
     options_applied: appliedOptions(opts.options, [
       'theme',
       'use_category',
       'with_api_model',
       'use_seo',
+      'use_slug',
       'list_template',
     ]),
   };
@@ -265,8 +290,18 @@ function generateModel(
   name: string,
   Name: string,
   useCategory: boolean,
-  withApiModel: boolean
+  withApiModel: boolean,
+  useSlug: boolean
 ): string {
+  // Поиск по ЧПУ. cmsModel::getItemByField() — штатный метод ядра.
+  const slugMethods = useSlug
+    ? `
+
+    public function getItemBySlug(string $slug) {
+        return $this->getItemByField('${name}_items', 'slug', $slug);
+    }
+`
+    : '';
   const categoryMethods = useCategory
     ? `
     public function getItemCategoryBySlug(string $slug) {
@@ -315,11 +350,28 @@ class model${Name} extends cmsModel {
     public function deleteItem($id) {
         return $this->delete('${name}_items', $id);
     }
-${withApiModel ? generateApiModelMethods(name) : ''}${categoryMethods}
+${withApiModel ? generateApiModelMethods(name) : ''}${slugMethods}${categoryMethods}
 }`;
 }
 
-function generateFrontend(name: string): string {
+function generateFrontend(name: string, Name: string, useSlug: boolean): string {
+  // routes.php работает только при наличии route(): cmsController::executeAction
+  // обращается к файлу маршрутов, когда экшена по имени нет, и требует route().
+  const routeMethod = useSlug
+    ? `
+    public function route($uri) {
+
+        $action_name = $this->parseRoute($uri);
+
+        if (!$action_name) {
+            return cmsCore::error404();
+        }
+
+        return $this->runAction($action_name);
+    }
+`
+    : '';
+
   return `<?php
 
 class ${name} extends cmsFrontend {
@@ -331,11 +383,45 @@ class ${name} extends cmsFrontend {
     public function run() {
         return $this->redirect(href_to(${name}::ROUTE_NAME));
     }
+${routeMethod}
+}`;
+}
+
+/**
+ * routes.php для ЧПУ: /{controller}/<slug>.html и /{controller}/page/N.
+ * parseRoute() кладёт именованные параметры маршрута в request, а не в аргументы экшена.
+ */
+function generateCrudRoutes(name: string): string {
+  return `<?php
+
+function routes_${name}() {
+
+    return [
+        [
+            'pattern' => '/^([a-z0-9\\-\\/]+)\\.html$/i',
+            'action'  => 'view',
+            1         => 'slug'
+        ],
+        [
+            'pattern' => '/^page\\/(\\d+)$/i',
+            'action'  => 'index',
+            1         => 'page'
+        ],
+        [
+            'pattern' => '/^$/',
+            'action'  => 'index'
+        ]
+    ];
 
 }`;
 }
 
-function generateActionIndex(name: string, Name: string, NAME: string): string {
+function generateActionIndex(name: string, Name: string, NAME: string, useSlug: boolean): string {
+  // При ЧПУ параметр page приходит из маршрута в request, а не аргументом экшена.
+  const readPage = useSlug
+    ? "\n        $page    = max(1, (int) $this->request->get('page', $page));"
+    : '';
+
   return `<?php
 
 class action${Name}Index extends cmsAction {
@@ -343,7 +429,7 @@ class action${Name}Index extends cmsAction {
     public function run($page = 1) {
 
         $perpage = !empty($this->options['perpage']) ? (int) $this->options['perpage'] : 10;
-        $page    = max(1, (int) $page);
+        $page    = max(1, (int) $page);${readPage}
 
         $total = $this->model->getCountPublished();
         $items = $this->model->getPublished($perpage, ($page - 1) * $perpage);
@@ -363,14 +449,23 @@ class action${Name}Index extends cmsAction {
 }`;
 }
 
-function generateActionView(name: string, Name: string, NAME: string): string {
+function generateActionView(name: string, Name: string, NAME: string, useSlug: boolean): string {
+  // При ЧПУ /{controller}/<slug>.html параметр slug кладёт в request route().
+  const lookup = useSlug
+    ? `        $slug = (string) $this->request->get('slug', '');
+
+        $item = $slug !== ''
+            ? $this->model->getItemBySlug($slug)
+            : $this->model->getItemById('${name}_items', (int) $id);`
+    : `        $item = $this->model->getItemById('${name}_items', (int) $id);`;
+
   return `<?php
 
 class action${Name}View extends cmsAction {
 
     public function run($id = 0) {
 
-        $item = $this->model->getItemById('${name}_items', (int) $id);
+${lookup}
 
         if (!$item || empty($item['is_pub'])) {
             return cmsCore::error404();
@@ -396,7 +491,21 @@ class action${Name}View extends cmsAction {
 }`;
 }
 
-function generateActionAdd(name: string, Name: string, NAME: string): string {
+function generateActionAdd(name: string, Name: string, NAME: string, useSlug: boolean): string {
+  const slugBlock = useSlug
+    ? `
+                if (empty($item['slug'])) {
+                    $item['slug'] = lang_slug($item['title']);
+                } else {
+                    $item['slug'] = lang_slug($item['slug']);
+                }
+                $item['slug'] = $this->model->checkCorrectEqualSlug('${name}_items', $item['slug'], 0);
+`
+    : '';
+  const redirect = useSlug
+    ? "return $this->redirect(href_to(${name}::ROUTE_NAME, $item['slug'] . '.html'));"
+    : "return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));";
+
   return `<?php
 
 class action${Name}Add extends cmsAction {
@@ -419,12 +528,12 @@ class action${Name}Add extends cmsAction {
 
                 $item['user_id']  = $this->cms_user->id;
                 $item['date_pub'] = date('Y-m-d H:i:s');
-
+${slugBlock}
                 $id = $this->model->addItem($item);
 
                 cmsEventsManager::hook('${name}_after_add', $item, $id);
 
-                return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));
+                ${redirect}
             }
         }
 
@@ -442,7 +551,21 @@ class action${Name}Add extends cmsAction {
 }`;
 }
 
-function generateActionEdit(name: string, Name: string, NAME: string): string {
+function generateActionEdit(name: string, Name: string, NAME: string, useSlug: boolean): string {
+  const slugBlock = useSlug
+    ? `
+                if (empty($item['slug'])) {
+                    $item['slug'] = lang_slug($item['title']);
+                } else {
+                    $item['slug'] = lang_slug($item['slug']);
+                }
+                $item['slug'] = $this->model->checkCorrectEqualSlug('${name}_items', $item['slug'], (int) $id);
+`
+    : '';
+  const editRedirect = useSlug
+    ? `return $this->redirect(href_to(${name}::ROUTE_NAME, $item['slug'] . '.html'));`
+    : `return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));`;
+
   return `<?php
 
 class action${Name}Edit extends cmsAction {
@@ -468,11 +591,12 @@ class action${Name}Edit extends cmsAction {
 
             if (!$errors) {
 
+${slugBlock}
                 $this->model->updateItem($id, $item);
 
                 cmsEventsManager::hook('${name}_after_update', $item, $id);
 
-                return $this->redirect(href_to(${name}::ROUTE_NAME, 'view', $id));
+                ${editRedirect}
             }
         }
 
@@ -788,8 +912,21 @@ function generateFormItem(
   Name: string,
   NAME: string,
   formClassSuffix: string,
-  useSeo: boolean
+  useSeo: boolean,
+  useSlug: boolean
 ): string {
+  // Поле ЧПУ: правило slug проверяет cmsController::validate_slug().
+  const slugField = useSlug
+    ? `                    new fieldString('slug', [
+                        'title' => LANG_${NAME}_SLUG,
+                        'rules' => [
+                            ['slug'],
+                            ['max_length', 255],
+                        ],
+                    ]),
+`
+    : '';
+
   let formCode = `<?php
 
 class form${Name}${formClassSuffix} extends cmsForm {
@@ -808,7 +945,7 @@ class form${Name}${formClassSuffix} extends cmsForm {
                             ['max_length', 255],
                         ],
                     ]),
-`;
+${slugField}`;
 
   for (const field of fields) {
     if (SYSTEM_FIELDS.has(field.name) || field.is_system) {
@@ -935,7 +1072,8 @@ function generateSql(
   fields: CrdField[],
   useCategory: boolean,
   withApiModel: boolean,
-  useSeo: boolean
+  useSeo: boolean,
+  useSlug: boolean
 ): string {
   const custom = fields
     .filter(field => !SYSTEM_FIELDS.has(field.name) && !field.is_system)
@@ -944,6 +1082,10 @@ function generateSql(
   const categoryColumn = useCategory
     ? `    \`category_id\` int(10) unsigned NOT NULL DEFAULT 0,`
     : '';
+
+  // ЧПУ: slug уникален, экшен view ищет материал по нему.
+  const slugColumn = useSlug ? "    `slug`    varchar(255) NOT NULL DEFAULT ''," : '';
+  const slugKey = useSlug ? ',\n    UNIQUE KEY `slug` (`slug`)' : '';
 
   // SEO-поля: их применяет экшен view через cmsTemplate::setMeta().
   const seoColumns = useSeo
@@ -972,13 +1114,14 @@ ${categoryColumn}
     \`user_id\`  int(10) unsigned NOT NULL DEFAULT 0,
     \`title\`    varchar(255) NOT NULL DEFAULT '',
 ${seoColumns}
+${slugColumn}
 ${custom.join('\n')}
     \`date_pub\` datetime NOT NULL,
     \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT 1,
     PRIMARY KEY (\`id\`),
     KEY \`user_id\` (\`user_id\`),
     KEY \`is_pub\` (\`is_pub\`),
-    KEY \`date_pub\` (\`date_pub\`)
+    KEY \`date_pub\` (\`date_pub\`)${slugKey}
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ${categoryTable}${withApiModel ? generateApiTokensTable(name) : ''}`;
 }
@@ -994,6 +1137,7 @@ define('LANG_${NAME}_DELETE_SUCCESS', ${quotePhp('Запись успешно у
 define('LANG_${NAME}_NOT_FOUND', ${quotePhp('Ничего не найдено')});
 define('LANG_${NAME}_IS_PUB', ${quotePhp('Опубликовано')});
 define('LANG_${NAME}_BASIC', ${quotePhp('Основное')});
+define('LANG_${NAME}_SLUG', ${quotePhp('Адрес (ЧПУ)')});
 define('LANG_${NAME}_META_TITLE', ${quotePhp('SEO: заголовок')});
 define('LANG_${NAME}_META_DESCRIPTION', ${quotePhp('SEO: описание')});
 define('LANG_${NAME}_META_KEYWORDS', ${quotePhp('SEO: ключевые слова')});
@@ -1020,7 +1164,16 @@ define('LANG_${NAME}_CP_DELETE', ${quotePhp('Удаление элемента')
   return lang;
 }
 
-function generateTplIndex(name: string, NAME: string, listTemplate: string): string {
+function generateTplIndex(
+  name: string,
+  NAME: string,
+  listTemplate: string,
+  useSlug: boolean
+): string {
+  // Ссылка на материал: ЧПУ по slug либо стандартный /{controller}/view/{id}.
+  const viewLink = useSlug
+    ? `href_to('${name}', $item['slug'] . '.html')`
+    : `href_to('${name}', 'view', $item['id'])`;
   const header = `<?php
 /**
  * @var array  $items
@@ -1043,7 +1196,7 @@ function generateTplIndex(name: string, NAME: string, listTemplate: string): str
 `;
 
   const itemLink = (inner: string): string =>
-    `                <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">\n                    ${inner}\n                </a>`;
+    `                <a href="<?php echo ${viewLink}; ?>">\n                    ${inner}\n                </a>`;
 
   if (listTemplate === 'table') {
     return `${header}    <table class="table table-striped">
@@ -1057,7 +1210,7 @@ function generateTplIndex(name: string, NAME: string, listTemplate: string): str
             <?php foreach ($items as $item) { ?>
                 <tr>
                     <td>
-                        <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                        <a href="<?php echo ${viewLink}; ?>">
                             <?php echo html($item['title']); ?>
                         </a>
                     </td>
@@ -1091,7 +1244,7 @@ ${footer}`;
                 <div class="card h-100">
                     <div class="card-body">
                         <h2 class="h5 mb-2">
-                            <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                            <a href="<?php echo ${viewLink}; ?>">
                                 <?php echo html($item['title']); ?>
                             </a>
                         </h2>
@@ -1161,7 +1314,10 @@ function generateTplDelete(NAME: string): string {
 `;
 }
 
-function generateTplCategory(name: string, NAME: string): string {
+function generateTplCategory(name: string, NAME: string, useSlug: boolean): string {
+  const viewLink = useSlug
+    ? `href_to('${name}', $item['slug'] . '.html')`
+    : `href_to('${name}', 'view', $item['id'])`;
   return `<?php
 /**
  * @var array  $category
@@ -1178,7 +1334,7 @@ function generateTplCategory(name: string, NAME: string): string {
     <ul>
         <?php foreach ($items as $item) { ?>
             <li>
-                <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                <a href="<?php echo ${viewLink}; ?>">
                     <?php echo html($item['title']); ?>
                 </a>
             </li>

@@ -1003,6 +1003,39 @@ describe('SEO Tool', () => {
     expect(plain).not.toContain("'og:title'");
   });
 
+  test('use_slug находит материал по slug и строит ЧПУ', () => {
+    const result = scaffoldSeo({
+      addon_name: 'articles',
+      options: { use_slug: true, use_og_tags: true, use_sitemap: true },
+    }) as any;
+
+    const hook = result.files['package/system/controllers/articles/hooks/render_page.php'];
+    // Хук render_page получает пустой request, поэтому берёт slug у cmsCore.
+    expect(hook).toContain("cmsCore::getInstance()->request->get('slug'");
+    expect(hook).toContain("filterEqual('slug'");
+    expect(hook).toContain("$slug . '.html'");
+
+    const sitemap =
+      result.files['package/system/controllers/articles/hooks/sitemap_urls_list_articles.php'];
+    expect(sitemap).toContain("$entry['slug'] . '.html'");
+
+    expect(result.options_applied).toEqual({
+      use_schema_org: true,
+      use_og_tags: true,
+      use_sitemap: true,
+      use_slug: true,
+    });
+    expect(result.supported_options).toContain('use_slug');
+  });
+
+  test('без use_slug материал ищется по id из uri_params', () => {
+    const result = scaffoldSeo({ addon_name: 'articles' }) as any;
+    const hook = result.files['package/system/controllers/articles/hooks/render_page.php'];
+    expect(hook).toContain('uri_params[0]');
+    expect(hook).toContain("'view', $item_id");
+    expect(hook).not.toContain("request->get('slug'");
+  });
+
   test('вымышленных методов ICMS2 в хуке нет', () => {
     const result = scaffoldSeo({ addon_name: 'test_seo' }) as any;
     const hook = result.files['package/system/controllers/test_seo/hooks/render_page.php'];
