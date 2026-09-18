@@ -1,0 +1,7 @@
+# Generated files must match their generator byte for byte:
+# npm run knowledge:check and knowledge:build compare this output.
+src/generated/
+
+dist/
+coverage/
+node_modules/

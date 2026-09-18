@@ -15,6 +15,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/hooks.ts",
       "domain": "hooks",
       "confidence": "inferred",
+      "provenance": "curated",
       "verified_at": "2026-08-26"
     },
     {
@@ -22,6 +23,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/components.ts",
       "domain": "components",
       "confidence": "inferred",
+      "provenance": "curated",
       "verified_at": "2026-08-26"
     },
     {
@@ -29,6 +31,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/generated/hooks-source.ts",
       "domain": "hooks",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -36,13 +39,15 @@ export const knowledgeCatalog = {
       "runtime_file": "src/generated/components-source.ts",
       "domain": "components",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
       "id": "runtime-schemas",
       "runtime_file": "src/data/schemas.ts",
       "domain": "schemas",
-      "confidence": "verified",
+      "confidence": "inferred",
+      "provenance": "curated",
       "verified_at": "2026-08-26"
     },
     {
@@ -50,6 +55,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/database-schema.ts",
       "domain": "database",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -57,6 +63,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/events-map.ts",
       "domain": "events",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -64,6 +71,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/controllers-map.ts",
       "domain": "controllers",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -71,6 +79,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/widgets-map.ts",
       "domain": "widgets",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -78,6 +87,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/traits-map.ts",
       "domain": "traits",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -85,6 +95,7 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/fields-map.ts",
       "domain": "fields",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     },
     {
@@ -92,7 +103,19 @@ export const knowledgeCatalog = {
       "runtime_file": "src/data/core-api.ts",
       "domain": "core",
       "confidence": "verified",
+      "provenance": "generated",
       "verified_at": "2026-08-26"
     }
+  ]
+} as const;
+export const knowledgeSummary = {
+  "total": 12,
+  "verified": 9,
+  "inferred": 3,
+  "legacy": 0,
+  "inferred_domains": [
+    "components",
+    "hooks",
+    "schemas"
   ]
 } as const;

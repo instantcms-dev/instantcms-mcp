@@ -64,7 +64,8 @@
     "*.ts": [
       "eslint --fix",
       "prettier --write"
-    ]
+    ],
+    "!src/generated/**": []
   },
   "publishConfig": {
     "access": "public",

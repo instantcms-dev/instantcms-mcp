@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { components } from '../data/components.js';
 import { hookCategories, hooks } from '../data/hooks.js';
 import { addonStructures } from '../data/schemas.js';
+import { knowledgeSummary } from '../generated/knowledge-meta.js';
 import { compareVersionProfiles, instantCmsVersionProfiles } from '../data/version-profiles.js';
 import {
   buildAddonArchive,
@@ -106,6 +107,9 @@ export function registerMetaTools(server: McpServer): void {
         hook_categories: hookCategories.length,
         components: components.length,
         addon_types: Object.keys(addonStructures),
+        // Какие домены подтверждены парсером закреплённого исходника,
+        // а какие написаны вручную — см. knowledge/catalog.yaml.
+        sources: knowledgeSummary,
       },
     })
   );
