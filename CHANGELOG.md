@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased
+## 1.4.0
+
+### Breaking changes
+
+- **Database tools are read-only by default.** `maria_execute_query` now runs only `SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` and `WITH`; changing data requires an explicit `allow_write: true`. Statements touching server files or privileges (`INTO OUTFILE`/`DUMPFILE`, `LOAD_FILE`, `LOAD DATA`, `GRANT`/`REVOKE`, `CREATE`/`DROP`/`ALTER USER`, `SET GLOBAL`, `SHUTDOWN`) and multi-statement payloads are always rejected. `DB_READONLY=1` blocks writes even when `allow_write` is set. If you relied on the tools to modify data, pass `allow_write: true` or set up a dedicated account.
+- **Generator options that were silently ignored now fail.** `scaffold_crud` (`use_tags`, `use_comments`, `use_rating`, `use_moderation`, `use_seo`, `use_content`, `list_template`), `scaffold_api` (`use_rate_limit`), `scaffold_filter` (`use_ajax`, `use_url_params`, `save_filters`), `scaffold_form` (`generate_rules`), `scaffold_cron` (`use_lock_file`, `log_execution`), `scaffold_seo` (`auto_generation`, `fields`) and `scaffold_permission` (`withCategories`) throw an actionable error instead of accepting a value they never used. Explicit `false`/`undefined` is still accepted, so existing calls that pass defaults keep working.
+- **`scaffold_permission`, `scaffold_seo`, `scaffold_filter` and `scaffold_cron` output moved to the real ICMS2 layout.** They previously wrote into `system/hooks/` and `system/config/permissions/` (which do not exist) with classes that were not ICMS2 hooks. Regenerate those artifacts: permission rules are registered through `cmsPermissions::addRule()` in `install_package()`, SEO is a real `render_page` hook, filters are a backend grid function, and cron tasks are `hooks/cron_<task>.php` plus `install_package()` registration.
+- `scaffold_migration` no longer emits a `cmsInstaller` class: it produces `[pkg] install.sql` and an `install_package()` hook, matching the installer that ICMS2 actually calls.
+
+### Added
+
+- `npm run verify:generated` deploys a generated artifact into a live InstantCMS instance and runs scenarios (`crud`, `api`, `addon`, `widget`, `cron`, `form`, `grid`, `integration`), removing everything it created.
+- `src/__tests__/knowledge-provenance.test.ts` cross-checks `src/data` against the pinned upstream and fails when a claim drifts.
+- `scaffold_crud` gained `with_api_model`, which adds the model contract `scaffold_api` calls, so CRUD and API work together without hand-written model code.
+- `scaffold_widget` emits `[pkg] install_widget.php` with an idempotent registration function for `cms_widgets`.
+
+### Fixed
+
+- Generators that produced code which could not run: `scaffold_permission`, `scaffold_seo`, `scaffold_filter`, `scaffold_cron`, plus `scaffold_widget` paths and class names, `scaffold_addon` templates and `setTitle`, `scaffold_grid` quoting, `scaffold_test` duplicate `setUp`, and the installer convention across generators and the validator.
+- PHP artifact validation no longer reports false positives from brackets inside strings or comments.
 
 - **Unsupported generator options now fail loudly instead of being ignored.** `scaffold_crud` (`use_tags`, `use_comments`, `use_rating`, `use_moderation`, `use_seo`, `use_content`, `list_template`), `scaffold_api` (`use_rate_limit`), `scaffold_filter` (`use_ajax`, `use_url_params`), `scaffold_form` (`generate_rules`) and `scaffold_migration` (`permissions`) accepted options they never used, so callers could believe they requested behaviour that was never generated. Each now throws an actionable error; explicit `false` is still accepted. `generate_migration` gained a working `ifNotExists` flag, and `scaffold_crud` reports `supported_options` plus `options_applied` in its result. Covered by `src/__tests__/generator-options.test.ts`.
 
