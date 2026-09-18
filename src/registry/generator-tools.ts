@@ -134,6 +134,10 @@ export function registerGeneratorTools(server: McpServer): void {
             .describe(
               'SEO-поля meta_title/meta_description/meta_keywords и их применение в экшене view'
             ),
+          use_slug: z
+            .boolean()
+            .optional()
+            .describe('ЧПУ /{controller}/<slug>.html: колонка slug, routes.php и route()'),
           use_content: z
             .boolean()
             .optional()

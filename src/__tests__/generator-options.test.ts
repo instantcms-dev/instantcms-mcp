@@ -164,6 +164,7 @@ describe('unsupported generator options', () => {
       'use_category',
       'with_api_model',
       'use_seo',
+      'use_slug',
       'list_template',
     ]);
     expect(result.options_applied).toEqual({ theme: 'modern', use_category: true });
@@ -197,6 +198,54 @@ describe('unsupported generator options', () => {
       files: Record<string, string>;
     };
     expect(result.files['[pkg] install.sql']).not.toContain('meta_title');
+  });
+
+  test('use_slug добавляет ЧПУ: колонку, маршрут, поиск по slug и ссылки', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields: crudFields,
+      options: { use_slug: true },
+    }) as { files: Record<string, string>; options_applied: Record<string, unknown> };
+
+    const sql = result.files['[pkg] install.sql'];
+    expect(sql).toContain('`slug`');
+    expect(sql).toContain('UNIQUE KEY');
+
+    const model = result.files['package/system/controllers/demo/model.php'];
+    expect(model).toContain('getItemBySlug');
+
+    const frontend = result.files['package/system/controllers/demo/frontend.php'];
+    expect(frontend).toContain('public function route($uri)');
+    expect(result.files['package/system/controllers/demo/routes.php']).toContain(
+      "'action'  => 'view'"
+    );
+
+    const view = result.files['package/system/controllers/demo/actions/view.php'];
+    expect(view).toContain("request->get('slug'");
+
+    const add = result.files['package/system/controllers/demo/actions/add.php'];
+    expect(add).toContain('lang_slug');
+    expect(add).toContain('checkCorrectEqualSlug');
+
+    const form = result.files['package/system/controllers/demo/backend/forms/form_item.php'];
+    expect(form).toContain("fieldString('slug'");
+
+    const indexKey = Object.keys(result.files).find(k => k.endsWith('index.tpl.php')) as string;
+    expect(result.files[indexKey]).toContain("$item['slug'] . '.html'");
+
+    expect(result.options_applied).toEqual({ use_slug: true });
+  });
+
+  test('без use_slug ЧПУ не создаются', () => {
+    const result = scaffoldCrud({ addon_name: 'demo', fields: crudFields }) as {
+      files: Record<string, string>;
+    };
+
+    expect(result.files['package/system/controllers/demo/routes.php']).toBeUndefined();
+    expect(result.files['[pkg] install.sql']).not.toContain('UNIQUE KEY');
+    expect(result.files['package/system/controllers/demo/actions/view.php']).not.toContain(
+      "request->get('slug'"
+    );
   });
 
   test('list_template выбирает разметку шаблона списка', () => {

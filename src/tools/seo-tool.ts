@@ -44,6 +44,8 @@ interface ScaffoldSeoOptions {
   options?: {
     /** Enable automatic meta tag generation */
     auto_generation?: boolean;
+    /** Материалы доступны по ЧПУ /{controller}/<slug>.html */
+    use_slug?: boolean;
     /** Generate sitemap.xml support */
     use_sitemap?: boolean;
     /** Generate Open Graph meta tags */
@@ -71,7 +73,7 @@ import { quotePhp } from '../utils/serialization.js';
  * Вымышленных методов вроде setPageDescription() в ICMS2 нет.
  */
 
-const SEO_OPTIONS = ['use_schema_org', 'use_og_tags', 'use_sitemap'];
+const SEO_OPTIONS = ['use_schema_org', 'use_og_tags', 'use_sitemap', 'use_slug'];
 
 function generateSeoHelper(controller: string, Name: string): string {
   return `<?php
@@ -150,8 +152,36 @@ function generateRenderPageHook(
   controller: string,
   Name: string,
   useSchemaOrg: boolean,
-  useOgTags: boolean
+  useOgTags: boolean,
+  useSlug: boolean
 ): string {
+  // При ЧПУ route() кладёт slug в основной request; в хуке $_request пустой,
+  // поэтому берём его у cmsCore (parseRoute пишет именно туда).
+  const itemLookup = useSlug
+    ? `        $slug = (string) cmsCore::getInstance()->request->get('slug', '');
+        if ($slug === '') {
+            return $html;
+        }
+
+        $item = cmsCore::getModel(${quotePhp(controller)})
+            ->filterEqual('slug', $slug)
+            ->getItem(${quotePhp(`${controller}_items`)});
+        if (!$item) {
+            return $html;
+        }
+
+        $item_url = href_to_abs($this->cms_core->uri_controller, $slug . '.html');`
+    : `        $item_id = (int) ($this->cms_core->uri_params[0] ?? 0);
+        if (!$item_id) {
+            return $html;
+        }
+
+        $item = cmsCore::getModel(${quotePhp(controller)})->getItemById(${quotePhp(`${controller}_items`)}, $item_id);
+        if (!$item) {
+            return $html;
+        }
+
+        $item_url = href_to_abs($this->cms_core->uri_controller, 'view', $item_id);`;
   const schemaBlock = useSchemaOrg
     ? `
         if ($item) {
@@ -199,18 +229,7 @@ class on${Name}RenderPage extends cmsAction {
             return $html;
         }
 
-        // uri_params — массив параметров после действия: /<controller>/view/<id>
-        $item_id = (int) ($this->cms_core->uri_params[0] ?? 0);
-        if (!$item_id) {
-            return $html;
-        }
-
-        $item = cmsCore::getModel(${quotePhp(controller)})->getItemById(${quotePhp(`${controller}_items`)}, $item_id);
-        if (!$item) {
-            return $html;
-        }
-
-        $item_url = href_to_abs($this->cms_core->uri_controller, 'view', $item_id);
+${itemLookup}
         // Хук получает уже готовый HTML, поэтому setMeta() здесь не сработает —
         // разметка внедряется в <head> напрямую.
         $meta   = ${Name}Seo::getMeta($item);
@@ -231,7 +250,12 @@ ${ogBlock}${schemaBlock}
 `;
 }
 
-function generateSitemapHook(controller: string, Name: string): string {
+function generateSitemapHook(controller: string, Name: string, useSlug: boolean): string {
+  // В карте сайта — тот же адрес, что отдаёт контроллер.
+  const itemUrl = useSlug
+    ? `href_to_abs(${quotePhp(controller)}, $entry['slug'] . '.html')`
+    : `href_to(${quotePhp(controller)}, 'view', $entry['id'])`;
+
   return `<?php
 
 /**
@@ -253,7 +277,7 @@ class on${Name}SitemapUrlsList${Name} extends cmsAction {
             foreach ($items as $entry) {
                 $urls[] = [
                     'title'      => $entry['title'],
-                    'url'        => href_to(${quotePhp(controller)}, 'view', $entry['id']),
+                    'url'        => ${itemUrl},
                     'lastmod'    => !empty($entry['date_pub']) ? $entry['date_pub'] : null,
                     'changefreq' => 'weekly',
                     'priority'   => 0.6,
@@ -277,6 +301,7 @@ export function scaffoldSeo(opts: ScaffoldSeoOptions): ScaffoldResult {
   const useSchemaOrg = opts.options?.use_schema_org ?? true;
   const useOgTags = opts.options?.use_og_tags ?? true;
   const useSitemap = opts.options?.use_sitemap ?? false;
+  const useSlug = opts.options?.use_slug ?? false;
 
   const ctrl = `package/system/controllers/${lowercase}`;
 
@@ -286,14 +311,16 @@ export function scaffoldSeo(opts: ScaffoldSeoOptions): ScaffoldResult {
       lowercase,
       UpperCamelCase,
       useSchemaOrg,
-      useOgTags
+      useOgTags,
+      useSlug
     ),
   };
 
   if (useSitemap) {
     files[`${ctrl}/hooks/sitemap_urls_list_${lowercase}.php`] = generateSitemapHook(
       lowercase,
-      UpperCamelCase
+      UpperCamelCase,
+      useSlug
     );
   }
 
@@ -304,6 +331,7 @@ export function scaffoldSeo(opts: ScaffoldSeoOptions): ScaffoldResult {
       use_schema_org: useSchemaOrg,
       use_og_tags: useOgTags,
       use_sitemap: useSitemap,
+      use_slug: useSlug,
     },
     supported_options: SEO_OPTIONS,
     scaffold_status: 'partial',
@@ -315,7 +343,9 @@ export function scaffoldSeo(opts: ScaffoldSeoOptions): ScaffoldResult {
         : 'Интеграция с картой сайта не запрошена (use_sitemap)',
     ],
     limitations: [
-      'Хук определяет материал по id из URI; для ЧПУ-адресов без id нужна своя логика.',
+      useSlug
+        ? 'Хук определяет материал по slug из request: генератор рассчитан на маршрут /{controller}/<slug>.html.'
+        : 'Хук определяет материал по id из URI; для ЧПУ-адресов включите use_slug (нужна колонка slug и маршрут).',
       'Описание формируется из поля description или первых 160 символов text.',
       'Правила обхода и последняя модификация карты сайта настраиваются в контроллере sitemap.',
     ],
@@ -342,6 +372,10 @@ export const seoToolSchema = {
             description: 'Автогенерация метатегов (не поддержана)',
           },
           use_sitemap: { type: 'boolean', description: 'Добавлять материалы в карту сайта' },
+          use_slug: {
+            type: 'boolean',
+            description: 'Материалы доступны по ЧПУ /{controller}/<slug>.html',
+          },
           use_og_tags: { type: 'boolean', description: 'Добавлять Open Graph теги' },
           use_schema_org: { type: 'boolean', description: 'Добавлять разметку Schema.org' },
         },
