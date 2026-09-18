@@ -1158,7 +1158,7 @@ describe('SEO Tool', () => {
 });
 
 describe('Import/Export Tool', () => {
-  test('scaffoldImportExport generates import/export files', () => {
+  test('scaffoldImportExport generates import/export files in the controller', () => {
     const result = scaffoldImportExport({
       addon_name: 'products',
       fields: [
@@ -1168,11 +1168,12 @@ describe('Import/Export Tool', () => {
     }) as any;
     expect(result).toHaveProperty('addon_name', 'products');
     expect(result).toHaveProperty('fields_count', 2);
-    expect('products/import.php' in result.files).toBe(true);
-    expect('products/export.php' in result.files).toBe(true);
+    expect(result).toHaveProperty('table', 'products_items');
+    expect('package/system/controllers/products/import.php' in result.files).toBe(true);
+    expect('package/system/controllers/products/export.php' in result.files).toBe(true);
   });
 
-  test('scaffoldImportExport generates import class with parsing', () => {
+  test('scaffoldImportExport generates import class on real cmsModel', () => {
     const result = scaffoldImportExport({
       addon_name: 'catalog',
       fields: [
@@ -1181,23 +1182,28 @@ describe('Import/Export Tool', () => {
         { field: 'is_active', type: 'bool', label: 'Активен' },
       ],
     }) as any;
-    const importFile = result.files['catalog/import.php'];
+    const importFile = result.files['package/system/controllers/catalog/import.php'];
     expect(importFile).toContain('CatalogImport');
+    expect(importFile).toContain('new cmsModel()');
     expect(importFile).toContain('function importFromArray(');
-    expect(importFile).toContain('function importRow(');
-    expect(importFile).toContain('floatval');
+    expect(importFile).toContain('getItemByField');
+    expect(importFile).toContain('(float) $row');
+    expect(importFile).not.toContain('cmsModel::getInstance');
   });
 
   test('scaffoldImportExport generates export class with formats', () => {
     const result = scaffoldImportExport({
       addon_name: 'items',
       fields: [{ field: 'title', type: 'string', label: 'Заголовок' }],
+      options: { use_xml: true },
     }) as any;
-    const exportFile = result.files['items/export.php'];
+    const exportFile = result.files['package/system/controllers/items/export.php'];
     expect(exportFile).toContain('ItemsExport');
     expect(exportFile).toContain('function exportToCsv(');
     expect(exportFile).toContain('function exportToJson(');
     expect(exportFile).toContain('function exportToXml(');
+    expect(exportFile).toContain('->limitPage(');
+    expect(exportFile).not.toContain('fetchAll');
   });
 
   test('scaffoldImportExport with JSON API enabled', () => {
@@ -1206,11 +1212,15 @@ describe('Import/Export Tool', () => {
       fields: [{ field: 'id', type: 'number', label: 'ID' }],
       options: { use_json: true },
     }) as any;
-    expect('data_sync/api.import.php' in result.files).toBe(true);
-    const apiFile = result.files['data_sync/api.import.php'];
-    expect(apiFile).toContain('DataSyncApiImport');
-    expect(apiFile).toContain('function actionImport(');
-    expect(apiFile).toContain('function actionExport(');
+    const importAction =
+      result.files['package/system/controllers/data_sync/actions/api_import.php'];
+    const exportAction =
+      result.files['package/system/controllers/data_sync/actions/api_export.php'];
+    expect(importAction).toContain('class actionDataSyncApiImport extends cmsAction');
+    expect(importAction).toContain("require_once __DIR__ . '/../import.php'");
+    expect(importAction).toContain('sendAndExit');
+    expect(exportAction).toContain('class actionDataSyncApiExport extends cmsAction');
+    expect(exportAction).toContain("require_once __DIR__ . '/../export.php'");
   });
 
   test('scaffoldImportExport with CSV form enabled', () => {
@@ -1219,10 +1229,20 @@ describe('Import/Export Tool', () => {
       fields: [{ field: 'name', type: 'string', label: 'Название' }],
       options: { use_csv: true },
     }) as any;
-    expect('test_ie/import.form.php' in result.files).toBe(true);
-    const formFile = result.files['test_ie/import.form.php'];
+    const formFile = result.files['package/system/controllers/test_ie/import.form.php'];
     expect(formFile).toContain('TestIeImportForm');
-    expect(formFile).toContain('fieldFile');
+    expect(formFile).toContain("$form->addField('import', new fieldFile('import_file'");
+    expect(formFile).toContain("'rules' => [['required']]");
+  });
+
+  test('scaffoldImportExport rejects use_xlsx honestly', () => {
+    expect(() =>
+      scaffoldImportExport({
+        addon_name: 'with_xlsx',
+        fields: [{ field: 'name', type: 'string', label: 'Название' }],
+        options: { use_xlsx: true },
+      })
+    ).toThrow(/use_xlsx/);
   });
 });
 

@@ -29,6 +29,7 @@ import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldEmail } from '../src/tools/email-tool.js';
 import { scaffoldCache } from '../src/tools/cache-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
+import { scaffoldImportExport } from '../src/tools/import-export-tool.js';
 import { scaffoldLayoutOverride } from '../src/tools/layout-override-tool.js';
 import { scaffoldHook } from '../src/tools/addon-tool.js';
 import { scaffoldLang } from '../src/tools/lang-tool.js';
@@ -715,6 +716,123 @@ echo $html !== '' && strpos($html, 'Array') === false ? 'ok' : 'fail:' . $html;`
         },
       };
     }
+    case 'import_export': {
+      // Библиотека импорта/экспорта поверх реального контроллера и модели CRUD.
+      const crud = scaffoldCrud({
+        addon_name: options.name,
+        fields: [
+          { name: 'title', type: 'varchar', title: 'Заголовок' },
+          { name: 'price', type: 'decimal', title: 'Цена' },
+        ],
+        options: { theme: options.theme, use_slug: true },
+      }) as { files: Record<string, string> };
+      put(crud.files);
+
+      const result = scaffoldImportExport({
+        addon_name: options.name,
+        fields: [
+          { field: 'title', type: 'string', label: 'title', required: true },
+          { field: 'price', type: 'number', label: 'price' },
+          { field: 'slug', type: 'string', label: 'slug' },
+          { field: 'date_pub', type: 'datetime', label: 'date_pub' },
+        ],
+        options: {
+          table: `${options.name}_items`,
+          key_field: 'slug',
+          update_existing: true,
+          use_csv: true,
+          use_json: true,
+          use_xml: true,
+        },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const Name = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify import/export', isBackend: 0 },
+        runtimePhp: [
+          {
+            note: 'библиотека импорта/экспорта работает на модели CRUD',
+            script: `require_once PATH . '/system/controllers/${options.name}/export.php';
+require_once PATH . '/system/controllers/${options.name}/import.php';
+
+$model = cmsCore::getModel('${options.name}');
+$now = date('Y-m-d H:i:s');
+
+$model->insert('${options.name}_items', [
+    'title' => 'Экспорт-строка',
+    'price' => 12.5,
+    'slug' => 'export-row',
+    'date_pub' => $now,
+    'is_pub' => 1,
+]);
+
+$export = new ${Name}Export(['table' => '${options.name}_items'], $model);
+$rows = $export->exportToArray();
+$csv = $export->exportToCsv();
+$json = $export->exportToJson();
+
+$import = new ${Name}Import([
+    'table' => '${options.name}_items',
+    'skip_header' => false,
+    'update_existing' => false,
+], $model);
+$stats = $import->importFromArray([
+    ['title' => 'Импорт-строка', 'price' => '42', 'slug' => 'import-row', 'date_pub' => $now],
+]);
+
+$import_again = new ${Name}Import([
+    'table' => '${options.name}_items',
+    'skip_header' => false,
+    'update_existing' => true,
+    'key_field' => 'slug',
+], $model);
+$stats_again = $import_again->importFromArray([
+    ['title' => 'Обновлённая строка', 'price' => '99', 'slug' => 'import-row', 'date_pub' => $now],
+]);
+
+$count = (int) $model->getCount('${options.name}_items');
+$updated_row = $model->getItemByField('${options.name}_items', 'slug', 'import-row');
+
+$ok = count($rows) === 2
+    && in_array('title', $rows[0], true)
+    && $stats['imported'] === 1
+    && $stats['errors'] === 0
+    && $stats_again['updated'] === 1
+    && $count === 2
+    && $updated_row['title'] === 'Обновлённая строка'
+    && strpos($csv, 'Экспорт-строка') !== false
+    && strpos($json, 'Экспорт-строка') !== false;
+
+echo $ok ? 'ok' : 'fail:' . json_encode([$rows, $stats, $stats_again, $count]);`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'форма импорта собирается на реальных полях',
+            script: `require_once PATH . '/system/controllers/${options.name}/import.form.php';
+
+$form = new cmsForm();
+${Name}ImportForm::create($form);
+
+$fields = ['import_file', 'update_existing', 'skip_header', 'encoding'];
+$missing = [];
+foreach ($fields as $field) {
+    if (!$form->hasField($field)) { $missing[] = $field; }
+}
+
+echo $missing ? 'missing:' . implode(',', $missing) : 'ok';`,
+            expect: output => output.trim() === 'ok',
+          },
+        ],
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1281,6 +1399,31 @@ echo $model->createApiToken(1);
     add('виджет отрисован на главной', 1, home.body.includes(`widget_${name}_recent`) ? 1 : 0);
   }
 
+  if (options.scenario === 'import_export') {
+    const payload = encodeURIComponent(
+      JSON.stringify([
+        { title: 'Импорт HTTP', price: '7', slug: 'http-row', date_pub: '2026-01-01 00:00:00' },
+      ])
+    );
+
+    const imported = await httpStatus(
+      options,
+      `${base}/${name}/api_import?data=${payload}&update_existing=0`,
+      { method: 'POST' }
+    );
+    add('POST /api_import', 200, imported.status);
+    add('ответ импорта — success', 1, imported.body.includes('"success":true') ? 1 : 0);
+
+    const exported = await httpStatus(options, `${base}/${name}/api_export?format=json`);
+    add('GET /api_export (json)', 200, exported.status);
+    add('экспорт содержит CLI-строку', 1, exported.body.includes('Экспорт-строка') ? 1 : 0);
+    add('экспорт содержит HTTP-строку', 1, exported.body.includes('Импорт HTTP') ? 1 : 0);
+
+    const csv = await httpStatus(options, `${base}/${name}/api_export?format=csv`);
+    add('GET /api_export (csv)', 200, csv.status);
+    add('CSV содержит заголовок title', 1, csv.body.includes('title') ? 1 : 0);
+  }
+
   if (options.scenario === 'cron') {
     const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
 
@@ -1345,7 +1488,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
