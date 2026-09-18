@@ -239,7 +239,6 @@ class action${ctrl.Name}Index extends cmsAction {
 }
 
 function generateActionView(ctrl: NormalizedController): string {
-  const NAME = ctrl.name.toUpperCase();
   return `<?php
 
 class action${ctrl.Name}View extends cmsAction {
