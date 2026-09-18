@@ -12,6 +12,7 @@ import {
 } from '../tools/artifact-tool.js';
 import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
 import { findToolCategories } from '../utils/find-tool.js';
+import { getServerVersion } from '../version.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
 
 const workflows = {
@@ -99,7 +100,7 @@ export function registerMetaTools(server: McpServer): void {
     'Версии, профили и объём базы знаний MCP-сервера',
     {},
     () => ({
-      server_version: '1.4.0',
+      server_version: getServerVersion(),
       tools_count: 100,
       instantcms_profiles: instantCmsVersionProfiles,
       knowledge: {
@@ -199,7 +200,7 @@ export function registerMetaTools(server: McpServer): void {
     {},
     () => ({
       status: 'ready',
-      server_version: '1.4.0',
+      server_version: getServerVersion(),
       tested_instantcms: '2.18.2',
       checks: ['npm run check', 'npm run test:integration', 'npm run build', 'npm audit'],
     })

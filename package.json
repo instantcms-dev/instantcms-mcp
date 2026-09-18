@@ -38,7 +38,7 @@
     "coverage": "tsx src/tools/parser/coverage-generator.ts",
     "verify:generated": "tsx scripts/verify-generated.ts",
     "verify:install-icms": "node scripts/install-instantcms.mjs",
-    "prepare": "husky install",
+    "prepare": "husky",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
     "release:major": "npm version major"

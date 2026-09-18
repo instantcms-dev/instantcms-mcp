@@ -179,3 +179,19 @@ jobs:
         env:
           ICMS_REQUIRE_SOURCE: '1'
           ICMS_REQUIRE_PHP: '1'
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # Только зависимости рантайма: advisories в eslint/prettier не должны
+      # блокировать выпуск, но уязвимости в поставляемом коде — должны.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

@@ -112,6 +112,8 @@ php -S 127.0.0.1:8099 -t /tmp/icms-site /tmp/icms-site/index.php &
 
 В CI это выполняет job **Generated artifacts on a live InstantCMS**: он поднимает MariaDB, ставит InstantCMS закреплённой версии и прогоняет все сценарии `verify:generated`.
 
+Отдельный job **Dependency audit** проверяет `npm audit --omit=dev --audit-level=high`: advisories в dev-зависимостях (eslint, prettier) выпуск не блокируют, уязвимости в поставляемом коде — блокируют.
+
 ## Выпуск релиза
 
 Релиз запускается тегом, совпадающим с версией в `package.json`:
