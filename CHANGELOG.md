@@ -15,6 +15,8 @@
 
 - **`scaffold_form` and `scaffold_grid` are now runtime-verified too.** `npm run verify:generated` gained `form` and `grid` scenarios: the generated form class is loaded and `init('add')` must build a structure, and the generated grid function must return columns with `is_filter` enabled. Both checks run inside a bootstrapped InstantCMS CLI context. The README verification matrix now lists `crud`, `api`, `addon`, `widget`, `cron`, `form`, `grid`, `permission`, `seo` and `filter` as runtime-verified.
 
+- **Generators now compose.** `scaffold_crud` gained `with_api_model`, which writes the model contract `scaffold_api` calls (`getApiList`, `getApiItem`, `createApiItem`, `updateApiItem`, `deleteApiItem`) so CRUD plus API work together without hand-written model code; the methods avoid the `cmsModel` names `getItem`/`getItemById`. `scaffold_widget` now emits `[pkg] install_widget.php` with an idempotent `install_widget_<controller>_<widget>()` that registers the widget in `cms_widgets` — a uniquely named function rather than a second `install_package()`, so several generated features no longer collide. A new `integration` scenario in `npm run verify:generated` deploys CRUD (`with_api_model`) + API + widget and asserts the CRUD page, API list/item backed by the generated model, the 401 for a protected endpoint and the widget rendered on the home page. Covered by `src/__tests__/generator-integration.test.ts`.
+
 ## 1.3.0
 
 **Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.

@@ -69,6 +69,8 @@ interface Artifact {
   controller?: { name: string; title: string; isBackend: number };
   /** PHP-сценарий для проверки загружаемых классов (form, grid и т.п.). */
   runtimePhp?: { script: string; expect: (output: string) => boolean; note: string };
+  /** Функция регистрации виджета из сгенерированного install_widget.php. */
+  widgetInstaller?: string;
   /** Задача планировщика, если создан cron-хук. */
   schedulerTask?: { hook: string; period: number; title: string };
   /** Строка в cms_widgets, если создан виджет. */
@@ -232,6 +234,66 @@ function buildArtifact(options: Options): Artifact {
             table: `cms_${options.name}_items`,
             columns: 'user_id,title,text,date_pub,is_pub',
             values: `1,'Материал дополнения','Текст',NOW(),1`,
+          },
+        ],
+      };
+    }
+    case 'integration': {
+      // CRUD с контрактом модели + API + виджет: проверяем, что связка работает
+      // без ручных правок.
+      const crud = scaffoldCrud({
+        addon_name: options.name,
+        fields: [
+          { name: 'description', type: 'text', title: 'Описание' },
+          { name: 'price', type: 'int', title: 'Цена' },
+        ],
+        options: { theme: options.theme, with_api_model: true },
+      }) as { files: Record<string, string> };
+      put(crud.files);
+
+      const api = scaffoldApi({
+        addon_name: options.name,
+        endpoints: [
+          { name: 'list', method: 'GET', path: '/list', auth_required: false },
+          {
+            name: 'item',
+            method: 'GET',
+            path: '/items/{id}',
+            auth_required: false,
+            params: [{ name: 'id', type: 'path', required: true }],
+          },
+          { name: 'create', method: 'POST', path: '/create', auth_required: true },
+        ],
+      }) as { files: Record<string, string> };
+      put(api.files);
+
+      const widget = scaffoldWidget({
+        addon_name: options.name,
+        widget_name: 'recent',
+        options: [{ name: 'limit', type: 'number', label: 'Количество', default: 3 }],
+        options_config: { with_template: true, with_styles: false, with_cache: false },
+      }) as { files: Record<string, string> };
+      for (const [rawPath, content] of Object.entries(widget.files)) {
+        if (rawPath.startsWith('[pkg] ')) {
+          files[`.verify/${rawPath.replace('[pkg] ', '')}`] = content;
+          continue;
+        }
+        files[rawPath.replace(/^package\//, '')] = content;
+      }
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify integration', isBackend: 1 },
+        widget: { controller: options.name, name: 'recent', title: 'Verify widget' },
+        widgetBinding: { position: 'pos_8', options: '---\nlimit: 3\n' },
+        widgetInstaller: `install_widget_${options.name}_recent`,
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,description,price,date_pub,is_pub',
+            values: `1,'Материал интеграции','Описание',500,NOW(),1`,
           },
         ],
       };
@@ -410,6 +472,28 @@ function registerRows(options: Options, artifact: Artifact): void {
        VALUES ('${artifact.controller.title}','${artifact.controller.name}',NULL,1,'verify','','1.0.0',${artifact.controller.isBackend});`
     );
   }
+  if (artifact.widgetInstaller) {
+    // Вызываем сгенерированную функцию так, как это делает install_package().
+    const scriptPath = path.join(options.site, '_verify_widget_install.php');
+    fs.writeFileSync(
+      scriptPath,
+      `<?php
+if (PHP_SAPI !== 'cli') { die('404'); }
+require_once __DIR__ . '/bootstrap.php';
+chdir(PATH);
+$core->initLanguage();
+require_once __DIR__ . '/.verify/install_widget.php';
+${artifact.widgetInstaller}();
+echo 'ok';
+`
+    );
+    try {
+      spawnSync('php', [scriptPath], { encoding: 'utf8' });
+    } finally {
+      fs.rmSync(scriptPath, { force: true });
+    }
+  }
+
   if (artifact.schedulerTask) {
     mysql(
       options,
@@ -551,7 +635,7 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
   };
 
   // Таблица items есть только у сценариев, которые её создают.
-  const hasItemsTable = ['crud', 'addon', 'widget'].includes(options.scenario);
+  const hasItemsTable = ['crud', 'addon', 'widget', 'integration'].includes(options.scenario);
   const first = hasItemsTable ? idOf('is_pub=1') : 0;
   const hidden = hasItemsTable ? idOf('is_pub=0') : 0;
 
@@ -641,6 +725,27 @@ ${artifact.runtimePhp.script}
     }
   }
 
+  if (options.scenario === 'integration') {
+    const index = await httpStatus(options, `${base}/${name}`);
+    add(`GET /${name}`, 200, index.status);
+
+    // Модель получила контракт, поэтому API отвечает данными, а не 501.
+    const list = await httpStatus(options, `${base}/${name}/api_v1_list`);
+    add('GET /api_v1_list (контракт в модели CRUD)', 200, list.status);
+    add('список API содержит материал', 1, list.body.includes('Материал интеграции') ? 1 : 0);
+
+    const item = await httpStatus(options, `${base}/${name}/api_v1_item/${first}`);
+    add(`GET /api_v1_item/${first}`, 200, item.status);
+
+    const protegido = await httpStatus(options, `${base}/${name}/api_v1_create`, {
+      method: 'POST',
+    });
+    add('POST /api_v1_create без токена', 401, protegido.status);
+
+    const home = await httpStatus(options, `${base}/`);
+    add('виджет отрисован на главной', 1, home.body.includes(`widget_${name}_recent`) ? 1 : 0);
+  }
+
   if (options.scenario === 'cron') {
     const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
 
@@ -704,7 +809,7 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.scenario) {
-    die('укажите --scenario crud|api|addon|widget|cron|form|grid');
+    die('укажите --scenario crud|api|addon|widget|cron|form|grid|integration');
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
   if (!fs.existsSync(config)) {

@@ -172,7 +172,7 @@ describe('unsupported generator options', () => {
       options: { use_category: true, theme: 'modern' },
     }) as { supported_options: string[]; options_applied: Record<string, unknown> };
 
-    expect(result.supported_options).toEqual(['theme', 'use_category']);
+    expect(result.supported_options).toEqual(['theme', 'use_category', 'with_api_model']);
     expect(result.options_applied).toEqual({ theme: 'modern', use_category: true });
   });
 

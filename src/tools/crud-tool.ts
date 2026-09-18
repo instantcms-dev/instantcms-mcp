@@ -24,6 +24,8 @@ interface ScaffoldCrudOptions {
     use_content?: boolean;
     list_template?: 'grid' | 'list' | 'table';
     theme?: string;
+    /** Добавить в модель контракт, который вызывают экшены scaffold_api. */
+    with_api_model?: boolean;
   };
 }
 
@@ -63,6 +65,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
   const useCategory = Boolean(opts.options?.use_category);
+  const withApiModel = Boolean(opts.options?.with_api_model);
   const theme = opts.options?.theme || 'modern';
   if (!/^[a-z][a-z0-9_]{0,63}$/.test(theme)) throw new Error('Invalid theme name');
 
@@ -70,7 +73,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
 
   const ctrl = `package/system/controllers/${name}`;
 
-  files[`${ctrl}/model.php`] = generateModel(name, Name, useCategory);
+  files[`${ctrl}/model.php`] = generateModel(name, Name, useCategory, withApiModel);
   files[`${ctrl}/frontend.php`] = generateFrontend(name);
   files[`${ctrl}/actions/index.php`] = generateActionIndex(name, Name, NAME);
   files[`${ctrl}/actions/view.php`] = generateActionView(name, Name, NAME);
@@ -136,11 +139,14 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
       useCategory
         ? 'Режим категорий создаёт действия и модель, но таблицу категорий нужно создать отдельно.'
         : 'Категории не используются.',
+      withApiModel
+        ? 'Контракт API добавлен в модель; защищённые endpoint-ы требуют getApiUserByToken().'
+        : 'Контракт API не добавлен (with_api_model) — экшены scaffold_api ответят 501.',
       'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     options: opts.options || {},
-    supported_options: ['theme', 'use_category'],
-    options_applied: appliedOptions(opts.options, ['theme', 'use_category']),
+    supported_options: ['theme', 'use_category', 'with_api_model'],
+    options_applied: appliedOptions(opts.options, ['theme', 'use_category', 'with_api_model']),
   };
 }
 
@@ -148,7 +154,48 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function generateModel(name: string, Name: string, useCategory: boolean): string {
+/**
+ * Контракт модели, который вызывают сгенерированные экшены scaffold_api.
+ * Имена не пересекаются с методами cmsModel (проверено по 2.18.2).
+ */
+function generateApiModelMethods(name: string): string {
+  return `
+    // ── Контракт для scaffold_api ───────────────────────────────────────────
+    // Публичные endpoint-ы работают сразу. Защищённые требуют метода
+    // getApiUserByToken(): реализуйте проверку токена под свой проект.
+
+    public function getApiList(int $page, int $perpage): array {
+        return array_values($this->getPublished($perpage, ($page - 1) * $perpage));
+    }
+
+    public function getApiItem(int $id): ?array {
+        $item = $this->getItemById('${name}_items', $id);
+        return $item ?: null;
+    }
+
+    public function createApiItem(array $data, int $user_id) {
+        $data['user_id']  = $user_id;
+        $data['date_pub'] = !empty($data['date_pub']) ? $data['date_pub'] : date('Y-m-d H:i:s');
+        $data['is_pub']   = isset($data['is_pub']) ? (int) $data['is_pub'] : 1;
+        return $this->insert('${name}_items', $data);
+    }
+
+    public function updateApiItem(int $id, array $data): bool {
+        return (bool) $this->update('${name}_items', $id, $data);
+    }
+
+    public function deleteApiItem(int $id): bool {
+        return (bool) $this->delete('${name}_items', $id);
+    }
+`;
+}
+
+function generateModel(
+  name: string,
+  Name: string,
+  useCategory: boolean,
+  withApiModel: boolean
+): string {
   const categoryMethods = useCategory
     ? `
     public function getItemCategoryBySlug(string $slug) {
@@ -197,7 +244,7 @@ class model${Name} extends cmsModel {
     public function deleteItem($id) {
         return $this->delete('${name}_items', $id);
     }
-${categoryMethods}
+${withApiModel ? generateApiModelMethods(name) : ''}${categoryMethods}
 }`;
 }
 

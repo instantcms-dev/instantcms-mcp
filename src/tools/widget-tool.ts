@@ -235,6 +235,58 @@ ${styles}`;
 }
 
 /**
+ * Регистрация виджета в cms_widgets.
+ *
+ * Виджеты контроллера не появляются в админке сами: установщик ICMS2
+ * регистрирует их только для widget-пакетов. Поэтому генератор отдаёт
+ * отдельный файл с функцией, которую вызывает install_package() пакета.
+ * Имя функции уникально, поэтому файлы разных виджетов не конфликтуют.
+ */
+function generateWidgetInstall(
+  controller: string,
+  widget: string,
+  Widget: string,
+  Controller: string,
+  title: string
+): string {
+  const functionName = `install_widget_${controller}_${widget}`;
+
+  return `<?php
+
+/**
+ * Регистрирует виджет ${controller}/${widget} в cms_widgets (идемпотентно).
+ * Вызовите из install_package() пакета: ${functionName}($install_options);
+ *
+ * @param array $install_options
+ * @return bool
+ */
+function ${functionName}(array $install_options = []) {
+
+    $model = cmsCore::getModel('admin');
+
+    $exists = $model->filterEqual('controller', '${controller}')
+                    ->filterEqual('name', '${widget}')
+                    ->getItem('widgets');
+
+    if ($exists) {
+        return true;
+    }
+
+    $model->insert('widgets', [
+        'controller' => '${controller}',
+        'name'       => '${widget}',
+        'title'      => '${title.replace(/'/g, "\\'")}',
+        'author'     => '',
+        'url'        => '',
+        'version'    => '1.0.0',
+    ]);
+
+    return true;
+}
+`;
+}
+
+/**
  * Generates a complete widget for InstantCMS
  *
  * @example
@@ -280,6 +332,14 @@ export function scaffoldWidget(opts: ScaffoldWidgetOptions): ScaffoldResult {
   );
   files[`${widgetDir}/options.form.php`] = generateWidgetOptions(Widget, Controller, options);
 
+  files['[pkg] install_widget.php'] = generateWidgetInstall(
+    lowercase,
+    widget,
+    Widget,
+    Controller,
+    options.find(option => option.name === 'title')?.default?.toString() || `Виджет ${widget}`
+  );
+
   if (options_config.with_template) {
     files[
       `package/templates/${theme}/controllers/${lowercase}/widgets/${widget}/${widget}.tpl.php`
@@ -298,10 +358,12 @@ export function scaffoldWidget(opts: ScaffoldWidgetOptions): ScaffoldResult {
       `Форма опций: formWidget${Controller}${Widget}Options (файл options.form.php)`,
       `Шаблон: templates/${theme}/controllers/${lowercase}/widgets/${widget}/${widget}.tpl.php`,
       'Опции читаются через $this->getOption(), поля формы имеют префикс options:',
+      `Регистрация виджета: [pkg] install_widget.php, функция install_widget_${lowercase}_${widget}()`,
     ],
     limitations: [
       'Виджет обращается к таблице {controller}_items — замените запрос на свою модель.',
       'Права доступа, кэш-инвалидация и позиции виджета настраиваются в админке.',
+      `Вызовите install_widget_${lowercase}_${widget}($install_options) из install_package() пакета — иначе виджет не появится в админке.`,
     ],
   };
 }
