@@ -1,6 +1,5 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
 import { scaffoldApi } from '../tools/api-tool.js';
-import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
 import { scaffoldOAuth } from '../tools/oauth-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
@@ -306,15 +305,6 @@ describe('unsupported generator options', () => {
  */
 describe('экспериментальные генераторы помечают себя и причины', () => {
   const cases: Array<[string, () => unknown]> = [
-    [
-      'scaffold_external_api',
-      () =>
-        scaffoldExternalApi({
-          addon_name: 'genext',
-          base_url: 'https://api.example.com',
-          endpoints: [{ path: '/data', method: 'GET' }],
-        }),
-    ],
     [
       'scaffold_oauth',
       () =>
