@@ -1,8 +1,20 @@
 /**
  * @fileoverview OAuth scaffolding tool for InstantCMS
- * Generates OAuth client, provider, callback, and storage classes
+ * Generates a real OAuth client: authorization URL, token exchange over cURL,
+ * PKCE and token storage through cmsModel.
+ *
+ * Проверено по исходникам InstantCMS 2.18.2:
+ * - работа с токенами — только через `cmsModel`
+ *   (`filterEqual`/`getItem`/`get`/`insert`/`update`/`deleteFiltered`);
+ *   у него нет ни `getInstance()`, ни методов с массивом фильтров;
+ * - редирект — `cmsResponse::redirect()`, абсолютный хост — `cmsConfig::get('host')`
+ *   (ключ `root_url` в конфиге отсутствует);
+ * - классы дополнения не автозагружаются и подключаются через `require_once`,
+ *   а файлы живут в `system/controllers/<name>/`, а не в `<name>/`;
+ * - каталога `system/hooks/` в ICMS2 нет.
  */
 
+import { phpValue, quotePhp } from '../utils/serialization';
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 
 /**
@@ -21,6 +33,8 @@ interface OAuthProvider {
   token_url: string;
   /** OAuth scopes */
   scopes?: string[];
+  /** User info endpoint URL */
+  user_info_url?: string;
 }
 
 /**
@@ -42,37 +56,41 @@ interface ScaffoldOAuthOptions {
   };
 }
 
+function providerConfig(provider: OAuthProvider): string {
+  return `        ${quotePhp(provider.name)} => [
+            'client_id'      => ${quotePhp(provider.client_id)},
+            'client_secret'  => ${quotePhp(provider.client_secret)},
+            'auth_url'       => ${quotePhp(provider.auth_url)},
+            'token_url'      => ${quotePhp(provider.token_url)},
+            'user_info_url'  => ${quotePhp(provider.user_info_url ?? '')},
+            'scopes'         => ${phpValue(provider.scopes ?? ['openid', 'profile', 'email'])},
+        ],`;
+}
+
 /**
- * Generates OAuth client class
+ * Generates the OAuth client class.
  */
 function generateOAuthClient(
   name: string,
   Name: string,
   providers: OAuthProvider[],
-  _options: Record<string, unknown>
+  options: Record<string, unknown>
 ): string {
-  const providerConfigs = providers
-    .map(p => {
-      return `        '${p.name}' => [
-            'client_id' => '${p.client_id}',
-            'client_secret' => '${p.client_secret}',
-            'auth_url' => '${p.auth_url}',
-            'token_url' => '${p.token_url}',
-            'scopes' => ['${(p.scopes || ['openid', 'profile', 'email']).join("', '")}'],
-        ],`;
-    })
-    .join('\n');
+  const configs = providers.map(providerConfig).join('\n');
 
   return `<?php
-// InstantCMS 2. ${name}/oauth/client.php
+// InstantCMS 2. system/controllers/${name}/oauth/client.php
 
+require_once __DIR__ . '/provider.php';
+${options.store_tokens_in_db ? `require_once __DIR__ . '/storage.php';\n` : ''}
 class ${Name}OAuthClient {
     private static $instance = null;
     private $providers = [];
-    private $config = [];
 
     private function __construct() {
-        $this->loadConfig();
+        $this->providers = [
+${configs}
+        ];
     }
 
     public static function getInstance() {
@@ -82,36 +100,31 @@ class ${Name}OAuthClient {
         return self::$instance;
     }
 
-    private function loadConfig() {
-        $this->providers = [
-${providerConfigs}
-        ];
-    }
-
-    public function getProvider($provider) {
-        if (!isset($this->providers[$provider])) {
-            throw new ${Name}OAuthException("Provider '{$provider}' not found");
-        }
-        return new ${Name}OAuthProvider($provider, $this->providers[$provider]);
-    }
-
     public function getProviders() {
         return array_keys($this->providers);
     }
 
+    public function hasProvider($provider) {
+        return isset($this->providers[$provider]);
+    }
+
+    public function getProvider($provider) {
+        if (!isset($this->providers[$provider])) {
+            throw new ${Name}OAuthException('Provider not found: ' . $provider);
+        }
+        return new ${Name}OAuthProvider($provider, $this->providers[$provider]);
+    }
+
     public function getAuthUrl($provider, $state = null, $redirect_uri = null) {
-        $provider_obj = $this->getProvider($provider);
-        return $provider_obj->getAuthorizationUrl($state, $redirect_uri);
+        return $this->getProvider($provider)->getAuthorizationUrl($state, $redirect_uri);
     }
 
     public function handleCallback($provider, $code, $state = null) {
-        $provider_obj = $this->getProvider($provider);
-        return $provider_obj->handleCallback($code, $state);
+        return $this->getProvider($provider)->handleCallback($code, $state);
     }
 
     public function refreshToken($provider, $refresh_token) {
-        $provider_obj = $this->getProvider($provider);
-        return $provider_obj->refreshToken($refresh_token);
+        return $this->getProvider($provider)->refreshToken($refresh_token);
     }
 }
 
@@ -119,7 +132,7 @@ class ${Name}OAuthException extends Exception {}`;
 }
 
 /**
- * Generates OAuth provider class
+ * Generates the OAuth provider class (cURL token exchange).
  */
 function generateOAuthProvider(
   name: string,
@@ -128,7 +141,7 @@ function generateOAuthProvider(
   options: Record<string, unknown>
 ): string {
   return `<?php
-// InstantCMS 2. ${name}/oauth/provider.php
+// InstantCMS 2. system/controllers/${name}/oauth/provider.php
 
 class ${Name}OAuthProvider {
     private $provider_name;
@@ -136,32 +149,34 @@ class ${Name}OAuthProvider {
     private $pkce_support;
 
     public function __construct($provider_name, $config) {
-        $this->provider_name = $provider_name;
-        $this->config = $config;
-        $this->pkce_support = ${options.PKCE_support};
+        $this->provider_name = (string) $provider_name;
+        $this->config = (array) $config;
+        $this->pkce_support = ${phpValue(options.PKCE_support)};
+    }
+
+    public function getName() {
+        return $this->provider_name;
     }
 
     public function getAuthorizationUrl($state = null, $redirect_uri = null) {
+        $state = $state ?: bin2hex(random_bytes(16));
+
+        $_SESSION['${name}_oauth_state'] = $state;
+
         $params = [
-            'client_id' => $this->config['client_id'],
-            'redirect_uri' => $redirect_uri ?: $this->getDefaultRedirectUri(),
+            'client_id'     => $this->config['client_id'],
+            'redirect_uri'  => $this->resolveRedirectUri($redirect_uri),
             'response_type' => 'code',
-            'scope' => implode(' ', $this->config['scopes']),
+            'scope'         => implode(' ', (array) $this->config['scopes']),
+            'state'         => $state,
         ];
 
-        if ($state) {
-            $params['state'] = $state;
-        }
-
         if ($this->pkce_support) {
-            $code_verifier = $this->generateCodeVerifier();
-            $code_challenge = $this->generateCodeChallenge($code_verifier);
-            $params['code_challenge'] = $code_challenge;
+            $verifier = $this->generateCodeVerifier();
+            $params['code_challenge'] = $this->generateCodeChallenge($verifier);
             $params['code_challenge_method'] = 'S256';
-            $_SESSION['${name}_oauth_code_verifier'] = $code_verifier;
+            $_SESSION['${name}_oauth_code_verifier'] = $verifier;
         }
-
-        $_SESSION['${name}_oauth_state'] = $state ?: bin2hex(random_bytes(16));
 
         return $this->config['auth_url'] . '?' . http_build_query($params);
     }
@@ -172,84 +187,104 @@ class ${Name}OAuthProvider {
         }
 
         $params = [
-            'grant_type' => 'authorization_code',
-            'client_id' => $this->config['client_id'],
+            'grant_type'    => 'authorization_code',
+            'client_id'     => $this->config['client_id'],
             'client_secret' => $this->config['client_secret'],
-            'code' => $code,
-            'redirect_uri' => $this->getDefaultRedirectUri(),
+            'code'          => (string) $code,
+            'redirect_uri'  => $this->resolveRedirectUri(null),
         ];
 
-        if ($this->pkce_support && isset($_SESSION['${name}_oauth_code_verifier'])) {
+        if ($this->pkce_support && !empty($_SESSION['${name}_oauth_code_verifier'])) {
             $params['code_verifier'] = $_SESSION['${name}_oauth_code_verifier'];
-            unset($_SESSION['${name}_oauth_code_verifier']);
         }
 
-        unset($_SESSION['${name}_oauth_state']);
+        unset($_SESSION['${name}_oauth_state'], $_SESSION['${name}_oauth_code_verifier']);
 
-        $response = $this->makeRequest($this->config['token_url'], $params);
-
-        return $this->parseTokenResponse($response);
+        return $this->parseTokenResponse($this->makeRequest($this->config['token_url'], $params));
     }
 
     public function refreshToken($refresh_token) {
         $params = [
-            'grant_type' => 'refresh_token',
-            'client_id' => $this->config['client_id'],
+            'grant_type'    => 'refresh_token',
+            'client_id'     => $this->config['client_id'],
             'client_secret' => $this->config['client_secret'],
-            'refresh_token' => $refresh_token,
+            'refresh_token' => (string) $refresh_token,
         ];
 
-        $response = $this->makeRequest($this->config['token_url'], $params);
-
-        return $this->parseTokenResponse($response);
+        return $this->parseTokenResponse($this->makeRequest($this->config['token_url'], $params));
     }
 
-    private function makeRequest($url, $params, $method = 'POST') {
+    public function getUserInfo($access_token) {
+        $url = $this->config['user_info_url'] !== ''
+            ? $this->config['user_info_url']
+            : str_replace('/token', '/userinfo', $this->config['token_url']);
+
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $access_token]);
 
         $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
 
-        curl_close($ch);
+        if ($error !== '') {
+            throw new ${Name}OAuthException('cURL error: ' . $error);
+        }
 
-        if ($error) {
+        return json_decode((string) $response, true);
+    }
+
+    private function makeRequest($url, $params) {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+
+        $response = curl_exec($ch);
+        $http_code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+
+        if ($error !== '') {
             throw new ${Name}OAuthException('cURL error: ' . $error);
         }
 
         if ($http_code >= 400) {
-            throw new ${Name}OAuthException('HTTP error: ' . $http_code . ' - ' . $response);
+            throw new ${Name}OAuthException('HTTP error: ' . $http_code);
         }
 
-        return json_decode($response, true);
+        return json_decode((string) $response, true);
     }
 
     private function parseTokenResponse($response) {
+        if (!is_array($response)) {
+            throw new ${Name}OAuthException('Invalid token response');
+        }
+
         if (isset($response['error'])) {
-            throw new ${Name}OAuthException($response['error_description'] ?? $response['error']);
+            throw new ${Name}OAuthException((string) ($response['error_description'] ?? $response['error']));
         }
 
         return [
-            'access_token' => $response['access_token'],
+            'access_token'  => (string) ($response['access_token'] ?? ''),
             'refresh_token' => $response['refresh_token'] ?? null,
-            'expires_in' => $response['expires_in'] ?? 3600,
-            'token_type' => $response['token_type'] ?? 'Bearer',
-            'scope' => $response['scope'] ?? '',
+            'expires_in'    => (int) ($response['expires_in'] ?? 3600),
+            'token_type'    => (string) ($response['token_type'] ?? 'Bearer'),
+            'scope'         => (string) ($response['scope'] ?? ''),
         ];
     }
 
-    private function getDefaultRedirectUri() {
-        return cmsConfig::get('root_url') . '/oauth/' . $this->provider_name . '/callback';
+    private function resolveRedirectUri($redirect_uri) {
+        if (!empty($redirect_uri)) {
+            return (string) $redirect_uri;
+        }
+
+        return rtrim(cmsConfig::get('host'), '/') . '/oauth/' . $this->provider_name . '/callback';
     }
 
     private function generateCodeVerifier() {
@@ -259,32 +294,27 @@ class ${Name}OAuthProvider {
     private function generateCodeChallenge($verifier) {
         return rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
     }
-
-    public function getUserInfo($access_token) {
-        $user_info_url = $this->config['user_info_url'] ?? str_replace('/token', '/userinfo', $this->config['token_url']);
-
-        $ch = curl_init($user_info_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $access_token]);
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        return json_decode($response, true);
-    }
 }`;
 }
 
 /**
- * Generates OAuth callback handler
+ * Generates the callback helper.
  */
 function generateOAuthCallback(
   name: string,
   Name: string,
   options: Record<string, unknown>
 ): string {
+  const storeBlock = options.store_tokens_in_db
+    ? `            $storage = new ${Name}OAuthStorage();
+            $storage->storeTokens(cmsUser::getInstance()->id, $provider, $tokens);
+`
+    : '';
+
   return `<?php
-// InstantCMS 2. ${name}/oauth/callback.php
+// InstantCMS 2. system/controllers/${name}/oauth/callback.php
+
+require_once __DIR__ . '/client.php';
 
 class ${Name}OAuthCallback {
     private $client;
@@ -294,60 +324,38 @@ class ${Name}OAuthCallback {
     }
 
     public function handle($provider, $request) {
-        $code = $request->get('code');
-        $state = $request->get('state');
-        $error = $request->get('error');
-
-        if ($error) {
-            return [
-                'success' => false,
-                'error' => $request->get('error_description') ?? $error,
-            ];
+        $error = $request->get('error', '');
+        if ($error !== '') {
+            return ['success' => false, 'error' => (string) $request->get('error_description', $error)];
         }
 
-        if (!$code) {
-            return [
-                'success' => false,
-                'error' => 'Authorization code not provided',
-            ];
+        $code = (string) $request->get('code', '');
+        if ($code === '') {
+            return ['success' => false, 'error' => 'Authorization code not provided'];
         }
 
         try {
-            $tokens = $this->client->handleCallback($provider, $code, $state);
+            $tokens = $this->client->handleCallback($provider, $code, $request->get('state', null));
 
-${
-  options.store_tokens_in_db
-    ? `            $storage = new ${Name}OAuthStorage();
-            $user_id = cmsUser::getInstance()->id;
-            $storage->storeTokens($user_id, $provider, $tokens);`
-    : ''
-}
-
+${storeBlock}
             $user_info = $this->client->getProvider($provider)->getUserInfo($tokens['access_token']);
 
-            return [
-                'success' => true,
-                'tokens' => $tokens,
-                'user_info' => $user_info,
-            ];
+            return ['success' => true, 'tokens' => $tokens, 'user_info' => $user_info];
         } catch (${Name}OAuthException $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-            ];
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
-    public function redirectToProvider($provider) {
-        $auth_url = $this->client->getAuthUrl($provider);
-        cmsCore::getInstance()->response->redirect($auth_url);
-        exit;
+    public function redirectToProvider($provider, $redirect_uri = null) {
+        return cmsCore::getInstance()->response->redirect(
+            $this->client->getAuthUrl($provider, null, $redirect_uri)
+        );
     }
 }`;
 }
 
 /**
- * Generates OAuth storage class
+ * Generates the token storage (cmsModel, no cmsModel::getInstance()).
  */
 function generateOAuthStorage(
   name: string,
@@ -355,40 +363,46 @@ function generateOAuthStorage(
   _options: Record<string, unknown>
 ): string {
   return `<?php
-// InstantCMS 2. ${name}/oauth/storage.php
+// InstantCMS 2. system/controllers/${name}/oauth/storage.php
 
 class ${Name}OAuthStorage {
-    private $table = '${name}_oauth_tokens';
+    private $model;
+    private $table;
+
+    public function __construct($model = null) {
+        $this->model = $model ? $model : new cmsModel();
+        $this->table = ${quotePhp(`${name}_oauth_tokens`)};
+    }
 
     public function storeTokens($user_id, $provider, $tokens) {
         $existing = $this->getTokens($user_id, $provider);
 
         $data = [
-            'user_id' => $user_id,
-            'provider' => $provider,
-            'access_token' => $tokens['access_token'],
+            'user_id'       => (int) $user_id,
+            'provider'      => (string) $provider,
+            'access_token'  => (string) ($tokens['access_token'] ?? ''),
             'refresh_token' => $tokens['refresh_token'] ?? null,
-            'expires_at' => date('Y-m-d H:i:s', time() + $tokens['expires_in']),
-            'scope' => $tokens['scope'] ?? '',
-            'updated_at' => date('Y-m-d H:i:s'),
+            'expires_at'    => date('Y-m-d H:i:s', time() + (int) ($tokens['expires_in'] ?? 3600)),
+            'scope'         => (string) ($tokens['scope'] ?? ''),
+            'updated_at'    => date('Y-m-d H:i:s'),
         ];
 
         if ($existing) {
-            $data['created_at'] = $existing['created_at'];
-            cmsModel::getInstance()->update($this->table, $existing['id'], $data);
-        } else {
-            $data['created_at'] = date('Y-m-d H:i:s');
-            cmsModel::getInstance()->insert($this->table, $data);
+            return $this->model->update($this->table, (int) $existing['id'], $data);
         }
+
+        $data['created_at'] = date('Y-m-d H:i:s');
+
+        return $this->model->insert($this->table, $data);
     }
 
     public function getTokens($user_id, $provider) {
-        return cmsModel::getInstance()->getItem($this->table, function ($item) {
-            return $item;
-        }, [
-            'user_id' => $user_id,
-            'provider' => $provider,
-        ]);
+        $item = $this->model
+            ->filterEqual('user_id', (int) $user_id)
+            ->filterEqual('provider', (string) $provider)
+            ->getItem($this->table);
+
+        return $item ?: null;
     }
 
     public function getValidToken($user_id, $provider) {
@@ -398,92 +412,63 @@ class ${Name}OAuthStorage {
             return null;
         }
 
-        $expires_at = strtotime($tokens['expires_at']);
+        if (strtotime($tokens['expires_at']) >= time() + 300) {
+            return $tokens['access_token'];
+        }
 
-        if ($expires_at < time() + 300) {
-            if (!empty($tokens['refresh_token'])) {
-                $client = ${Name}OAuthClient::getInstance();
-                $new_tokens = $client->refreshToken($provider, $tokens['refresh_token']);
-                $this->storeTokens($user_id, $provider, $new_tokens);
-                return $new_tokens['access_token'];
-            }
+        if (empty($tokens['refresh_token'])) {
             return null;
         }
 
-        return $tokens['access_token'];
+        $client = ${Name}OAuthClient::getInstance();
+        $new_tokens = $client->refreshToken($provider, $tokens['refresh_token']);
+        $this->storeTokens($user_id, $provider, $new_tokens);
+
+        return $new_tokens['access_token'];
     }
 
     public function deleteTokens($user_id, $provider) {
-        return cmsModel::getInstance()->delete($this->table, null, [
-            'user_id' => $user_id,
-            'provider' => $provider,
-        ]);
+        return $this->model
+            ->filterEqual('user_id', (int) $user_id)
+            ->filterEqual('provider', (string) $provider)
+            ->deleteFiltered($this->table);
     }
 
     public function deleteAllTokens($user_id) {
-        return cmsModel::getInstance()->delete($this->table, null, [
-            'user_id' => $user_id,
-        ]);
+        return $this->model
+            ->filterEqual('user_id', (int) $user_id)
+            ->deleteFiltered($this->table);
     }
 
     public function getUserProviders($user_id) {
-        $items = cmsModel::getInstance()->get($this->table, function ($item) {
-            return $item['provider'];
-        }, [
-            'user_id' => $user_id,
-        ]);
+        $items = $this->model
+            ->filterEqual('user_id', (int) $user_id)
+            ->get($this->table);
 
-        return array_column($items, 'provider');
+        return array_values(array_unique(array_column($items ?: [], 'provider')));
     }
 }`;
 }
 
-/**
- * Generates OAuth hook handlers
- */
-function generateOAuthHooks(
-  name: string,
-  Name: string,
-  providers: OAuthProvider[],
-  _options: Record<string, unknown>
-): string {
-  const providerButtons = providers
-    .map(p => {
-      return `        <a href="/oauth/${p.name}/connect" class="btn btn-social btn-${p.name}">
-            <i class="icon-${p.name}"></i>
-            ${p.name}
-        </a>`;
-    })
-    .join('\n');
-
-  return `<?php
-// InstantCMS 2. system/hooks/${name}/oauth.hooks.php
-
-class on${Name}OAuthHook {
-    public function onUserLoginForm($form) {
-        $form->addFieldsetStart('social_login', 'Войти через');
-    }
-
-    public function onUserLoginButtons() {
-        return \`
-${providerButtons}
-        \`;
-    }
-
-    public function onUserDeleteAccount($user_id) {
-        $storage = new ${Name}OAuthStorage();
-        $storage->deleteAllTokens($user_id);
-        return true;
-    }
-
-    public function onAfterUserAuthorize($user, $token) {
-        return $user;
-    }
-}`;
+function generateTokensSql(name: string): string {
+  return `-- Замените cms_ на реальный префикс БД из system/config/config.php
+CREATE TABLE IF NOT EXISTS \`cms_${name}_oauth_tokens\` (
+    \`id\`            int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`user_id\`       int(10) unsigned NOT NULL DEFAULT 0,
+    \`provider\`      varchar(64) NOT NULL DEFAULT '',
+    \`access_token\`  text,
+    \`refresh_token\` text,
+    \`expires_at\`    datetime NOT NULL,
+    \`scope\`         varchar(255) NOT NULL DEFAULT '',
+    \`created_at\`    datetime NOT NULL,
+    \`updated_at\`    datetime NOT NULL,
+    PRIMARY KEY (\`id\`),
+    UNIQUE KEY \`user_provider\` (\`user_id\`,\`provider\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
 }
 
 /**
- * Generates a complete OAuth system for an InstantCMS addon
+ * Generates a complete OAuth system for an InstantCMS addon.
  *
  * @param opts - Configuration options for the OAuth system
  * @returns Object containing generated files and metadata
@@ -516,51 +501,78 @@ export function scaffoldOAuth(opts: ScaffoldOAuthOptions): ScaffoldResult {
     PKCE_support: opts.options?.PKCE_support ?? false,
   };
 
-  files[`${lowercase}/oauth/client.php`] = generateOAuthClient(
-    lowercase,
-    UpperCamelCase,
-    opts.providers,
-    options
-  );
-  files[`${lowercase}/oauth/provider.php`] = generateOAuthProvider(
-    lowercase,
-    UpperCamelCase,
-    opts.providers,
-    options
-  );
-  files[`${lowercase}/oauth/callback.php`] = generateOAuthCallback(
-    lowercase,
-    UpperCamelCase,
-    options
-  );
-
-  if (options.store_tokens_in_db) {
-    files[`${lowercase}/oauth/storage.php`] = generateOAuthStorage(
-      lowercase,
-      UpperCamelCase,
-      options
-    );
+  if (!opts.providers || !opts.providers.length) {
+    throw new Error('oauth: укажите хотя бы одного провайдера');
   }
 
-  files[`system/hooks/${lowercase}/oauth.hooks.php`] = generateOAuthHooks(
+  const seen = new Set<string>();
+  for (const provider of opts.providers) {
+    if (!/^[a-z][a-z0-9_]*$/.test(provider.name)) {
+      throw new Error(`oauth: неверное имя провайдера «${provider.name}»`);
+    }
+    if (seen.has(provider.name)) {
+      throw new Error(`oauth: провайдер «${provider.name}» указан дважды`);
+    }
+    seen.add(provider.name);
+    if (!provider.client_id || !provider.client_secret) {
+      throw new Error(`oauth: для провайдера ${provider.name} нужны client_id и client_secret`);
+    }
+    for (const [field, value] of [
+      ['auth_url', provider.auth_url],
+      ['token_url', provider.token_url],
+    ] as const) {
+      if (!/^https?:\/\/.+/i.test(value)) {
+        throw new Error(`oauth: ${field} провайдера ${provider.name} должен быть http(s)-URL`);
+      }
+    }
+  }
+
+  const ctrl = `package/system/controllers/${lowercase}/oauth`;
+
+  files[`${ctrl}/provider.php`] = generateOAuthProvider(
     lowercase,
     UpperCamelCase,
     opts.providers,
     options
   );
+  files[`${ctrl}/client.php`] = generateOAuthClient(
+    lowercase,
+    UpperCamelCase,
+    opts.providers,
+    options
+  );
+  files[`${ctrl}/callback.php`] = generateOAuthCallback(lowercase, UpperCamelCase, options);
+
+  if (options.store_tokens_in_db) {
+    files[`${ctrl}/storage.php`] = generateOAuthStorage(lowercase, UpperCamelCase, options);
+    files['[pkg] install.sql'] = generateTokensSql(lowercase);
+  }
 
   return {
-    scaffold_status: 'experimental',
-    limitations: [
-      'Классы лежат в разных файлах и не подключают друг друга (нет require): OAuthClient не найдёт OAuthProvider/OAuthStorage.',
-      'Файлы кладутся в <name>/ вместо system/controllers/<name>/.',
-      'Хуки пишутся в несуществующий system/hooks/.',
-      'Рантайм-проверка на живом InstantCMS не проходила.',
-    ],
     addon_name: lowercase,
     files,
     providers_count: opts.providers.length,
+    providers: opts.providers.map(provider => provider.name),
     options,
+    table: options.store_tokens_in_db ? `${lowercase}_oauth_tokens` : null,
+    supported_options: ['use_refresh_token', 'store_tokens_in_db', 'PKCE_support'],
+    structure_notes: [
+      `Классы: system/controllers/${lowercase}/oauth/{provider.php,client.php,callback.php${options.store_tokens_in_db ? ',storage.php' : ''}}`,
+      'Классы подключают друг друга через require_once; обмен кода на токен — реальный cURL POST',
+      options.store_tokens_in_db
+        ? `Токены хранятся в таблице ${lowercase}_oauth_tokens через cmsModel`
+        : 'Хранение токенов в БД отключено (store_tokens_in_db: false)',
+      options.PKCE_support
+        ? 'PKCE включён: code_verifier хранится в $_SESSION'
+        : 'PKCE отключён (PKCE_support: false)',
+      'redirect_uri по умолчанию — host/oauth/<provider>/callback; передайте свой в getAuthUrl()/callback',
+    ],
+    limitations: [
+      'Секреты провайдеров вшиты в provider.php (так задан вход). Для продакшена перенесите их в опции дополнения.',
+      'Страницы «войти через …» и привязка к пользователю не генерируются: вызовите OAuthCallback::redirectToProvider() из своего экшена.',
+      'Хук на удаление аккаунта не генерируется: подпишитесь на событие удаления пользователя в своём хуке.',
+      'Реальный вход проверяйте на конкретном провайдере: у него свои требования к redirect_uri и scope.',
+    ],
   };
 }
 
@@ -581,6 +593,7 @@ export const oauthToolSchema = {
             client_secret: { type: 'string' },
             auth_url: { type: 'string' },
             token_url: { type: 'string' },
+            user_info_url: { type: 'string' },
             scopes: { type: 'array', items: { type: 'string' } },
           },
         },
@@ -608,14 +621,6 @@ export const oauthToolSchema = {
           auth_url: 'https://accounts.google.com/o/oauth2/auth',
           token_url: 'https://oauth2.googleapis.com/token',
           scopes: ['openid', 'profile', 'email'],
-        },
-        {
-          name: 'vkontakte',
-          client_id: 'xxx',
-          client_secret: 'yyy',
-          auth_url: 'https://oauth.vk.com/authorize',
-          token_url: 'https://oauth.vk.com/access_token',
-          scopes: ['email'],
         },
       ],
       options: { use_refresh_token: true, store_tokens_in_db: true },

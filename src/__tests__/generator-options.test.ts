@@ -1,7 +1,10 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
 import { scaffoldApi } from '../tools/api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
+import { scaffoldComponent } from '../tools/component-tool.js';
+import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldOAuth } from '../tools/oauth-tool.js';
+import { scaffoldWebhook } from '../tools/webhook-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldFilter } from '../tools/filter-tool.js';
 import { scaffoldForm } from '../tools/form-tool.js';
@@ -300,32 +303,44 @@ describe('unsupported generator options', () => {
 });
 
 /**
- * Генераторы-прототипы: их вывод нельзя ставить на сайт без правки, и это
- * должно быть видно вызывающему агенту в самом ответе, а не только в README.
+ * Раньше эти генераторы были прототипами и возвращали scaffold_status
+ * 'experimental'. После переработки они не должны снова начать это делать,
+ * а ограничения обязаны остаться видимыми агенту.
  */
-describe('экспериментальные генераторы помечают себя и причины', () => {
+describe('переработанные генераторы не помечают себя прототипами', () => {
   const cases: Array<[string, () => unknown]> = [
+    ['scaffold_component', () => scaffoldComponent({ addon_name: 'okcomp' })],
+    ['scaffold_webhook', () => scaffoldWebhook({ addon_name: 'okwh', events: ['order.created'] })],
+    [
+      'scaffold_external_api',
+      () =>
+        scaffoldExternalApi({
+          addon_name: 'okext',
+          base_url: 'https://api.example.com',
+          endpoints: [{ path: '/x', method: 'GET' }],
+        }),
+    ],
     [
       'scaffold_oauth',
       () =>
         scaffoldOAuth({
-          addon_name: 'genoauth',
+          addon_name: 'okoauth',
           providers: [
             {
               name: 'google',
               client_id: 'x',
               client_secret: 'y',
-              auth_url: 'https://a',
-              token_url: 'https://t',
+              auth_url: 'https://accounts.google.com/o/oauth2/auth',
+              token_url: 'https://oauth2.googleapis.com/token',
             },
           ],
         }),
     ],
   ];
 
-  test.each(cases)('%s: experimental и непустые limitations', (_name, run) => {
+  test.each(cases)('%s: без scaffold_status experimental и с limitations', (_name, run) => {
     const result = run() as { scaffold_status?: string; limitations?: string[] };
-    expect(result.scaffold_status).toBe('experimental');
+    expect(result.scaffold_status).not.toBe('experimental');
     expect(Array.isArray(result.limitations)).toBe(true);
     expect((result.limitations ?? []).length).toBeGreaterThan(0);
   });
