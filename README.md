@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `crud_options`, `crud_slug`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -157,7 +157,7 @@ git push && git push --tags
 | `scaffold_widget`                                                                                         | рантайм: привязка к позиции и рендер на главной                             |
 | `scaffold_permission`                                                                                     | рантайм: правила регистрируются и читаются `cmsPermissions::getRulesList()` |
 | `scaffold_seo`                                                                                            | рантайм: хук `render_page` внедряет Open Graph и JSON-LD в страницу         |
-| `scaffold_filter`                                                                                         | рантайм: грид с фильтрами открывается в админке                             |
+| `scaffold_filter`                                                                                         | рантайм: грид с фильтрами в админке и применение фронтенд-фильтра к модели  |
 | `scaffold_addon` (with_routes)                                                                            | рантайм: ЧПУ из `routes.php` через метод `route()`                          |
 | `scaffold_crud` (with_api_model)                                                                          | рантайм: контракт API и токены выдаются и проверяются                       |
 | `scaffold_crud` (use_seo, list_template)                                                                  | рантайм: SEO-метатеги в `<head>` и разметка списка таблицей                 |

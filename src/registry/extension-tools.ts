@@ -206,6 +206,10 @@ export function registerExtensionTools(server: McpServer): void {
         .describe('Поля фильтра'),
       options: z
         .object({
+          frontend: z
+            .boolean()
+            .optional()
+            .describe('Фронтенд-фильтр списка (list_filter) на cmsFormField'),
           use_ajax: z.boolean().optional().describe('AJAX фильтрация'),
           use_url_params: z.boolean().optional().describe('Параметры в URL'),
           save_filters: z.boolean().optional().describe('Сохранение фильтров'),

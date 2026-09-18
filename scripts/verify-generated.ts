@@ -25,6 +25,7 @@ import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
+import { scaffoldFilter } from '../src/tools/filter-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
 import { scaffoldSeo } from '../src/tools/seo-tool.js';
@@ -457,6 +458,77 @@ echo count($grid['columns']) . '|' . (!empty($grid['options']['is_filter']) ? 1 
             const [columns, filter] = output.trim().split('|');
             return Number(columns) >= 2 && filter === '1';
           },
+        },
+      };
+    }
+    case 'filter': {
+      // Бэкенд-грид и фронтенд-фильтр: применяем фильтры к модели в рантайме.
+      const crud = scaffoldCrud({
+        addon_name: options.name,
+        fields: [
+          { name: 'description', type: 'text', title: 'Описание' },
+          { name: 'price', type: 'int', title: 'Цена' },
+        ],
+        options: { theme: options.theme },
+      }) as { files: Record<string, string> };
+      put(crud.files);
+
+      const result = scaffoldFilter({
+        addon_name: options.name,
+        fields: [
+          { field: 'title', type: 'text', label: 'Заголовок' },
+          { field: 'price', type: 'range', label: 'Цена' },
+        ],
+        options: { frontend: true },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const UpperCamelCase = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify filter', isBackend: 1 },
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,description,price,date_pub,is_pub',
+            values: `1,'Материал один','Описание',100,NOW(),1`,
+          },
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,description,price,date_pub,is_pub',
+            values: `1,'Материал два','Описание',200,NOW(),1`,
+          },
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,description,price,date_pub,is_pub',
+            values: `1,'Материал три','Описание',300,NOW(),1`,
+          },
+        ],
+        runtimePhp: {
+          note: 'фронтенд-фильтр применяется к модели',
+          script: `cmsCore::loadControllerLanguage('${options.name}');
+require_once PATH . '/system/controllers/${options.name}/${options.name}_filter.php';
+
+$table = '${options.name}_items';
+
+$none = cmsCore::getModel('${options.name}')->get($table);
+
+$byTitle = cmsCore::getModel('${options.name}');
+${UpperCamelCase}Filter::apply($byTitle, new cmsRequest(['title' => 'Материал два'], cmsRequest::CTX_INTERNAL));
+$titleRows = $byTitle->get($table);
+
+$byPrice = cmsCore::getModel('${options.name}');
+${UpperCamelCase}Filter::apply($byPrice, new cmsRequest(['price' => ['from' => 150]], cmsRequest::CTX_INTERNAL));
+$priceRows = $byPrice->get($table);
+
+echo count($none) . '|' . count($titleRows) . '|' . count($priceRows);`,
+          expect: output => output.trim() === '3|1|2',
         },
       };
     }
@@ -995,7 +1067,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
