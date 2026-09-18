@@ -50,7 +50,11 @@ import {
   listFields,
   getFieldInfo,
 } from '../tools/source-tool';
-import { generateMigration, generateFieldSuggestions } from '../tools/migration-tool';
+import {
+  generateMigration,
+  generateFieldSuggestions,
+  scaffoldMigration,
+} from '../tools/migration-tool';
 import { analyzeRequirement, suggestAddonStructure } from '../tools/requirement-tool';
 
 describe('Hooks Tool', () => {
@@ -1786,6 +1790,25 @@ describe('Migration Tool', () => {
     expect(result.sql).toContain('NOT NULL');
     expect(result.install_php).toContain('<?php');
     expect(result.install_php).toContain('install_package');
+  });
+
+  test('scaffoldMigration создаёт таблицу с префиксом БД, как обещает table_name', () => {
+    const result = scaffoldMigration({
+      addon_name: 'demo',
+      table_name: 'demo_items',
+      fields: [
+        { name: 'id', type: 'int(10) unsigned', nullable: false, extra: 'AUTO_INCREMENT' },
+        { name: 'title', type: 'varchar(255)', nullable: false, default: '' },
+      ],
+      options: { indexes: [{ name: 'title', type: 'INDEX', fields: ['title'] }] },
+    }) as any;
+
+    expect(result.table_name).toBe('cms_demo_items');
+    expect(result.files['[pkg] install.sql']).toContain(
+      'CREATE TABLE IF NOT EXISTS `cms_demo_items`'
+    );
+    expect(result.files['[pkg] install.sql']).not.toContain('`demo_items`');
+    expect(result.files['[pkg] install.php']).toContain('install_package');
   });
 
   test('generateFieldSuggestions returns suggestions', () => {

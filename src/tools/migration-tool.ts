@@ -182,7 +182,7 @@ export function scaffoldMigration(params: {
     : [];
 
   const installSql = `-- Замените cms_ на реальный префикс БД из system/config/config.php
-CREATE TABLE IF NOT EXISTS \`${table_name}\` (
+CREATE TABLE IF NOT EXISTS \`${tableName}\` (
 ${[...columnLines, ...primaryKey, ...indexLines].join(',\n')}
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
 

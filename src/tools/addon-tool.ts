@@ -1491,11 +1491,14 @@ ${
 }
 
 function buildHookClassName(addonName: string, hookName: string): string {
-  // Преобразуем snake_case в CamelCase для hookName
-  const hookParts = hookName.split('_');
-  const camelHook = hookParts
-    .map((part, i) => (i === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)))
-    .join('');
+  // Та же формула, что у ядра: on + string_to_camel('_', listener) + string_to_camel('_', event).
+  const camel = (value: string): string =>
+    value
+      .toLowerCase()
+      .split('_')
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
 
-  return `on${addonName.charAt(0).toUpperCase() + addonName.slice(1)}${camelHook.charAt(0).toUpperCase() + camelHook.slice(1)}`;
+  return `on${camel(addonName)}${camel(hookName)}`;
 }

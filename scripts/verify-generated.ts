@@ -26,6 +26,10 @@ import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldFilter } from '../src/tools/filter-tool.js';
+import { scaffoldHook } from '../src/tools/addon-tool.js';
+import { scaffoldLang } from '../src/tools/lang-tool.js';
+import { scaffoldMigration } from '../src/tools/migration-tool.js';
+import { generateMigration } from '../src/tools/migration-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
 import { scaffoldSeo } from '../src/tools/seo-tool.js';
@@ -62,6 +66,12 @@ interface Deployed {
   dirs: string[];
 }
 
+interface RuntimeCheck {
+  note: string;
+  script: string;
+  expect: (output: string) => boolean;
+}
+
 interface Artifact {
   /** Путь относительно корня сайта → содержимое. */
   files: Record<string, string>;
@@ -69,8 +79,8 @@ interface Artifact {
   sql: string[];
   /** Строка в cms_controllers, если контроллер нужно зарегистрировать. */
   controller?: { name: string; title: string; isBackend: number };
-  /** PHP-сценарий для проверки загружаемых классов (form, grid и т.п.). */
-  runtimePhp?: { script: string; expect: (output: string) => boolean; note: string };
+  /** PHP-сценарии для проверки загружаемых классов и хуков (form, grid, hook и т.п.). */
+  runtimePhp?: RuntimeCheck | RuntimeCheck[];
   /** Функция регистрации виджета из сгенерированного install_widget.php. */
   widgetInstaller?: string;
   /** Задача планировщика, если создан cron-хук. */
@@ -571,6 +581,92 @@ echo count($none) . '|' . count($titleRows) . '|' . count($priceRows);`,
         },
       };
     }
+    case 'core_artifacts': {
+      // migration + lang + hook: артефакты, которые ядро реально загружает.
+      const addon = scaffoldAddon({
+        name: options.name,
+        title: 'Verify core artifacts',
+        type: 'basic',
+      }) as { files: Record<string, string> };
+      put(addon.files);
+
+      const migration = scaffoldMigration({
+        addon_name: options.name,
+        table_name: `${options.name}_migrated`,
+        fields: [
+          { name: 'id', type: 'int(10) unsigned', nullable: false, extra: 'AUTO_INCREMENT' },
+          { name: 'title', type: 'varchar(255)', nullable: false, default: '' },
+        ],
+        options: { indexes: [{ name: 'title', type: 'INDEX', fields: ['title'] }] },
+      }) as { files: Record<string, string> };
+      put(migration.files);
+      files['.verify/install_package.php'] = migration.files['[pkg] install.php'];
+
+      // Второй генератор миграций: чистый SQL и install.php без file-map.
+      const legacy = generateMigration(`${options.name}_legacy`, [
+        { name: 'id', type: 'int(10) unsigned', extra: 'AUTO_INCREMENT' },
+        { name: 'title', type: 'varchar(255)', nullable: false },
+      ]) as { sql: string; install_php: string };
+      files['.verify/migrate_legacy.sql'] = legacy.sql;
+      files['.verify/install_legacy.php'] = legacy.install_php;
+      sql.push('.verify/migrate_legacy.sql');
+      tables.push(`cms_${options.name}_legacy`);
+
+      const lang = scaffoldLang({ addon_name: options.name }) as { file_content: string };
+      files[`system/languages/ru/controllers/${options.name}/${options.name}.php`] =
+        lang.file_content;
+
+      const hook = scaffoldHook({
+        addon_name: options.name,
+        hook_name: 'render_page',
+        type: 'filter',
+      }) as { code: string };
+      files[`system/controllers/${options.name}/hooks/render_page.php`] = hook.code;
+
+      const NAME = options.name.toUpperCase();
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify core artifacts', isBackend: 1 },
+        runtimePhp: [
+          {
+            note: 'install_package() из migration',
+            script: `require_once PATH . '/.verify/install_package.php';
+echo function_exists('install_package') && install_package([]) === true ? 'ok' : 'fail';`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'SQL scaffold_migration создал таблицу',
+            script: `$model = cmsCore::getModel('${options.name}');
+echo (int) $model->getCount('${options.name}_migrated') === 0 ? 'ok' : 'fail';`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'generate_migration создал таблицу и install_package()',
+            script: `$model = cmsCore::getModel('${options.name}');
+$count = (int) $model->getCount('${options.name}_legacy');
+require_once PATH . '/.verify/install_legacy.php';
+echo $count === 0 && install_package([]) === true ? 'ok' : 'fail';`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'языковой файл scaffold_lang',
+            script: `cmsCore::loadControllerLanguage('${options.name}');
+echo defined('LANG_${NAME}_TITLE') ? 'ok' : 'missing';`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'хук из scaffold_hook вызывается ядром',
+            script: `$controller = cmsCore::getController('${options.name}');
+$result = $controller->runHook('render_page', ['ping']);
+echo is_string($result) ? $result : json_encode($result);`,
+            expect: output => output.trim() === 'ping',
+          },
+        ],
+      };
+    }
     case 'cron': {
       // Планировщик вызывает runHook() у контроллера — значит, контроллер нужен.
       const crud = scaffoldCrud({
@@ -801,6 +897,9 @@ function cleanup(options: Options, artifact: Artifact, deployed: Deployed): void
     );
     mysql(options, `DELETE FROM cms_events WHERE listener='${artifact.controller?.name}';`);
   }
+  if (artifact.events?.length) {
+    mysql(options, `DELETE FROM cms_events WHERE listener='${artifact.controller?.name}';`);
+  }
   for (const table of artifact.tables) {
     mysql(options, `DROP TABLE IF EXISTS \`${table}\`;`);
   }
@@ -907,7 +1006,13 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     add(`GET /${name}/view/99999`, 404, missing.status);
   }
 
-  if (artifact.runtimePhp) {
+  const runtimeChecks = Array.isArray(artifact.runtimePhp)
+    ? artifact.runtimePhp
+    : artifact.runtimePhp
+      ? [artifact.runtimePhp]
+      : [];
+
+  for (const check of runtimeChecks) {
     const scriptPath = path.join(options.site, '_verify_runtime.php');
     const body = `<?php
 if (PHP_SAPI !== 'cli') { die('404'); }
@@ -915,7 +1020,7 @@ require_once __DIR__ . '/bootstrap.php';
 chdir(PATH);
 $core->initLanguage();
 cmsTemplate::getInstance();
-${artifact.runtimePhp.script}
+${check.script}
 `;
     fs.writeFileSync(scriptPath, body);
 
@@ -929,9 +1034,9 @@ ${artifact.runtimePhp.script}
       fs.rmSync(scriptPath, { force: true });
     }
 
-    add(`${artifact.runtimePhp.note}: PHP без ошибок`, 0, status);
+    add(`${check.note}: PHP без ошибок`, 0, status);
     if (status === 0) {
-      add(`${artifact.runtimePhp.note}: результат`, 1, artifact.runtimePhp.expect(output) ? 1 : 0);
+      add(`${check.note}: результат`, 1, check.expect(output) ? 1 : 0);
     }
   }
 
@@ -1106,7 +1211,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|core_artifacts|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
