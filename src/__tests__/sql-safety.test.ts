@@ -4,7 +4,9 @@ import {
   assertSqlAllowed,
   classifySql,
   hasMultipleStatements,
+  isSensitiveColumn,
   redactSecrets,
+  redactSensitiveRows,
 } from '../utils/sql-safety.js';
 import { closePool, executeQuery } from '../tools/mariadb.js';
 import { mariaExecuteQuery } from '../tools/maria-tool.js';
@@ -100,6 +102,63 @@ describe('sql safety', () => {
     expect(redactSecrets('DB_PASSWORD=hunter2')).toBe('DB_PASSWORD=***');
     expect(redactSecrets('Authorization: Bearer abc.def')).toBe('Authorization: Bearer ***');
     expect(redactSecrets('https://x/?token=abc&a=1')).toContain('token=***');
+  });
+
+  test('секреты маскируются в JSON, URL, Basic и SQL-литералах', () => {
+    expect(redactSecrets('{"password": "hunter2"}')).toBe('{"password": "***"}');
+    const ini = redactSecrets("db_password = 'hunter2'");
+    expect(ini).not.toContain('hunter2');
+    expect(ini).toContain('***');
+    expect(redactSecrets('mysql://root:hunter2@localhost/icms')).toBe(
+      'mysql://root:***@localhost/icms'
+    );
+    expect(redactSecrets('Authorization: Basic cm9vdDpzZWNyZXQ=')).toBe('Authorization: Basic ***');
+    expect(redactSecrets("SELECT * FROM cms_users WHERE token = 'abc'")).toContain("= '***'");
+  });
+
+  test('колонки-секреты определяются по границам имени', () => {
+    for (const column of [
+      'password',
+      'password_hash',
+      'passwd',
+      'api_token',
+      'token_hash',
+      'access_token',
+      'secret_key',
+      'api_key',
+      'reset_token',
+    ]) {
+      expect(isSensitiveColumn(column)).toBe(true);
+    }
+
+    for (const column of ['tokens_count', 'commented', 'title', 'user_id', 'is_pub']) {
+      expect(isSensitiveColumn(column)).toBe(false);
+    }
+  });
+
+  test('redactSensitiveRows маскирует значения и сообщает колонки', () => {
+    const { rows, redactedColumns } = redactSensitiveRows(
+      ['id', 'login', 'password', 'api_token'],
+      [
+        { id: 1, login: 'admin', password: 'hash', api_token: 'tok' },
+        { id: 2, login: 'user', password: 'hash2', api_token: 'tok2' },
+      ]
+    );
+
+    expect(redactedColumns).toEqual(['password', 'api_token']);
+    expect(rows[0]).toEqual({ id: 1, login: 'admin', password: '***', api_token: '***' });
+    expect(rows[1].password).toBe('***');
+  });
+
+  test('redactSensitiveRows не меняет строки без секретов и при includeSensitive', () => {
+    const rows = [{ id: 1, title: 'x' }];
+    expect(redactSensitiveRows(['id', 'title'], rows)).toEqual({ rows, redactedColumns: [] });
+
+    const secretRows = [{ id: 1, password: 'hash' }];
+    expect(redactSensitiveRows(['id', 'password'], secretRows, true)).toEqual({
+      rows: secretRows,
+      redactedColumns: [],
+    });
   });
 
   test('executeQuery не выполняет запись без подтверждения', async () => {

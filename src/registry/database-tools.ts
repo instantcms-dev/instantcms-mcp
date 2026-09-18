@@ -23,7 +23,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_execute_query',
-    'Выполняет произвольный SQL запрос к базе данных MariaDB. Возвращает результат с колонками, строками и временем выполнения.',
+    'Выполняет произвольный SQL запрос к базе данных MariaDB. Значения колонок-секретов (password, token, secret) маскируются, пока не передан include_sensitive.',
     {
       sql: z
         .string()
@@ -35,9 +35,21 @@ export function registerDatabaseTools(server: McpServer): void {
         .describe(
           'Подтверждение изменения данных. По умолчанию разрешено только чтение; при DB_READONLY=1 запись запрещена всегда'
         ),
+      include_sensitive: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          'Вернуть значения колонок-секретов (password, token, secret и т.п.) как есть. По умолчанию они маскируются'
+        ),
     },
-    async ({ sql, allow_write }) =>
-      databaseResult(mariaExecuteQuery(String(sql), { allowWrite: Boolean(allow_write) }))
+    async ({ sql, allow_write, include_sensitive }) =>
+      databaseResult(
+        mariaExecuteQuery(String(sql), {
+          allowWrite: Boolean(allow_write),
+          includeSensitive: Boolean(include_sensitive),
+        })
+      )
   );
 
   defineTool(
@@ -79,7 +91,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_get_table_data',
-    'Получить данные из таблицы с поддержкой пагинации, сортировки и фильтрации.',
+    'Получить данные из таблицы с поддержкой пагинации, сортировки и фильтрации. Значения колонок-секретов маскируются, пока не передан include_sensitive.',
     {
       table_name: z.string().describe('Имя таблицы. Пример: cms_users'),
       limit: z.number().optional().default(20).describe('Количество строк (по умолчанию 20)'),
@@ -94,8 +106,15 @@ export function registerDatabaseTools(server: McpServer): void {
         .record(z.string(), z.unknown())
         .optional()
         .describe('Фильтр в формате {поле: значение}'),
+      include_sensitive: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          'Вернуть значения колонок-секретов (password, token, secret и т.п.) как есть. По умолчанию они маскируются'
+        ),
     },
-    async ({ table_name, limit, offset, order_by, order_dir, filter }) =>
+    async ({ table_name, limit, offset, order_by, order_dir, filter, include_sensitive }) =>
       databaseResult(
         mariaGetTableData(String(table_name), {
           limit: Number(limit),
@@ -103,6 +122,7 @@ export function registerDatabaseTools(server: McpServer): void {
           orderBy: String(order_by),
           orderDir: order_dir === 'ASC' ? 'ASC' : 'DESC',
           filter: filter as Record<string, unknown> | undefined,
+          includeSensitive: Boolean(include_sensitive),
         })
       )
   );

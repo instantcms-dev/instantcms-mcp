@@ -119,11 +119,50 @@ function die(message: string): never {
   process.exit(1);
 }
 
+/**
+ * Пароль не передаётся аргументом командной строки: `-p<password>` виден
+ * другим пользователям в `ps`. Вместо этого — временный option-файл MySQL
+ * с правами 0600, который удаляется при выходе.
+ */
+let mysqlDefaultsDir: string | null = null;
+function getMysqlDefaultsFile(options: Options): string {
+  if (mysqlDefaultsDir) return path.join(mysqlDefaultsDir, 'client.cnf');
+
+  mysqlDefaultsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'icms-mysql-'));
+  const file = path.join(mysqlDefaultsDir, 'client.cnf');
+  const value = (raw: string): string => `"${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+
+  fs.writeFileSync(
+    file,
+    [
+      '[client]',
+      `host=${value(options.dbHost)}`,
+      `user=${value(options.dbUser)}`,
+      `password=${value(options.dbPassword)}`,
+      '',
+    ].join('\n'),
+    { mode: 0o600 }
+  );
+
+  const cleanup = (): void => {
+    if (mysqlDefaultsDir) fs.rmSync(mysqlDefaultsDir, { recursive: true, force: true });
+  };
+  process.once('exit', cleanup);
+  process.once('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.once('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
+
+  return file;
+}
+
 function mysql(options: Options, sql: string, file?: string): string {
   const args = [
-    `-h${options.dbHost}`,
-    `-u${options.dbUser}`,
-    options.dbPassword ? `-p${options.dbPassword}` : '',
+    `--defaults-extra-file=${getMysqlDefaultsFile(options)}`,
     options.dbName,
     ...(file ? [] : ['-e', sql]),
   ].filter(Boolean);

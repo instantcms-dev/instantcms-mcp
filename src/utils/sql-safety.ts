@@ -145,9 +145,24 @@ export function assertSqlAllowed(sql: string, options: SqlGuardOptions = {}): Sq
 }
 
 const SECRET_PATTERNS: Array<{ pattern: RegExp; replace: string }> = [
+  // "password": "secret" — ключ и значение в кавычках (JSON, INI)
+  {
+    pattern:
+      /(["'])(password|passwd|pwd|secret|api[_-]?key|api[_-]?token|auth[_-]?key|access[_-]?token|token)\1(\s*[:=]\s*)(["'])([^"']*)\4/gi,
+    replace: '$1$2$1$3$4***$4',
+  },
+  // password = "secret" / password: 'secret'
+  {
+    pattern:
+      /((?:password|passwd|pwd|secret|api[_-]?key|api[_-]?token|auth[_-]?key|access[_-]?token|token)\s*[:=]\s*)(["'])([^"']*)\2/gi,
+    replace: '$1$2***$2',
+  },
   { pattern: /(password|passwd|pwd)\s*[=:]\s*[^\s;,'")]+/gi, replace: '$1=***' },
   { pattern: /(DB_PASSWORD|DB_PASS)\s*=\s*[^\s;]+/gi, replace: '$1=***' },
+  // Учётные данные в URL: mysql://user:secret@host/db
+  { pattern: /(\b[a-z][a-z0-9+.-]*:\/\/[^:/\s@]+:)[^@/\s]+@/gi, replace: '$1***@' },
   { pattern: /(authorization\s*:\s*bearer\s+)[^\s]+/gi, replace: '$1***' },
+  { pattern: /(authorization\s*:\s*basic\s+)[^\s]+/gi, replace: '$1***' },
   { pattern: /([?&](?:token|api_key|apikey|access_token)=)[^&\s]+/gi, replace: '$1***' },
 ];
 
@@ -157,4 +172,52 @@ export function redactSecrets(text: string): string {
     (result, { pattern, replace }) => result.replace(pattern, replace),
     text
   );
+}
+
+/**
+ * Имена колонок, значения которых не отдаются наружу.
+ *
+ * Сопоставление по границам сегментов имени, поэтому `token_hash`,
+ * `api_token` и `secret_key` маскируются, а `tokens_count` — нет.
+ */
+const SENSITIVE_COLUMN_PATTERN =
+  /(?:^|_)(?:password|passwd|pwd|secret|token|salt|api_?key|auth_?key|private_?key)(?:_|$|[0-9])/i;
+
+export function isSensitiveColumn(column: string): boolean {
+  return SENSITIVE_COLUMN_PATTERN.test(column);
+}
+
+export interface RedactRowsResult {
+  rows: Record<string, unknown>[];
+  /** Колонки, значения которых заменены на `***`. */
+  redactedColumns: string[];
+}
+
+/**
+ * Заменяет значения колонок-секретов на `***`.
+ *
+ * Инструменты MCP читает ИИ-агент, а дамп `cms_users` отдаёт хэши паролей и
+ * токены, поэтому значения таких колонок маскируются, пока вызывающий явно не
+ * попросит обратное (`include_sensitive: true`).
+ */
+export function redactSensitiveRows(
+  columns: string[],
+  rows: Record<string, unknown>[],
+  includeSensitive = false
+): RedactRowsResult {
+  if (includeSensitive) return { rows, redactedColumns: [] };
+
+  const sensitive = columns.filter(isSensitiveColumn);
+  if (sensitive.length === 0) return { rows, redactedColumns: [] };
+
+  return {
+    rows: rows.map(row => {
+      const copy: Record<string, unknown> = { ...row };
+      for (const column of sensitive) {
+        copy[column] = '***';
+      }
+      return copy;
+    }),
+    redactedColumns: sensitive,
+  };
 }
