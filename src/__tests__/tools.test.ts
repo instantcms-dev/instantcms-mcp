@@ -747,76 +747,77 @@ describe('Template Overrides Tool', () => {
     expect(result).toHaveProperty('available');
   });
 });
-
 describe('Cron Tool', () => {
-  test('scaffoldCron generates cron files', () => {
+  test('scaffoldCron создаёт хуки задач планировщика', () => {
     const result = scaffoldCron({
       addon_name: 'test_cron',
       tasks: [
-        {
-          name: 'cleanup',
-          schedule: { minute: '0', hour: '*', day: '*', month: '*', day_of_week: '*' },
-          action: 'taskCleanup',
-        },
-        {
-          name: 'send_notifications',
-          schedule: { minute: '*/15' },
-          action: 'taskSendNotifications',
-        },
+        { name: 'cleanup', schedule: { minute: '0', hour: '*' }, action: 'taskCleanup' },
+        { name: 'notifications', schedule: { minute: '*/15' }, action: 'taskNotify' },
       ],
     }) as any;
-    expect(result).toHaveProperty('addon_name', 'test_cron');
-    expect(result).toHaveProperty('tasks_count', 2);
-    expect('package/system/controllers/test_cron/cron.php' in result.files).toBe(true);
-  });
 
-  test('scaffoldCron generates manifest with tasks', () => {
-    const result = scaffoldCron({
-      addon_name: 'test_cron',
-      tasks: [{ name: 'daily', schedule: { minute: '0', hour: '0' }, action: 'taskDaily' }],
-    }) as any;
-    const manifest = result.files['package/system/controllers/test_cron/manifest.xml'];
-    expect(manifest).toContain('<task name="daily"');
-    expect(manifest).toContain('schedule="0 0 * * *"');
-  });
-
-  test('scaffoldCron generates language file', () => {
-    const result = scaffoldCron({
-      addon_name: 'test_cron',
-      tasks: [
-        {
-          name: 'cleanup',
-          schedule: { minute: '0' },
-          action: 'taskCleanup',
-          description: 'Clean old data',
-        },
-      ],
-    }) as any;
-    expect('package/system/languages/ru/controllers/test_cron/test_cron.php' in result.files).toBe(
+    expect(result.scaffold_status).toBe('partial');
+    expect('package/system/controllers/test_cron/hooks/cron_cleanup.php' in result.files).toBe(
       true
     );
-    const lang = result.files['package/system/languages/ru/controllers/test_cron/test_cron.php'];
-    expect(lang).toContain('LANG_TEST_CRON_TASK_CLEANUP');
+    expect(
+      'package/system/controllers/test_cron/hooks/cron_notifications.php' in result.files
+    ).toBe(true);
   });
 
-  test('scaffoldCron returns correct task info', () => {
+  test('классы хуков соответствуют правилу on<Controller><Hook>', () => {
     const result = scaffoldCron({
       addon_name: 'test_cron',
-      tasks: [{ name: 'hourly', schedule: { minute: '0', hour: '*' }, action: 'taskHourly' }],
+      tasks: [{ name: 'daily_report', schedule: { minute: '0', hour: '3' }, action: 'taskDaily' }],
     }) as any;
-    expect(result.tasks[0].name).toBe('hourly');
-    expect(result.tasks[0].schedule).toBe('0 * * * *');
+
+    const hook = result.files['package/system/controllers/test_cron/hooks/cron_daily_report.php'];
+    expect(hook).toContain('class onTestCronCronDailyReport extends cmsAction');
+    expect(hook).toContain('public function run()');
+    expect(result.tasks[0].class).toBe('onTestCronCronDailyReport');
   });
 
-  test('scaffoldCron with lock and logging options', () => {
+  test('install.php регистрирует задачи через addSchedulerTask', () => {
     const result = scaffoldCron({
       addon_name: 'test_cron',
-      tasks: [{ name: 'test', schedule: { minute: '*' }, action: 'taskTest' }],
-      options: { use_lock_file: true, log_execution: true },
+      tasks: [{ name: 'cleanup', schedule: { minute: '0' }, action: 'taskCleanup' }],
     }) as any;
-    const cron = result.files['package/system/controllers/test_cron/cron.php'];
-    expect(cron).toContain('is_locked');
-    expect(cron).toContain('cache/logs/test_cron.log');
+
+    const install = result.files['[pkg] install.php'];
+    expect(install).toContain('function install_package(array $install_options = [])');
+    expect(install).toContain("cmsCore::getModel('admin')");
+    expect(install).toContain('$model->addSchedulerTask($task)');
+    expect(install).toContain("'controller' => 'test_cron'");
+    expect(install).toContain("'hook'       => 'cleanup'");
+  });
+
+  test('расписание переводится в период в минутах', () => {
+    const cases: Array<[Record<string, string>, number]> = [
+      [{ minute: '*' }, 1],
+      [{ minute: '0', hour: '*' }, 60],
+      [{ minute: '0', hour: '3' }, 1440],
+      [{ minute: '0', hour: '3', day: '1' }, 10080],
+    ];
+    for (const [schedule, expected] of cases) {
+      const result = scaffoldCron({
+        addon_name: 'test_cron',
+        tasks: [{ name: 'task', schedule, action: 'taskRun' }],
+      }) as any;
+      expect(result.tasks[0].period_minutes).toBe(expected);
+    }
+  });
+
+  test('устаревшие опции lock и log отклоняются', () => {
+    for (const option of ['use_lock_file', 'log_execution'] as const) {
+      expect(() =>
+        scaffoldCron({
+          addon_name: 'test_cron',
+          tasks: [{ name: 'x', schedule: { minute: '0' }, action: 'taskX' }],
+          options: { [option]: true },
+        })
+      ).toThrow(new RegExp(option));
+    }
   });
 });
 

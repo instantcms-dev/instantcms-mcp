@@ -92,7 +92,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon` или `widget`.
+- `--scenario`: `crud`, `api`, `addon`, `widget` или `cron`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
