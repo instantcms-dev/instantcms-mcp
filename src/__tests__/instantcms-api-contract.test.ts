@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { scaffoldCrud } from '../tools/crud-tool.js';
+import { scaffoldApi } from '../tools/api-tool.js';
 
 /**
  * Проверяет, что сгенерированный код обращается только к реально существующим
@@ -113,10 +114,45 @@ if (!source) {
       fields: [{ name: 'description', type: 'text', title: 'Описание' }],
     }) as { files: Record<string, string> };
 
-    const serverFiles = Object.entries(crud.files).filter(
+    const api = scaffoldApi({
+      addon_name: 'contract_demo',
+      endpoints: [
+        { name: 'list', method: 'GET', path: '/list', auth_required: false },
+        {
+          name: 'item',
+          method: 'GET',
+          path: '/items/{id}',
+          params: [{ name: 'id', type: 'path', required: true }],
+        },
+        { name: 'create', method: 'POST', path: '/create' },
+        {
+          name: 'update',
+          method: 'PUT',
+          path: '/items/{id}',
+          params: [{ name: 'id', type: 'path', required: true }],
+        },
+        {
+          name: 'delete',
+          method: 'DELETE',
+          path: '/items/{id}',
+          params: [{ name: 'id', type: 'path', required: true }],
+        },
+      ],
+    }) as { files: Record<string, string> };
+
+    const allFiles = { ...crud.files, ...api.files };
+
+    const serverFiles = Object.entries(allFiles).filter(
       ([file]) => file.endsWith('.php') && !file.includes('/templates/')
     );
     const sources = serverFiles.map(([, content]) => content).join('\n');
+
+    const generatedModelMethods = new Set<string>();
+    for (const [, content] of serverFiles) {
+      if (/class\s+\w+\s+extends\s+cmsModel/.test(content)) {
+        for (const name of parseMethodShapes(content).keys()) generatedModelMethods.add(name);
+      }
+    }
 
     const isFrontendFile = (file: string): boolean =>
       !file.includes('/backend/') && !file.includes('/backend.php');
@@ -161,18 +197,8 @@ if (!source) {
       expect(missing).toEqual([]);
     });
 
-    test('методы cmsModel и cmsRequest существуют', () => {
-      const model = methodsOf('system/core/model.php');
+    test('методы cmsRequest существуют', () => {
       const request = methodsOf('system/core/request.php');
-      const generatedModel = new Set(
-        [...sources.matchAll(/function\s+([a-zA-Z_]+)\s*\(/g)].map(match => match[1].toLowerCase())
-      );
-
-      const modelUsed = [...sources.matchAll(/model->([a-zA-Z_]+)\s*\(/g)].map(match => match[1]);
-      const modelMissing = [...new Set(modelUsed)].filter(
-        name => !model.has(name.toLowerCase()) && !generatedModel.has(name.toLowerCase())
-      );
-
       const requestUsed = [...sources.matchAll(/request->([a-zA-Z_]+)\s*\(/g)].map(
         match => match[1]
       );
@@ -180,7 +206,6 @@ if (!source) {
         name => !request.has(name.toLowerCase())
       );
 
-      expect(modelMissing).toEqual([]);
       expect(requestMissing).toEqual([]);
     });
 
@@ -245,6 +270,30 @@ if (!source) {
         }
       }
       expect(problems).toEqual([]);
+    });
+
+    test('каждый вызов метода модели существует или защищён method_exists', () => {
+      const coreModelMethods = parseMethodShapes(read('system/core/model.php'));
+      const problems: string[] = [];
+      for (const [file, content] of serverFiles) {
+        for (const match of content.matchAll(/model->([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g)) {
+          const name = match[1];
+          if (coreModelMethods.has(name.toLowerCase())) continue;
+          if (generatedModelMethods.has(name.toLowerCase())) continue;
+          if (content.includes(`method_exists($this->model, '${name}')`)) continue;
+          problems.push(`${file}: ${name}()`);
+        }
+      }
+      expect(problems).toEqual([]);
+    });
+
+    test('методы cmsResponse, используемые для ответа, существуют', () => {
+      const available = methodsOf('system/core/response.php');
+      const used = [...sources.matchAll(/response[\s\S]{0,80}?->([a-zA-Z_]+)\s*\(/g)].map(
+        match => match[1]
+      );
+      const missing = [...new Set(used)].filter(name => !available.has(name.toLowerCase()));
+      expect(missing).toEqual([]);
     });
 
     test('глобальные хелперы шаблонов доступны', () => {

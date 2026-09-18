@@ -1,5 +1,3 @@
-import { escapeXml, quotePhp } from '../utils/serialization.js';
-
 interface ApiEndpoint {
   name: string;
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -26,6 +24,21 @@ interface ScaffoldApiOptions {
     base_path?: string;
   };
 }
+
+type HandlerKind = 'list' | 'item' | 'status' | 'create' | 'update' | 'delete';
+
+/**
+ * Документированный контракт модели, который вызывает сгенерированный API.
+ * Имена не пересекаются с методами cmsModel (проверено по InstantCMS 2.18.2).
+ */
+const MODEL_CONTRACT = [
+  'getApiList(int $page, int $perpage): array',
+  'getApiItem(int $id): ?array',
+  'createApiItem(array $data, int $user_id)',
+  'updateApiItem(int $id, array $data): bool',
+  'deleteApiItem(int $id): bool',
+  'getApiUserByToken(string $token): ?array',
+];
 
 export function scaffoldApi(opts: ScaffoldApiOptions): object {
   const name = opts.addon_name;
@@ -60,19 +73,16 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
 
   for (const endpoint of opts.endpoints) {
     const action = `api_${version}_${endpoint.name}`;
-    files[`${ctrl}/actions/${action}.php`] = generateApiController(
-      name,
+    files[`${ctrl}/actions/${action}.php`] = generateApiAction(
       Name,
       action,
-      [endpoint],
-      basePath
+      endpoint,
+      endpoint.auth_required !== false
     );
   }
 
-  files[`${ctrl}/manifest.xml`] = generateManifest(name, Name, version);
-
   if (opts.options?.use_swagger) {
-    files[`package/docs/openapi.json`] = generateOpenApi(name, version, opts.endpoints, basePath);
+    files['package/docs/openapi.json'] = generateOpenApi(name, version, opts.endpoints, basePath);
   }
 
   return {
@@ -81,11 +91,14 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
     base_path: basePath,
     endpoints_count: opts.endpoints.length,
     scaffold_status: 'partial',
+    model_contract: MODEL_CONTRACT,
     limitations: [
-      'Not an installable addon: merge actions into an existing controller and configure routing.',
-      'Implement and review model methods, permissions, input validation and token authentication before deployment.',
-      'JSON request body parsing and rate limiting are not implemented by this scaffold.',
-      'Syntax validation does not establish InstantCMS runtime compatibility.',
+      'Не самостоятельное дополнение: actions нужно добавить в существующий контроллер и настроить маршруты.',
+      `Реализуйте контракт модели (${MODEL_CONTRACT.length} методов) — без него endpoints отвечают 501 NOT_IMPLEMENTED, а не падают.`,
+      'Разбор JSON-тела запроса не реализован: параметры читаются через request->get().',
+      'PHP не заполняет $_POST для PUT/PATCH/DELETE — передавайте параметры и токен в строке запроса.',
+      'Проверьте права доступа, валидацию входных данных и способ выдачи токенов перед публикацией.',
+      'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     files,
     endpoints: opts.endpoints.map(e => ({
@@ -97,7 +110,8 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
     structure_notes: [
       `API actions: ${ctrl}/actions/api_${version}_*.php`,
       `Настройте маршруты ${basePath}/* на соответствующие actions в существующем frontend-контроллере`,
-      `Защищённые endpoints требуют реализации getUserByToken в модели`,
+      'Ответы формируются через cmsResponse (Content-Type: application/json, HTTP-код в статусе ответа)',
+      'Отсутствующие методы модели дают 501 с именем метода, а не фатал',
     ],
   };
 }
@@ -106,221 +120,238 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function generateApiController(
-  name: string,
+function handlerKind(endpoint: ApiEndpoint): HandlerKind {
+  const method = endpoint.method.toUpperCase();
+  if (method === 'POST') return 'create';
+  if (method === 'PUT' || method === 'PATCH') return 'update';
+  if (method === 'DELETE') return 'delete';
+  if (endpoint.path.includes('/list') || endpoint.name.includes('list')) return 'list';
+  if (endpoint.name.includes('_by_') || /\/[a-z_]+\/\{.*\}/.test(endpoint.path)) return 'item';
+  return 'status';
+}
+
+function requiredModelMethods(kind: HandlerKind): string[] {
+  switch (kind) {
+    case 'list':
+      return ['getApiList'];
+    case 'item':
+      return ['getApiItem'];
+    case 'create':
+      return ['createApiItem'];
+    case 'update':
+      return ['getApiItem', 'updateApiItem'];
+    case 'delete':
+      return ['getApiItem', 'deleteApiItem'];
+    default:
+      return [];
+  }
+}
+
+function generateApiAction(
   Name: string,
   actionClass: string,
-  endpoints: ApiEndpoint[],
-  _basePath: string
+  endpoint: ApiEndpoint,
+  authRequired: boolean
 ): string {
-  const needsAuth = endpoints.some(endpoint => endpoint.auth_required !== false);
-  const authBlock = needsAuth
+  const className = `action${Name}${actionClass.split('_').map(capitalize).join('')}`;
+  const methodUpper = endpoint.method.toUpperCase();
+  const kind = handlerKind(endpoint);
+
+  const authBlock = authRequired
     ? `
     protected function checkAuth() {
-        $this->token = $this->request->get('token', '');
-        if (!$this->token) {
-            $this->errorResponse('API token required', 401);
-            return false;
+
+        $this->token = (string) $this->request->get('token', '');
+
+        if ($this->token === '') {
+            return $this->respond(['error' => true, 'message' => 'API token required'], 401);
         }
 
-        $user = $this->model->getUserByToken($this->token);
+        if (!method_exists($this->model, 'getApiUserByToken')) {
+            return $this->notImplemented('getApiUserByToken');
+        }
+
+        $user = $this->model->getApiUserByToken($this->token);
         if (!$user) {
-            $this->errorResponse('Invalid API token', 401);
-            return false;
+            return $this->respond(['error' => true, 'message' => 'Invalid API token'], 401);
         }
 
-        $this->user_id = $user['id'];
+        $this->user_id = (int) $user['id'];
+
         return true;
     }
 `
     : '';
 
-  let code = `<?php
-// Partial API action: integrate routes and model methods before deployment.
-class action${Name}${actionClass.split('_').map(capitalize).join('')} extends cmsAction {
+  const guardBlock = requiredModelMethods(kind)
+    .map(
+      method => `
+        if (!method_exists($this->model, '${method}')) {
+            return $this->notImplemented('${method}');
+        }`
+    )
+    .join('\n');
 
-    protected $token;
-    protected $user_id;
+  return `<?php
+/**
+ * Частичный API-экшен.
+ * Контракт модели: ${MODEL_CONTRACT.join('; ')}
+ */
+class ${className} extends cmsAction {
 
+    protected $token = '';
+    protected $user_id = 0;
+
+    public function run(${pathSignature(endpoint)}) {
+
+        if (strtoupper($this->request->getMethod()) !== ${JSON.stringify(methodUpper)}) {
+            return $this->respond(['error' => true, 'message' => 'Method not allowed'], 405);
+        }
+${
+  authRequired
+    ? `
+        $auth = $this->checkAuth();
+        if ($auth !== true) {
+            return $auth;
+        }
+`
+    : ''
+}${paramValidation(endpoint)}${guardBlock}
+${handlerBody(endpoint, kind)}
+    }
 ${authBlock}
-    protected function errorResponse($message, $code = 400) {
-        http_response_code($code);
-        echo json_encode(['error' => true, 'message' => $message]);
-        exit;
+    protected function respond(array $data, int $code = 200) {
+
+        return cmsCore::getInstance()->response
+            ->setStatusCode($code)
+            ->setContent($data)
+            ->sendAndExit();
     }
 
-    protected function successResponse($data, $code = 200) {
-        http_response_code($code);
-        echo json_encode(['success' => true, 'data' => $data]);
-        exit;
+    protected function notImplemented(string $method) {
+
+        return $this->respond([
+            'error'   => true,
+            'code'    => 'NOT_IMPLEMENTED',
+            'message' => 'Model method ' . $method . '() is not implemented',
+        ], 501);
     }
 
+}
 `;
-
-  for (const endpoint of endpoints) {
-    code += generateEndpoint(name, Name, endpoint);
-  }
-
-  code += `}
-`;
-  return code;
 }
 
-function generateEndpoint(name: string, _Name: string, endpoint: ApiEndpoint): string {
-  const methodUpper = endpoint.method.toUpperCase();
-
-  let paramsValidation = '';
-  const pathParams = (endpoint.params || [])
-    .filter(p => p.type === 'path')
-    .map(p => `$${p.name} = null`)
+function pathSignature(endpoint: ApiEndpoint): string {
+  return (endpoint.params || [])
+    .filter(param => param.type === 'path')
+    .map(param => `$${param.name} = null`)
     .join(', ');
+}
 
-  if (endpoint.params) {
-    for (const param of endpoint.params) {
-      if (param.type === 'path') {
-        paramsValidation += `
-        if (${param.required ? `$${param.name} === null || $${param.name} === ''` : 'false'}) {
-            $this->errorResponse('Missing required parameter: ${param.name}', 400);
+function paramValidation(endpoint: ApiEndpoint): string {
+  let code = '';
+  for (const param of endpoint.params || []) {
+    if (param.type === 'path') {
+      if (param.required) {
+        code += `
+        if ($${param.name} === null || $${param.name} === '') {
+            return $this->respond(['error' => true, 'message' => 'Missing required parameter: ${param.name}'], 400);
         }`;
-      } else if (param.type === 'query') {
-        paramsValidation += `
-        $${param.name} = $this->request->get('${param.name}', null);`;
-      } else if (param.type === 'body') {
-        paramsValidation += `
-        $${param.name} = $this->request->get('${param.name}', null);`;
       }
+    } else {
+      code += `
+        $${param.name} = $this->request->get('${param.name}', null);`;
     }
   }
-
-  const authCheck =
-    endpoint.auth_required !== false
-      ? `
-        $this->checkAuth();`
-      : '';
-
-  let code = `    public function run(${pathParams}) {
-        if (strtoupper($this->request->getMethod()) !== ${quotePhp(methodUpper)}) {
-            $this->errorResponse('Method not allowed', 405);
-        }${authCheck}${paramsValidation}
-`;
-
-  switch (methodUpper) {
-    case 'GET':
-      code += generateGetHandler(name, endpoint);
-      break;
-    case 'POST':
-      code += generatePostHandler(name, endpoint);
-      break;
-    case 'PUT':
-    case 'PATCH':
-      code += generatePutPatchHandler(name, endpoint);
-      break;
-    case 'DELETE':
-      code += generateDeleteHandler(name, endpoint);
-      break;
-  }
-
-  code += `    }
-
-`;
   return code;
 }
 
-function generateGetHandler(name: string, endpoint: ApiEndpoint): string {
-  const isList = endpoint.path.includes('/list') || endpoint.name.includes('list');
-  const isSingle = endpoint.name.includes('_by_') || endpoint.path.match(/\/[a-z_]+\/\{.*\}/);
+function handlerBody(endpoint: ApiEndpoint, kind: HandlerKind): string {
+  const idVar = endpoint.params?.find(param => param.type === 'path')?.name || 'id';
 
-  if (isList) {
-    return `
-        $page = $this->request->get('page', 1);
-        $perpage = $this->request->get('perpage', 20);
+  switch (kind) {
+    case 'list':
+      return `
+        $page    = max(1, (int) $this->request->get('page', 1));
+        $perpage = min(100, max(1, (int) $this->request->get('perpage', 20)));
 
-        $items = $this->model->get${capitalize(name)}List($this->user_id, [
-            'page' => $page,
-            'perpage' => $perpage,
-        ]);
+        $items = $this->model->getApiList($page, $perpage);
 
-        $this->successResponse($items);
+        return $this->respond(['success' => true, 'data' => $items]);
 `;
-  } else if (isSingle) {
-    const idVar = endpoint.params?.find(p => p.type === 'path')?.name || 'id';
-    return `
+    case 'item':
+      return `
         $${idVar} = (int) $${idVar};
 
-        $item = $this->model->get${capitalize(name)}ById($${idVar}, $this->user_id);
+        $item = $this->model->getApiItem($${idVar});
 
         if (!$item) {
-            $this->errorResponse('Item not found', 404);
+            return $this->respond(['error' => true, 'message' => 'Item not found'], 404);
         }
 
-        $this->successResponse($item);
+        return $this->respond(['success' => true, 'data' => $item]);
 `;
-  } else {
-    return `
-        $this->successResponse(['status' => 'ok']);
-`;
-  }
-}
-
-function generatePostHandler(name: string, _endpoint: ApiEndpoint): string {
-  return `
+    case 'create':
+      return `
         $data = $this->request->getAll();
+        unset($data['token'], $data['csrf_token']);
 
-        $id = $this->model->add${capitalize(name)}($data, $this->user_id);
+        if (!$data) {
+            return $this->respond(['error' => true, 'message' => 'No data to create'], 400);
+        }
+
+        $id = $this->model->createApiItem($data, $this->user_id);
 
         if (!$id) {
-            $this->errorResponse('Failed to create item', 500);
+            return $this->respond(['error' => true, 'message' => 'Failed to create item'], 500);
         }
 
-        $this->successResponse(['id' => $id], 201);
+        return $this->respond(['success' => true, 'data' => ['id' => (int) $id]], 201);
 `;
-}
-
-function generatePutPatchHandler(name: string, endpoint: ApiEndpoint): string {
-  const idVar = endpoint.params?.find(p => p.type === 'path')?.name || 'id';
-  return `
+    case 'update':
+      return `
         $${idVar} = (int) $${idVar};
-        $data = $this->request->getAll();
 
-        $item = $this->model->get${capitalize(name)}ById($${idVar}, $this->user_id);
-
-        if (!$item) {
-            $this->errorResponse('Item not found', 404);
+        if (!$this->model->getApiItem($${idVar})) {
+            return $this->respond(['error' => true, 'message' => 'Item not found'], 404);
         }
 
-        $updated = $this->model->update${capitalize(name)}($${idVar}, $data);
+        $data = $this->request->getAll();
+        unset($data['token'], $data['csrf_token']);
+
+        if (!$data) {
+            return $this->respond(['error' => true, 'message' => 'No data to update'], 400);
+        }
+
+        $updated = $this->model->updateApiItem($${idVar}, $data);
 
         if (!$updated) {
-            $this->errorResponse('Failed to update item', 500);
+            return $this->respond(['error' => true, 'message' => 'Failed to update item'], 500);
         }
 
-        $this->successResponse(['id' => $${idVar}]);
+        return $this->respond(['success' => true, 'data' => ['id' => $${idVar}]]);
 `;
-}
-
-function generateDeleteHandler(name: string, endpoint: ApiEndpoint): string {
-  const idVar = endpoint.params?.find(p => p.type === 'path')?.name || 'id';
-  return `
+    case 'delete':
+      return `
         $${idVar} = (int) $${idVar};
 
-        $deleted = $this->model->delete${capitalize(name)}($${idVar}, $this->user_id);
-
-        if (!$deleted) {
-            $this->errorResponse('Failed to delete item', 500);
+        if (!$this->model->getApiItem($${idVar})) {
+            return $this->respond(['error' => true, 'message' => 'Item not found'], 404);
         }
 
-        $this->successResponse(['deleted' => true]);
-`;
-}
+        $deleted = $this->model->deleteApiItem($${idVar});
 
-function generateManifest(name: string, Name: string, version: string): string {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<addon>
-    <name>${name}_api</name>
-    <title>${escapeXml(Name)} API ${escapeXml(version)}</title>
-    <version>1.0.0</version>
-    <!-- Partial scaffold: configure frontend routing in the host addon. -->
-</addon>`;
+        if (!$deleted) {
+            return $this->respond(['error' => true, 'message' => 'Failed to delete item'], 500);
+        }
+
+        return $this->respond(['success' => true, 'data' => ['deleted' => true]]);
+`;
+    default:
+      return `
+        return $this->respond(['success' => true, 'data' => ['status' => 'ok']]);
+`;
+  }
 }
 
 function generateOpenApi(
@@ -340,18 +371,20 @@ function generateOpenApi(
         tags: [name],
         security: endpoint.auth_required !== false ? [{ ApiToken: [] }] : [],
         parameters: endpoint.params
-          ?.filter(p => p.type === 'query')
-          .map(p => ({
-            name: p.name,
+          ?.filter(param => param.type === 'query')
+          .map(param => ({
+            name: param.name,
             in: 'query',
-            required: p.required,
-            description: p.description,
+            required: param.required,
+            description: param.description,
           })),
         responses: {
           '200': { description: 'Success' },
           '400': { description: 'Bad Request' },
           '401': { description: 'Unauthorized' },
           '404': { description: 'Not Found' },
+          '405': { description: 'Method Not Allowed' },
+          '501': { description: 'Model method not implemented' },
         },
       },
     };

@@ -496,7 +496,9 @@ describe('API Tool', () => {
     }) as any;
     const apiContent =
       result.files['package/system/controllers/test_api/actions/api_v1_create.php'];
-    expect(apiContent).toContain('addTest_api');
+    expect(apiContent).toContain('createApiItem');
+    expect(apiContent).toContain("method_exists($this->model, 'createApiItem')");
+    expect(apiContent).toContain('setStatusCode');
   });
 });
 

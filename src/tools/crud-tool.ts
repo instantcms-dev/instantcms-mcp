@@ -700,7 +700,11 @@ class form${Name}${formClassSuffix} extends cmsForm {
                         'default' => 1,
                     ]),
                     new fieldDate('date_pub', [
-                        'title' => LANG_DATE_PUB,
+                        'title'   => LANG_DATE_PUB,
+                        'default' => date('Y-m-d H:i'),
+                        'options' => [
+                            'show_time' => true,
+                        ],
                     ]),
                 ],
             ],
