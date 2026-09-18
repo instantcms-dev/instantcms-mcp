@@ -1,9 +1,27 @@
 /**
  * @fileoverview Webhook scaffolding tool for InstantCMS
- * Generates webhook handlers, queue processing, and security features
+ * Generates a real incoming webhook receiver: HMAC signature check, a queue
+ * table accessed through cmsModel, and cron processing.
+ *
+ * Проверено по исходникам InstantCMS 2.18.2:
+ * - входящий endpoint — отдельный экшен `actions/<action>.php`
+ *   (класс `action<Controller><Action> extends cmsAction`), тело запроса —
+ *   `cmsRequest::getContent()`, ответ — `cmsResponse`;
+ * - очередь — обычная таблица, работа только через `cmsModel`
+ *   (`insert`/`update`/`filterEqual`/`filterLt`/`filterIn`/`deleteFiltered`);
+ *   у `cmsDatabase` нет `get()`/`getCount()`;
+ * - фоновая обработка — cron-хук: `cron.php` вызывает
+ *   `$controller->runHook("cron_{$task['hook']}")`, ядро грузит
+ *   `system/controllers/<listener>/hooks/<event>.php` и ищет класс
+ *   `on<Listener><Event>` (`hookClassName()`);
+ * - секрет хранится в опциях контроллера (`cmsController::loadOptions`),
+ *   а не в несуществующем `system/config/webhooks/`.
  */
 
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
+import { phpValue, quotePhp } from '../utils/serialization';
+import { rejectUnsupportedOptions } from '../utils/generator-options';
+import { hookClassName } from '../utils/hook-class';
 
 /**
  * Options for webhook generation
@@ -11,23 +29,36 @@ import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 interface ScaffoldWebhookOptions {
   /** System name of the addon */
   addon_name: string;
-  /** List of events to handle */
+  /** Names of accepted incoming webhook events (e.g. order.created) */
   events: string[];
   /** Additional configuration */
   options?: {
-    /** Enable request signature verification */
+    /** Verify the HMAC signature of incoming requests */
     use_signature?: boolean;
-    /** Enable retry on failure */
+    /** Queue events and process them with a cron task */
     use_retry?: boolean;
-    /** Number of retry attempts */
+    /** Maximum delivery attempts */
     retry_count?: number;
-    /** Enable async execution */
+    /** Process asynchronously through the queue */
     async_execution?: boolean;
   };
 }
 
+const EVENT_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/;
+
+function eventMethod(event: string): string {
+  return (
+    'handle' +
+    event
+      .split(/[^a-zA-Z0-9]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
+  );
+}
+
 /**
- * Generates webhook handler class
+ * Generates the webhook dispatcher class.
  */
 function generateWebhookHandler(
   name: string,
@@ -35,303 +66,269 @@ function generateWebhookHandler(
   events: string[],
   options: Record<string, unknown>
 ): string {
-  const eventHandlers = events
-    .map(event => {
-      const eventName = event.replace('.', '_');
-      return `        '${event}' => 'handle${eventName}',`;
-    })
-    .join('\n');
+  const requires = [`require_once __DIR__ . '/webhook.security.php';`];
+  if (options.use_retry) {
+    requires.push(`require_once __DIR__ . '/webhook.queue.php';`);
+  }
 
   const eventMethods = events
-    .map(event => {
-      const eventName = event.replace('.', '_');
-      return `    private function handle${eventName}($data) {
-        return ['processed' => true, 'event' => '${event}'];
-    }`;
-    })
+    .map(
+      event => `    /**
+     * Обработчик события ${event}.
+     */
+    private function ${eventMethod(event)}($data) {
+        return ['processed' => true, 'event' => ${quotePhp(event)}, 'data' => $data];
+    }`
+    )
     .join('\n\n');
 
-  return `<?php
-// InstantCMS 2. ${name}/webhooks.php
+  const securityInit = options.use_signature
+    ? `        $this->security = new ${Name}WebhookSecurity($this->options['secret']);`
+    : '';
+  const queueInit = options.use_retry
+    ? `        $this->queue = new ${Name}WebhookQueue($this->options, $this->model);`
+    : '';
 
-class ${Name}Webhook {
-    private $config = [];
-    private $logger = null;
-
-    public function __construct() {
-        $config_path = cmsConfig::get('root_path') . '/system/config/webhooks/${name}.php';
-        if (file_exists($config_path)) {
-            $this->config = include $config_path;
+  const verifyBlock = options.use_signature
+    ? `
+        $check = $this->security->verifyRequest($request, $payload);
+        if (empty($check['valid'])) {
+            return ['success' => false, 'error' => $check['error'] ?? 'Invalid signature'];
         }
-        $this->logger = ${Name}WebhookLogger::getInstance();
+`
+    : '';
+
+  return `<?php
+// InstantCMS 2. system/controllers/${name}/webhook.php
+${requires.join('\n')}
+
+/**
+ * Приём и обработка входящих веб-хуков ${name}.
+ *
+ * Опции: events (поддерживаемые события), secret, async, max_attempts.
+ */
+class ${Name}Webhook {
+    private $model;
+    private $options = [];
+    private $security = null;
+    private $queue = null;
+
+    public function __construct($options = [], $model = null) {
+        $this->model = $model ? $model : new cmsModel();
+
+        $this->options = array_merge([
+            'events'       => ${phpValue(events)},
+            'secret'       => '',
+            'async'        => ${phpValue(options.async_execution)},
+            'max_attempts' => ${phpValue(options.retry_count)},
+        ], $options);
+${securityInit}
+${queueInit}
     }
 
+    public function supports($event) {
+        return in_array((string) $event, (array) $this->options['events'], true);
+    }
+
+    /**
+     * Обрабатывает событие и возвращает результат.
+     */
     public function handle($event, $data) {
-        if (!in_array($event, $this->config['events'])) {
+        $event = (string) $event;
+
+        if (!$this->supports($event)) {
             return ['success' => false, 'error' => 'Event not configured'];
         }
 
-        $this->logger->log('webhook_received', [
-            'event' => $event,
-            'data' => $data,
-            'timestamp' => date('Y-m-d H:i:s'),
-        ]);
+        $method = 'handle' . string_to_camel('_', str_replace(['.', '-', ':'], '_', $event));
 
-        $handlers = [
-${eventHandlers}
-        ];
-
-        if (!isset($handlers[$event])) {
+        if (!method_exists($this, $method)) {
             return ['success' => false, 'error' => 'No handler for event'];
         }
 
         try {
-            $result = $this->{$handlers[$event]}($data);
-
-            $this->logger->log('webhook_handled', [
-                'event' => $event,
-                'result' => $result,
-            ]);
-
-            return ['success' => true, 'result' => $result];
+            $result = $this->{$method}($data);
         } catch (Exception $e) {
-            $this->logger->log('webhook_error', [
-                'event' => $event,
-                'error' => $e->getMessage(),
-            ]);
-
-            if (${options.use_retry}) {
-                $this->scheduleRetry($event, $data, $e->getMessage());
+            if ($this->queue) {
+                $this->queue->add($event, $data, $this->options['max_attempts']);
             }
-
             return ['success' => false, 'error' => $e->getMessage()];
         }
+
+        return ['success' => true, 'event' => $event, 'result' => $result];
+    }
+
+    /**
+     * Разбирает входящий запрос: подпись, JSON, событие.
+     */
+    public function receive($request) {
+        $payload = (string) $request->getContent();
+
+        if ($payload === '') {
+            return ['success' => false, 'error' => 'Empty payload'];
+        }
+${verifyBlock}
+        $decoded = json_decode($payload, true);
+
+        if (!is_array($decoded)) {
+            return ['success' => false, 'error' => 'Invalid JSON'];
+        }
+
+        $event = isset($decoded['event']) ? (string) $decoded['event'] : '';
+        $data  = $decoded['data'] ?? $decoded;
+
+        if (!empty($this->options['async']) && $this->queue) {
+            $id = $this->queue->add($event, $data, $this->options['max_attempts']);
+            return ['success' => true, 'queued' => $id !== false, 'id' => (int) $id];
+        }
+
+        return $this->handle($event, $data);
+    }
+
+    /**
+     * Обрабатывает накопившуюся очередь. Вызывается cron-хуком.
+     */
+    public function processQueue($limit = 100) {
+        if (!$this->queue) {
+            return ['processed' => 0, 'completed' => 0, 'failed' => 0];
+        }
+
+        $completed = 0;
+        $failed    = 0;
+
+        foreach ($this->queue->getPending($limit) as $item) {
+            $data = json_decode($item['payload'], true);
+            $result = $this->handle($item['event'], is_array($data) ? $data : []);
+
+            if (!empty($result['success'])) {
+                $this->queue->markDone($item['id']);
+                $completed++;
+            } else {
+                $this->queue->markFailed(
+                    $item['id'],
+                    $result['error'] ?? 'unknown',
+                    (int) $item['attempt'],
+                    (int) $item['max_attempts']
+                );
+                $failed++;
+            }
+        }
+
+        return ['processed' => $completed + $failed, 'completed' => $completed, 'failed' => $failed];
     }
 
 ${eventMethods}
-
-    private function scheduleRetry($event, $data, $error) {
-        $queue = new ${Name}WebhookQueue();
-        $queue->add([
-            'event' => $event,
-            'data' => $data,
-            'error' => $error,
-            'attempt' => 0,
-            'max_attempts' => ${options.retry_count},
-            'scheduled_at' => date('Y-m-d H:i:s'),
-        ]);
-    }
-
-    public function processQueue() {
-        $queue = new ${Name}WebhookQueue();
-        $pending = $queue->getPending();
-
-        foreach ($pending as $item) {
-            $this->processQueueItem($item);
-        }
-
-        return ['processed' => count($pending)];
-    }
-
-    private function processQueueItem($item) {
-        $result = $this->handle($item['event'], $item['data']);
-
-        if ($result['success']) {
-            $item['status'] = 'completed';
-            $item['completed_at'] = date('Y-m-d H:i:s');
-        } else {
-            $item['attempt']++;
-            if ($item['attempt'] >= $item['max_attempts']) {
-                $item['status'] = 'failed';
-                $item['failed_at'] = date('Y-m-d H:i:s');
-            } else {
-                $item['scheduled_at'] = date('Y-m-d H:i:s', strtotime('+5 minutes'));
-            }
-        }
-
-        $queue = new ${Name}WebhookQueue();
-        $queue->update($item);
-    }
-
-    public static function receive($request) {
-        $webhook = new self();
-
-        $event = $request->get('event', '');
-        $data = $request->getAll();
-
-        unset($data['event']);
-
-        return $webhook->handle($event, $data);
-    }
 }`;
 }
 
 /**
- * Generates webhook configuration file
- */
-function generateWebhookConfig(
-  name: string,
-  _Name: string,
-  events: string[],
-  options: Record<string, unknown>
-): string {
-  return `<?php
-// InstantCMS 2. system/config/webhooks/${name}.php
-
-return [
-    'addon' => '${name}',
-    'events' => ['${events.join("', '")}'],
-    'endpoints' => [
-        [
-            'url' => '/webhooks/${name}',
-            'method' => 'POST',
-            'active' => true,
-        ],
-    ],
-    'options' => [
-        'signature' => ${options.use_signature},
-        'retry' => ${options.use_retry},
-        'retry_count' => ${options.retry_count},
-        'async' => ${options.async_execution},
-        'secret' => '${name}_webhook_secret_' . md5(cmsConfig::get('secret')),
-    ],
-    'handlers' => [
-${events.map(e => `        '${e}' => true,`).join('\n')}
-    ],
-];`;
-}
-
-/**
- * Generates webhook hook handlers
- */
-function generateWebhookHooks(
-  name: string,
-  Name: string,
-  events: string[],
-  _options: Record<string, unknown>
-): string {
-  const eventHooks = events
-    .map(event => {
-      return `    public function on${Name}${event.replace('.', '')}() {
-        $webhook = new ${Name}Webhook();
-        return $webhook->handle('${event}', func_get_args());
-    }`;
-    })
-    .join('\n\n');
-
-  return `<?php
-// InstantCMS 2. system/hooks/${name}/webhook.hooks.php
-
-class on${Name}WebhookHook {
-${eventHooks}
-
-    public function onCronRun() {
-        $webhook = new ${Name}Webhook();
-        return $webhook->processQueue();
-    }
-
-    public function onAfterSave($item) {
-        $webhook = new ${Name}Webhook();
-        $webhook->handle('item.created', $item);
-        return true;
-    }
-
-    public function onAfterUpdate($item) {
-        $webhook = new ${Name}Webhook();
-        $webhook->handle('item.updated', $item);
-        return true;
-    }
-
-    public function onAfterDelete($item) {
-        $webhook = new ${Name}Webhook();
-        $webhook->handle('item.deleted', $item);
-        return true;
-    }
-}`;
-}
-
-/**
- * Generates webhook queue class
+ * Generates the queue class (real cmsModel, no cmsDatabase).
  */
 function generateWebhookQueue(
   name: string,
   Name: string,
-  _events: string[],
   _options: Record<string, unknown>
 ): string {
   return `<?php
-// InstantCMS 2. ${name}/webhook.queue.php
+// InstantCMS 2. system/controllers/${name}/webhook.queue.php
 
+/**
+ * Очередь входящих веб-хуков. Таблица ${name}_webhook_queue.
+ */
 class ${Name}WebhookQueue {
-    private $table = '${name}_webhook_queue';
-    private $db = null;
+    private $model;
+    private $table;
+    private $options = [];
 
-    public function __construct() {
-        $this->db = cmsDatabase::getInstance();
+    public function __construct($options = [], $model = null) {
+        $this->model = $model ? $model : new cmsModel();
+
+        $this->options = array_merge([
+            'table'       => ${quotePhp(`${name}_webhook_queue`)},
+            'retry_delay' => 300,
+        ], $options);
+
+        $this->table = $this->options['table'];
     }
 
-    public function add($item) {
-        $item['created_at'] = date('Y-m-d H:i:s');
-        $item['status'] = 'pending';
+    public function add($event, $data, $max_attempts = 5) {
+        $now = date('Y-m-d H:i:s');
 
-        return $this->db->insert($this->table, $item);
+        return $this->model->insert($this->table, [
+            'event'        => (string) $event,
+            'payload'      => json_encode($data, JSON_UNESCAPED_UNICODE),
+            'status'       => 'pending',
+            'attempt'      => 0,
+            'max_attempts' => max(1, (int) $max_attempts),
+            'error'        => '',
+            'date_created' => $now,
+            'date_updated' => $now,
+            'scheduled_at' => $now,
+        ]);
     }
 
     public function getPending($limit = 100) {
-        return $this->db->get('${name}_webhook_queue', function ($item) {
-            return $item;
-        }, [
-            'status' => 'pending',
-            'scheduled_at <=' => date('Y-m-d H:i:s'),
-        ], 'priority ASC, created_at ASC', 1, $limit);
+        $items = $this->model
+            ->filterEqual('status', 'pending')
+            ->orderBy('id', 'asc')
+            ->limit(0, max(1, (int) $limit))
+            ->get($this->table);
+
+        return $items ? $items : [];
     }
 
-    public function getFailed($limit = 100) {
-        return $this->db->get('${name}_webhook_queue', function ($item) {
-            return $item;
-        }, [
-            'status' => 'failed',
-        ], 'created_at DESC', 1, $limit);
+    public function markDone($id) {
+        return (bool) $this->model->update($this->table, (int) $id, [
+            'status'       => 'completed',
+            'error'        => '',
+            'date_updated' => date('Y-m-d H:i:s'),
+        ]);
     }
 
-    public function update($item) {
-        return $this->db->update($this->table, $item['id'], $item);
+    public function markFailed($id, $error, $attempt, $max_attempts) {
+        $attempt = (int) $attempt;
+        $status  = ($attempt + 1) >= (int) $max_attempts ? 'failed' : 'pending';
+
+        return (bool) $this->model->update($this->table, (int) $id, [
+            'status'       => $status,
+            'attempt'      => $attempt + 1,
+            'error'        => mb_substr((string) $error, 0, 1000),
+            'scheduled_at' => date('Y-m-d H:i:s', time() + (int) $this->options['retry_delay']),
+            'date_updated' => date('Y-m-d H:i:s'),
+        ]);
     }
 
-    public function delete($id) {
-        return $this->db->delete($this->table, $id);
+    public function retry($id) {
+        return (bool) $this->model->update($this->table, (int) $id, [
+            'status'       => 'pending',
+            'attempt'      => 0,
+            'error'        => '',
+            'scheduled_at' => date('Y-m-d H:i:s'),
+            'date_updated' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public function getStats() {
         return [
-            'pending' => $this->db->getCount($this->table, ['status' => 'pending']),
-            'completed' => $this->db->getCount($this->table, ['status' => 'completed']),
-            'failed' => $this->db->getCount($this->table, ['status' => 'failed']),
+            'pending'   => (int) $this->model->filterEqual('status', 'pending')->getCount($this->table, 'id', true),
+            'completed' => (int) $this->model->filterEqual('status', 'completed')->getCount($this->table, 'id', true),
+            'failed'    => (int) $this->model->filterEqual('status', 'failed')->getCount($this->table, 'id', true),
         ];
     }
 
-    public function retry($id) {
-        $item = $this->db->getItem($this->table, $id);
-        if (!$item) {
-            return false;
-        }
-
-        $item['status'] = 'pending';
-        $item['attempt'] = 0;
-        $item['scheduled_at'] = date('Y-m-d H:i:s');
-
-        return $this->update($item);
-    }
-
     public function purge($days = 30) {
-        $before = date('Y-m-d H:i:s', strtotime("-{$days} days"));
-        return $this->db->query("DELETE FROM {$this->table} WHERE status IN ('completed', 'failed') AND created_at < '{$before}'");
+        $before = date('Y-m-d H:i:s', time() - max(1, (int) $days) * 86400);
+
+        return $this->model
+            ->filterLt('date_created', $before)
+            ->filterIn('status', ['completed', 'failed'])
+            ->deleteFiltered($this->table);
     }
 }`;
 }
 
 /**
- * Generates webhook security class
+ * Generates the HMAC security class.
  */
 function generateWebhookSecurity(
   name: string,
@@ -339,63 +336,59 @@ function generateWebhookSecurity(
   _options: Record<string, unknown>
 ): string {
   return `<?php
-// InstantCMS 2. ${name}/webhook.security.php
+// InstantCMS 2. system/controllers/${name}/webhook.security.php
 
+/**
+ * HMAC-подпись входящих веб-хуков.
+ * Секрет берётся из опций контроллера (ключ webhook_secret).
+ */
 class ${Name}WebhookSecurity {
     private $secret = '';
+    private $tolerance = 300;
 
-    public function __construct() {
-        $config = include cmsConfig::get('root_path') . '/system/config/webhooks/${name}.php';
-        $this->secret = $config['options']['secret'] ?? '';
-    }
-
-    public function verifySignature($payload, $signature, $timestamp = null) {
-        if (empty($this->secret)) {
-            return false;
-        }
-
-        if ($timestamp !== null) {
-            $tolerance = 300;
-            if (abs(time() - $timestamp) > $tolerance) {
-                return false;
-            }
-        }
-
-        $expected = $this->generateSignature($payload, $timestamp);
-
-        return hash_equals($expected, $signature);
+    public function __construct($secret = '') {
+        $this->secret = (string) $secret;
     }
 
     public function generateSignature($payload, $timestamp = null) {
-        $timestamp = $timestamp ?? time();
+        $timestamp = $timestamp === null ? time() : (int) $timestamp;
 
         if (is_array($payload)) {
-            $payload = json_encode($payload);
+            $payload = json_encode($payload, JSON_UNESCAPED_UNICODE);
         }
 
-        $signed_payload = $timestamp . '.' . $payload;
-
-        return hash_hmac('sha256', $signed_payload, $this->secret);
+        return hash_hmac('sha256', $timestamp . '.' . $payload, $this->secret);
     }
 
-    public function generateHeaders($payload) {
-        $timestamp = time();
-        $signature = $this->generateSignature($payload, $timestamp);
+    public function verifySignature($payload, $signature, $timestamp = null) {
+        if ($this->secret === '' || $signature === '') {
+            return false;
+        }
 
-        return [
-            'X-Webhook-Signature' => $signature,
-            'X-Webhook-Timestamp' => $timestamp,
-            'X-Webhook-Event' => '${name}',
-        ];
+        if ($timestamp !== null && abs(time() - (int) $timestamp) > $this->tolerance) {
+            return false;
+        }
+
+        return hash_equals($this->generateSignature($payload, $timestamp), (string) $signature);
     }
 
-    public function verifyRequest($request) {
-        $signature = $request->get('HTTP_X_WEBHOOK_SIGNATURE', '');
-        $timestamp = $request->get('HTTP_X_WEBHOOK_TIMESTAMP', 0);
-        $payload = $request->getRawData();
+    public function verifyRequest($request, $payload = null) {
+        if ($payload === null) {
+            $payload = (string) $request->getContent();
+        }
 
-        if (empty($payload)) {
+        if ($payload === '') {
             return ['valid' => false, 'error' => 'Empty payload'];
+        }
+
+        $signature = (string) $request->get('signature', '');
+        if ($signature === '' && isset($_SERVER['HTTP_X_WEBHOOK_SIGNATURE'])) {
+            $signature = (string) $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'];
+        }
+
+        $timestamp = (int) $request->get('timestamp', 0);
+        if ($timestamp === 0 && isset($_SERVER['HTTP_X_WEBHOOK_TIMESTAMP'])) {
+            $timestamp = (int) $_SERVER['HTTP_X_WEBHOOK_TIMESTAMP'];
         }
 
         if (!$this->verifySignature($payload, $signature, $timestamp)) {
@@ -408,7 +401,104 @@ class ${Name}WebhookSecurity {
 }
 
 /**
- * Generates a complete webhook system for an InstantCMS addon
+ * Generates the incoming webhook action.
+ */
+function generateWebhookAction(
+  name: string,
+  Name: string,
+  events: string[],
+  options: Record<string, unknown>
+): string {
+  return `<?php
+// InstantCMS 2. system/controllers/${name}/actions/webhook.php
+
+require_once __DIR__ . '/../webhook.php';
+
+class action${Name}Webhook extends cmsAction {
+
+    public function run() {
+        $options = cmsController::loadOptions($this->name);
+
+        $webhook = new ${Name}Webhook([
+            'events'       => ${phpValue(events)},
+            'secret'       => (string) ($options['webhook_secret'] ?? ''),
+            'async'        => !empty($options['webhook_async']),
+            'max_attempts' => ${phpValue(options.retry_count)},
+        ], isset($this->model) ? $this->model : null);
+
+        $result = $webhook->receive($this->request);
+
+        return $this->respond($result, !empty($result['success']) ? 200 : 400);
+    }
+
+    protected function respond($data, $code = 200) {
+        return cmsCore::getInstance()->response
+            ->setStatusCode($code)
+            ->setContent($data)
+            ->sendAndExit();
+    }
+}`;
+}
+
+/**
+ * Generates the cron hook that drains the queue.
+ */
+function generateQueueHook(
+  name: string,
+  Name: string,
+  events: string[],
+  options: Record<string, unknown>
+): string {
+  const event = `cron_${name}_queue`;
+  const className = hookClassName(name, event);
+
+  return `<?php
+// InstantCMS 2. system/controllers/${name}/hooks/${event}.php
+
+require_once __DIR__ . '/../webhook.php';
+
+/**
+ * Обработка очереди веб-хуков. cron.php вызывает
+ * runHook('${event}') у контроллера ${name}.
+ */
+class ${className} extends cmsAction {
+
+    public function run($data = []) {
+        $options = cmsController::loadOptions($this->name);
+
+        $webhook = new ${Name}Webhook([
+            'events'       => ${phpValue(events)},
+            'secret'       => (string) ($options['webhook_secret'] ?? ''),
+            'async'        => false,
+            'max_attempts' => ${phpValue(options.retry_count)},
+        ], isset($this->model) ? $this->model : null);
+
+        return $webhook->processQueue();
+    }
+}`;
+}
+
+function generateQueueSql(name: string): string {
+  return `-- Замените cms_ на реальный префикс БД из system/config/config.php
+CREATE TABLE IF NOT EXISTS \`cms_${name}_webhook_queue\` (
+    \`id\`           int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`event\`        varchar(128) NOT NULL DEFAULT '',
+    \`payload\`      text,
+    \`status\`       varchar(16) NOT NULL DEFAULT 'pending',
+    \`attempt\`      int(10) unsigned NOT NULL DEFAULT 0,
+    \`max_attempts\` int(10) unsigned NOT NULL DEFAULT 5,
+    \`error\`        text,
+    \`date_created\` datetime NOT NULL,
+    \`date_updated\` datetime NOT NULL,
+    \`scheduled_at\` datetime NOT NULL,
+    PRIMARY KEY (\`id\`),
+    KEY \`status\` (\`status\`),
+    KEY \`scheduled_at\` (\`scheduled_at\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
+}
+
+/**
+ * Generates a complete incoming webhook system for an InstantCMS addon.
  *
  * @param opts - Configuration options for the webhook system
  * @returns Object containing generated files and metadata
@@ -417,44 +507,53 @@ class ${Name}WebhookSecurity {
  * ```typescript
  * const result = scaffoldWebhook({
  *   addon_name: 'shop',
- *   events: ['order.created', 'order.paid', 'order.cancelled'],
- *   options: { use_signature: true, use_retry: true }
+ *   events: ['order.created', 'order.paid'],
+ *   options: { use_signature: true, use_retry: true, async_execution: true }
  * });
  * ```
  */
 export function scaffoldWebhook(opts: ScaffoldWebhookOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_webhook', opts.options, {});
+
   const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
   const files: Record<string, string> = {};
 
-  const events = opts.events || ['item.created', 'item.updated', 'item.deleted'];
+  const rawEvents = opts.events && opts.events.length ? opts.events : ['item.created'];
+  const events = Array.from(new Set(rawEvents.map(event => String(event))));
+  if (!events.length) {
+    throw new Error('webhook: укажите хотя бы одно событие во входе events');
+  }
+  for (const event of events) {
+    if (!EVENT_NAME.test(event)) {
+      throw new Error(
+        `webhook: неверное имя события «${event}» — допустимы буквы, цифры, точка, дефис, двоеточие и _`
+      );
+    }
+  }
+
   const options = {
     use_signature: opts.options?.use_signature ?? true,
     use_retry: opts.options?.use_retry ?? true,
-    retry_count: opts.options?.retry_count ?? 3,
+    retry_count: Math.max(1, opts.options?.retry_count ?? 5),
     async_execution: opts.options?.async_execution ?? false,
   };
 
-  files[`${lowercase}/webhooks.php`] = generateWebhookHandler(
-    lowercase,
-    UpperCamelCase,
-    events,
-    options
-  );
-  files[`${lowercase}/webhook.config.php`] = generateWebhookConfig(
-    lowercase,
-    UpperCamelCase,
-    events,
-    options
-  );
-  files[`system/hooks/${lowercase}/webhook.hooks.php`] = generateWebhookHooks(
-    lowercase,
-    UpperCamelCase,
-    events,
-    options
-  );
+  const ctrl = `package/system/controllers/${lowercase}`;
+
+  files[`${ctrl}/webhook.php`] = generateWebhookHandler(lowercase, UpperCamelCase, events, options);
+
+  if (options.use_signature) {
+    files[`${ctrl}/webhook.security.php`] = generateWebhookSecurity(
+      lowercase,
+      UpperCamelCase,
+      options
+    );
+  }
 
   if (options.use_retry) {
-    files[`${lowercase}/webhook.queue.php`] = generateWebhookQueue(
+    files[`${ctrl}/webhook.queue.php`] = generateWebhookQueue(lowercase, UpperCamelCase, options);
+    files['[pkg] install.sql'] = generateQueueSql(lowercase);
+    files[`${ctrl}/hooks/cron_${lowercase}_queue.php`] = generateQueueHook(
       lowercase,
       UpperCamelCase,
       events,
@@ -462,28 +561,38 @@ export function scaffoldWebhook(opts: ScaffoldWebhookOptions): ScaffoldResult {
     );
   }
 
-  if (options.use_signature) {
-    files[`${lowercase}/webhook.security.php`] = generateWebhookSecurity(
-      lowercase,
-      UpperCamelCase,
-      options
-    );
-  }
+  files[`${ctrl}/actions/webhook.php`] = generateWebhookAction(
+    lowercase,
+    UpperCamelCase,
+    events,
+    options
+  );
 
   return {
-    scaffold_status: 'experimental',
-    limitations: [
-      'Ссылается на ${Name}WebhookLogger, которого генератор не создаёт.',
-      'Очередь вызывает cmsDatabase::get(): такого метода нет, нужен cmsModel.',
-      'Конфиг ищется в system/config/webhooks/ — такого каталога в ICMS2 нет.',
-      'Хуки пишутся в несуществующий system/hooks/; ядро читает system/controllers/<listener>/hooks/<event>.php.',
-      'Нет SQL для таблицы <name>_webhook_queue.',
-      'Рантайм-проверка на живом InstantCMS не проходила.',
-    ],
     addon_name: lowercase,
     files,
+    events,
     events_count: events.length,
     options,
+    cron_hook: options.use_retry ? `cron_${lowercase}_queue` : null,
+    table: options.use_retry ? `${lowercase}_webhook_queue` : null,
+    supported_options: ['use_signature', 'use_retry', 'retry_count', 'async_execution'],
+    structure_notes: [
+      `Входящий endpoint: system/controllers/${lowercase}/actions/webhook.php (POST /${lowercase}/webhook)`,
+      options.use_retry
+        ? `Очередь: таблица ${lowercase}_webhook_queue, обработка cron-хуком system/controllers/${lowercase}/hooks/cron_${lowercase}_queue.php`
+        : 'Очередь не создавалась (use_retry: false): событие обрабатывается синхронно',
+      options.use_signature
+        ? 'Подпись: HMAC-SHA256 от "<timestamp>.<body>" в заголовках X-Webhook-Signature/X-Webhook-Timestamp'
+        : 'Проверка подписи отключена (use_signature: false)',
+      'Секрет задаётся в опциях контроллера (webhook_secret); без него подпись не проходит',
+      `Поддерживаемые события: ${events.join(', ')}`,
+    ],
+    limitations: [
+      'Обработчики событий приватные и по умолчанию только логируют результат: добавьте логику в методы handle<Event> класса Webhook.',
+      'Исходящие веб-хуки (отправка на чужие URL) не генерируются — это отдельная задача с curl и ретраями.',
+      'Секрет нужно задать в опциях дополнения (webhook_secret) — без него входящие запросы с подписью отклоняются.',
+    ],
   };
 }
 
@@ -494,14 +603,18 @@ export const webhookToolSchema = {
     type: 'object' as const,
     properties: {
       addon_name: { type: 'string', description: 'Имя дополнения' },
-      events: { type: 'array', items: { type: 'string' }, description: 'События для обработки' },
+      events: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Имена принимаемых событий (например, order.created)',
+      },
       options: {
         type: 'object',
         properties: {
-          use_signature: { type: 'boolean', description: 'Проверка подписи' },
-          use_retry: { type: 'boolean', description: 'Повтор при ошибках' },
-          retry_count: { type: 'number', description: 'Количество попыток' },
-          async_execution: { type: 'boolean', description: 'Асинхронное выполнение' },
+          use_signature: { type: 'boolean', description: 'Проверка HMAC-подписи' },
+          use_retry: { type: 'boolean', description: 'Очередь и cron-обработка' },
+          retry_count: { type: 'number', description: 'Максимум попыток обработки' },
+          async_execution: { type: 'boolean', description: 'Обрабатывать через очередь' },
         },
       },
     },
@@ -511,7 +624,7 @@ export const webhookToolSchema = {
     {
       addon_name: 'shop',
       events: ['order.created', 'order.paid', 'order.cancelled'],
-      options: { use_signature: true, use_retry: true },
+      options: { use_signature: true, use_retry: true, async_execution: true },
     },
   ],
 };

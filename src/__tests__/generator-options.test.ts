@@ -3,7 +3,6 @@ import { scaffoldApi } from '../tools/api-tool.js';
 import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
 import { scaffoldOAuth } from '../tools/oauth-tool.js';
-import { scaffoldWebhook } from '../tools/webhook-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldFilter } from '../tools/filter-tool.js';
 import { scaffoldForm } from '../tools/form-tool.js';
@@ -307,10 +306,6 @@ describe('unsupported generator options', () => {
  */
 describe('экспериментальные генераторы помечают себя и причины', () => {
   const cases: Array<[string, () => unknown]> = [
-    [
-      'scaffold_webhook',
-      () => scaffoldWebhook({ addon_name: 'genwh', events: ['user.registered'] }),
-    ],
     [
       'scaffold_external_api',
       () =>

@@ -16,6 +16,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { createHmac } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -39,6 +40,7 @@ import { generateMigration } from '../src/tools/migration-tool.js';
 import { scaffoldForm } from '../src/tools/form-tool.js';
 import { scaffoldGrid } from '../src/tools/grid-tool.js';
 import { scaffoldSeo } from '../src/tools/seo-tool.js';
+import { scaffoldWebhook } from '../src/tools/webhook-tool.js';
 import { scaffoldWidget } from '../src/tools/widget-tool.js';
 
 interface Options {
@@ -888,6 +890,71 @@ echo $missing ? 'missing:' . implode(',', $missing) : 'ok';`,
         },
       };
     }
+    case 'webhook': {
+      // Контроллер-хост, но без его SQL/манифеста: нужен только как место для экшена и хука.
+      const addon = scaffoldAddon({
+        name: options.name,
+        title: 'Verify webhook',
+        type: 'basic',
+      }) as { files: Record<string, string> };
+      for (const [rawPath, content] of Object.entries(addon.files)) {
+        if (rawPath.startsWith('[pkg] ')) continue;
+        files[rawPath.replace(/^package\//, '')] = content;
+      }
+
+      const result = scaffoldWebhook({
+        addon_name: options.name,
+        events: ['order.created', 'order.paid'],
+        options: { use_signature: true, use_retry: true, async_execution: false },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const Name = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify webhook', isBackend: 0 },
+        runtimePhp: {
+          note: 'подпись, диспетчер, очередь и cron-хук работают',
+          script: `require_once PATH . '/system/controllers/${options.name}/webhook.php';
+require_once PATH . '/system/controllers/${options.name}/webhook.security.php';
+require_once PATH . '/system/controllers/${options.name}/webhook.queue.php';
+require_once PATH . '/system/controllers/${options.name}/hooks/cron_${options.name}_queue.php';
+
+$security = new ${Name}WebhookSecurity('ci-secret');
+$payload = json_encode(['event' => 'order.created', 'data' => ['id' => 7]]);
+$timestamp = time();
+$signature = $security->generateSignature($payload, $timestamp);
+
+$valid = $security->verifySignature($payload, $signature, $timestamp);
+$invalid = $security->verifySignature($payload, 'deadbeef', $timestamp);
+
+$webhook = new ${Name}Webhook(['secret' => 'ci-secret', 'events' => ['order.created']]);
+$result = $webhook->handle('order.created', ['id' => 7]);
+
+$queue = new ${Name}WebhookQueue();
+$queue->add('order.created', ['id' => 8]);
+
+$controller = cmsCore::getController('${options.name}');
+$processed = $controller->runHook('cron_${options.name}_queue');
+
+$stats = $queue->getStats();
+
+echo $valid && !$invalid
+    && !empty($result['success'])
+    && (int) ($processed['processed'] ?? 0) === 1
+    && $stats['completed'] === 1
+    ? 'ok'
+    : 'fail:' . json_encode([$valid, $invalid, $result, $processed, $stats]);`,
+          expect: output => output.trim() === 'ok',
+        },
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1493,6 +1560,53 @@ echo $model->createApiToken(1);
     add(`GET /${name}/view/99999`, 404, missing.status);
   }
 
+  if (options.scenario === 'webhook') {
+    const secret = 'ci-secret';
+
+    // Секрет хранится в опциях контроллера, как это делают опции дополнения.
+    const optionsScript = `<?php
+if (PHP_SAPI !== 'cli') { die('404'); }
+require_once __DIR__ . '/bootstrap.php';
+chdir(PATH);
+$core->initLanguage();
+cmsController::saveOptions('${name}', ['webhook_secret' => '${secret}']);
+echo 'ok';`;
+    const optionsPath = path.join(options.site, '_verify_webhook_options.php');
+    fs.writeFileSync(optionsPath, optionsScript);
+    try {
+      spawnSync('php', [optionsPath], { encoding: 'utf8' });
+    } finally {
+      fs.rmSync(optionsPath, { force: true });
+    }
+
+    const payload = JSON.stringify({ event: 'order.created', data: { id: 42 } });
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = createHmac('sha256', secret).update(`${timestamp}.${payload}`).digest('hex');
+
+    const accepted = await httpStatus(
+      options,
+      `${base}/${name}/webhook?signature=${signature}&timestamp=${timestamp}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      }
+    );
+    add('POST /webhook с верной подписью', 200, accepted.status);
+    add('событие обработано', 1, accepted.body.includes('"success":true') ? 1 : 0);
+
+    const rejected = await httpStatus(
+      options,
+      `${base}/${name}/webhook?signature=deadbeef&timestamp=${timestamp}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      }
+    );
+    add('POST /webhook с чужой подписью', 400, rejected.status);
+  }
+
   if (options.scenario === 'cron') {
     const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
 
@@ -1557,7 +1671,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|component|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|component|webhook|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
