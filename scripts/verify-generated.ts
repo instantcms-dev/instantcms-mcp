@@ -21,6 +21,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { scaffoldAddon } from '../src/tools/scaffold-tool.js';
+import { scaffoldAdminPartial } from '../src/tools/admin-partial-tool.js';
 import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
@@ -686,6 +687,34 @@ echo $hasSubject && strpos($replaced, 'Привет, Мир!') !== false && $mat
         ],
       };
     }
+    case 'admin_partial': {
+      // Фрагмент админки рендерится ядром через getRenderedAsset().
+      const result = scaffoldAdminPartial({
+        addon_name: options.name,
+        partials: [
+          { name: 'menu', type: 'sidebar' },
+          { name: 'info', type: 'panel' },
+        ],
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      return {
+        files,
+        sql,
+        tables,
+        runtimePhp: {
+          note: 'фрагмент админки рендерится ядром',
+          script: `$template = new cmsTemplate('admincoreui');
+$html = $template->getRenderedAsset('${options.name}/sidebar_menu', [
+    'config' => cmsConfig::getInstance(),
+    'user' => cmsUser::getInstance(),
+    'items' => ['dashboard', 'settings'],
+]);
+echo $html !== '' && strpos($html, 'Array') === false ? 'ok' : 'fail:' . $html;`,
+          expect: output => output.trim().split('\n').pop() === 'ok',
+        },
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1316,7 +1345,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');

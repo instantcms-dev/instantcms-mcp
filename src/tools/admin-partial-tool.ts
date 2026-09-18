@@ -29,8 +29,8 @@ export function scaffoldAdminPartial(opts: ScaffoldAdminPartialOptions): object 
   const files: Record<string, string> = {};
 
   for (const partial of opts.partials) {
-    const partialFileName = `${partial.type}_${partial.name}.php`;
-    files[`package/templates/admincoreui/partials/${name}/${partialFileName}`] = generatePartial(
+    const partialFileName = `${partial.type}_${partial.name}.tpl.php`;
+    files[`package/templates/admincoreui/assets/${name}/${partialFileName}`] = generatePartial(
       name,
       Name,
       NAME,
@@ -39,7 +39,7 @@ export function scaffoldAdminPartial(opts: ScaffoldAdminPartialOptions): object 
     );
   }
 
-  files[`package/templates/admincoreui/partials/${name}/${name}.php`] = generateIndexPartial(
+  files[`package/templates/admincoreui/assets/${name}/${name}.tpl.php`] = generateIndexPartial(
     name,
     Name,
     NAME,
@@ -47,25 +47,24 @@ export function scaffoldAdminPartial(opts: ScaffoldAdminPartialOptions): object 
   );
 
   return {
-    scaffold_status: 'experimental',
-    limitations: [
-      'Файлы пишутся как .php, а фрагменты темы подключаются как .tpl.php через getTemplateFileName().',
-      '$this->renderPartial() в ICMS2 нет: используйте include $this->getTemplateFileName(...).',
-      'В шаблонах нет $cms_config и $this->cms_user: есть $this->sitename() и данные, переданные в шаблон.',
-      'Рантайм-проверка на живом InstantCMS не проходила.',
-    ],
+    scaffold_status: 'partial',
     addon_name: name,
     partials_count: opts.partials.length,
     files,
     partials: opts.partials.map(p => ({
       name: p.name,
       type: p.type,
-      file: `${p.type}_${p.name}.php`,
+      file: `${p.type}_${p.name}.tpl.php`,
     })),
     structure_notes: [
-      `Части админки: package/templates/admincoreui/partials/${name}/`,
-      `Использование в шаблоне: $this->renderPartial('${name}', '${name}_header', $vars)`,
-      `Или виджетом: <?php echo $this->widgets('admin_${name}_header'); ?>`,
+      `Части админки: package/templates/admincoreui/assets/${name}/`,
+      `Использование: echo $this->getRenderedAsset('${name}/<partial>', ['config' => $config, 'user' => $user, ...])`,
+      `Или вывод: $this->renderAsset('${name}/<partial>', [...])`,
+    ],
+    limitations: [
+      'Фрагменты расчитаны на шаблон admincoreui и переменные $config/$user: передавайте их в getRenderedAsset().',
+      'В шаблонах нет $cms_config и $this->cms_user — эти символы не существуют.',
+      'Файл не подключается автоматически: вызовите renderAsset()/getRenderedAsset() из шаблона админки.',
     ],
   };
 }
@@ -136,7 +135,7 @@ $header_vars = [
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <a class="navbar-brand" href="<?php echo href_to_home(); ?>">
         <i class="${iconSet}home"></i>
-        <?php echo $cms_config->sitename; ?>
+        <?php echo ($config->sitename ?? ''); ?>
     </a>
 
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#${name}Navbar">
@@ -161,7 +160,7 @@ $header_vars = [
         <ul class="navbar-nav">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                    <i class="${iconSet}user"></i> <?php echo html($this->cms_user->nickname); ?>
+                    <i class="${iconSet}user"></i> <?php echo html(($user->nickname ?? '')); ?>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a class="dropdown-item" href="<?php echo href_to('auth', 'profile'); ?>">
@@ -181,7 +180,7 @@ $header_vars = [
     code += `
 <div class="${name}-header">
     <div class="${name}-logo">
-        <a href="<?php echo href_to_home(); ?>"><?php echo $cms_config->sitename; ?></a>
+        <a href="<?php echo href_to_home(); ?>"><?php echo ($config->sitename ?? ''); ?></a>
     </div>
     <div class="${name}-menu">
 `;
@@ -273,7 +272,7 @@ function generateFooterPartial(
         <div class="row">
             <div class="col-md-6">
                 <p class="text-muted mb-0">
-                    &copy; <?php echo date('Y'); ?> <?php echo $cms_config->sitename; ?>
+                    &copy; <?php echo date('Y'); ?> <?php echo ($config->sitename ?? ''); ?>
                 </p>
             </div>
             <div class="col-md-6 text-md-right">
@@ -290,7 +289,7 @@ function generateFooterPartial(
   } else {
     code += `
 <div class="${name}-footer">
-    <p>&copy; <?php echo date('Y'); ?> <?php echo $cms_config->sitename; ?></p>
+    <p>&copy; <?php echo date('Y'); ?> <?php echo ($config->sitename ?? ''); ?></p>
 </div>
 `;
   }
@@ -637,15 +636,15 @@ function generateIndexPartial(
 `;
 
   for (const partial of partials) {
-    code += `// Подключение: $this->renderPartial('${name}', '${name}_${partial.type}_${partial.name}', $vars);
+    code += `// Подключение: $this->renderAsset('${name}/${partial.type}_${partial.name}', $vars);
 `;
   }
 
   code += `
 
-// Использование в контроллере:
-// $this->renderPartial('${name}', 'header', ['items' => $items]);
-// $this->renderPartial('${name}', 'sidebar', ['items' => $menu_items]);
+// Использование в шаблоне админки:
+// $this->renderAsset('${name}/header', ['config' => $config, 'user' => $user, 'items' => $items]);
+// $this->renderAsset('${name}/sidebar', ['config' => $config, 'user' => $user, 'items' => $menu_items]);
 `;
 
   return code;

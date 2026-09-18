@@ -1,5 +1,4 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
-import { scaffoldAdminPartial } from '../tools/admin-partial-tool.js';
 import { scaffoldApi } from '../tools/api-tool.js';
 import { scaffoldComponent } from '../tools/component-tool.js';
 import { scaffoldExternalApi } from '../tools/external-api-tool.js';
@@ -310,14 +309,6 @@ describe('unsupported generator options', () => {
  */
 describe('экспериментальные генераторы помечают себя и причины', () => {
   const cases: Array<[string, () => unknown]> = [
-    [
-      'scaffold_admin_partial',
-      () =>
-        scaffoldAdminPartial({
-          addon_name: 'genpart',
-          partials: [{ name: 'menu', type: 'sidebar' }],
-        }),
-    ],
     [
       'scaffold_import_export',
       () =>
