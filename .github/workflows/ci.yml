@@ -76,6 +76,84 @@ jobs:
       - name: Verify build output
         run: test -f dist/index.js
 
+  integration:
+    name: Generated artifacts on a live InstantCMS
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: icms
+          MARIADB_DATABASE: icms_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -u root -picms"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Ensure PHP with mysqli
+        run: |
+          if ! php -m 2>/dev/null | grep -qi '^mysqli$'; then
+            sudo apt-get update
+            sudo apt-get install -y php-cli php-mysql
+          fi
+          php -v
+          php -m | grep -i '^mysqli$'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare InstantCMS source (pinned upstream)
+        run: npm run knowledge:source:update
+
+      - name: Install InstantCMS headlessly
+        run: |
+          node scripts/install-instantcms.mjs \
+            --source .cache/icms2 --target /tmp/icms-site \
+            --base-url http://127.0.0.1:8099 \
+            --db-host 127.0.0.1 --db-name icms_ci \
+            --db-user root --db-password icms
+
+      - name: Start web server
+        run: |
+          php -S 127.0.0.1:8099 -t /tmp/icms-site /tmp/icms-site/index.php > /tmp/php-server.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8099/; then
+              echo "Site is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Site did not start"; cat /tmp/php-server.log; exit 1
+
+      - name: Verify generated artifacts
+        run: |
+          set -e
+          for scenario in crud api addon widget cron form grid integration; do
+            echo "::group::$scenario"
+            npx tsx scripts/verify-generated.ts \
+              --scenario "$scenario" --name "ci_$scenario" \
+              --site /tmp/icms-site --base-url http://127.0.0.1:8099 \
+              --db-name icms_ci --db-user root --db-password icms \
+              --yes --cleanup
+            echo "::endgroup::"
+          done
+
+      - name: Show server log on failure
+        if: failure()
+        run: tail -50 /tmp/php-server.log || true
+
   upstream-compatibility:
     name: InstantCMS upstream compatibility
     runs-on: ubuntu-latest

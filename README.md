@@ -97,6 +97,21 @@ npm run verify:generated -- \
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
 
+Экземпляр для проверки ставится без веб-установщика:
+
+```bash
+npm run verify:install-icms -- \
+  --source .cache/icms2 --target /tmp/icms-site \
+  --base-url http://127.0.0.1:8099 \
+  --db-name icms_ci --db-user root --db-password secret
+
+php -S 127.0.0.1:8099 -t /tmp/icms-site /tmp/icms-site/index.php &
+```
+
+`scripts/install-instantcms.mjs` копирует исходники, создаёт базу из `base.sql` (схема, контроллеры, виджеты, события, группы) и подключает виджеты темы через `widgets_bind_modern.sql`, после чего пишет `config.php`. Без второго дампа страницы рендерятся пустыми, потому что не подключается виджет «Тело страницы».
+
+В CI это выполняет job **Generated artifacts on a live InstantCMS**: он поднимает MariaDB, ставит InstantCMS закреплённой версии и прогоняет все сценарии `verify:generated`.
+
 ## Выпуск релиза
 
 Релиз запускается тегом, совпадающим с версией в `package.json`:
