@@ -1,5 +1,23 @@
 import * as mysql from 'mysql2/promise';
 
+import {
+  DEFAULT_MAX_ROWS,
+  DEFAULT_TIMEOUT_MS,
+  assertSqlAllowed,
+  redactSecrets,
+} from '../utils/sql-safety.js';
+
+export interface ExecuteOptions {
+  /** Разрешить изменение данных. */
+  allowWrite?: boolean;
+  /** Запретить запись полностью (DB_READONLY=1). */
+  readOnly?: boolean;
+  /** Сколько строк вернуть (остальные отбрасываются). */
+  maxRows?: number;
+  /** Таймаут запроса. */
+  timeoutMs?: number;
+}
+
 export interface MariaDBConfig {
   host: string;
   port: number;
@@ -12,6 +30,8 @@ export interface QueryResult {
   columns: string[];
   rows: Record<string, unknown>[];
   rowCount: number;
+  /** Строки не поместились в лимит и были отброшены. */
+  truncated?: boolean;
   affectedRows?: number;
   query: string;
   executionTime: number;
@@ -81,21 +101,41 @@ export function quoteIdentifier(name: string): string {
 
 export async function executeQuery(
   sql: string,
-  params: QueryParameter[] = []
+  params: QueryParameter[] = [],
+  options: ExecuteOptions = {}
 ): Promise<QueryResult> {
   const startTime = Date.now();
 
+  const readOnly = options.readOnly ?? process.env.DB_READONLY === '1';
+  const maxRows = options.maxRows ?? DEFAULT_MAX_ROWS;
+  const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
   try {
-    const [rows, fields] = await getPool().execute(sql, params);
+    assertSqlAllowed(sql, { allowWrite: options.allowWrite, readOnly });
+  } catch (error) {
+    return {
+      columns: [],
+      rows: [],
+      rowCount: 0,
+      query: sql,
+      executionTime: Date.now() - startTime,
+      error: redactSecrets(error instanceof Error ? error.message : String(error)),
+    };
+  }
+
+  try {
+    const [rows, fields] = await getPool().execute({ sql, timeout }, params as never);
     const executionTime = Date.now() - startTime;
 
     const columns = Array.isArray(fields) ? (fields as mysql.FieldPacket[]).map(f => f.name) : [];
-    const rowCount = Array.isArray(rows) ? rows.length : 0;
+    const all = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
+    const limited = all.slice(0, maxRows);
 
     return {
       columns,
-      rows: Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [],
-      rowCount,
+      rows: limited,
+      rowCount: limited.length,
+      truncated: all.length > limited.length,
       query: sql,
       executionTime,
     };
@@ -107,7 +147,7 @@ export async function executeQuery(
       rowCount: 0,
       query: sql,
       executionTime,
-      error: error instanceof Error ? error.message : String(error),
+      error: redactSecrets(error instanceof Error ? error.message : String(error)),
     };
   }
 }
