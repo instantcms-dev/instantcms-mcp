@@ -75,8 +75,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # npm CLI exchanges GitHub OIDC credentials automatically.
-  # Configure the package's Trusted Publisher with workflow filename release.yml.
-  # See NPM_TRUSTED_PUBLISHING_SETUP.md.
+  # Configure the package's Trusted Publisher with workflow filename release.yml
+  # (no .github/workflows/ prefix) and no NPM_TOKEN secret.
   npm-publish-oidc:
     name: Publish to npm (Trusted Publishing)
     runs-on: ubuntu-latest
