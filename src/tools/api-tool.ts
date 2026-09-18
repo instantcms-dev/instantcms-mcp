@@ -1,3 +1,5 @@
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
+
 interface ApiEndpoint {
   name: string;
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -41,6 +43,11 @@ const MODEL_CONTRACT = [
 ];
 
 export function scaffoldApi(opts: ScaffoldApiOptions): object {
+  rejectUnsupportedOptions('scaffold_api', opts.options, {
+    use_rate_limit:
+      'rate limiting не генерируется — настройте его на уровне веб-сервера или контроллера',
+  });
+
   const name = opts.addon_name;
   const version = opts.version || 'v1';
   if (!/^[a-z][a-z0-9_]{1,63}$/.test(name) || !/^v[0-9]+$/.test(version)) {

@@ -1,3 +1,4 @@
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
 export interface MigrationField {
   name: string;
   type: string;
@@ -97,7 +98,7 @@ export function generateMigration(
 
   const allLines = [...fieldLines, ...indexes];
 
-  const createTable = `CREATE TABLE \`${tableName}\` (
+  const createTable = `CREATE TABLE${options?.ifNotExists === false ? '' : ' IF NOT EXISTS'} \`${tableName}\` (
  ${allLines.join(',\n')}
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8${options?.comment ? ` COMMENT='${options.comment}'` : ''};`;
 
@@ -150,6 +151,10 @@ export function scaffoldMigration(params: {
   };
 }): object {
   const { addon_name, table_name, fields, options = {} } = params;
+
+  rejectUnsupportedOptions('scaffold_migration', options, {
+    permissions: 'генерация прав доступа не поддержана — опишите permissions вручную',
+  });
 
   const tableName = `cms_${table_name}`;
 

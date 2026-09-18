@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { rejectUnsupportedOptions } from '../utils/generator-options.js';
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
 
 /**
@@ -365,6 +366,11 @@ class ${Name}SavedFilters {
  * ```
  */
 export function scaffoldFilter(opts: ScaffoldFilterOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_filter', opts.options, {
+    use_ajax: 'AJAX-фильтрация не генерируется — доработайте JS контроллера',
+    use_url_params: 'разбор параметров из URL не генерируется',
+  });
+
   const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
   const files: Record<string, string> = {};
 

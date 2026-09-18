@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Unsupported generator options now fail loudly instead of being ignored.** `scaffold_crud` (`use_tags`, `use_comments`, `use_rating`, `use_moderation`, `use_seo`, `use_content`, `list_template`), `scaffold_api` (`use_rate_limit`), `scaffold_filter` (`use_ajax`, `use_url_params`), `scaffold_form` (`generate_rules`) and `scaffold_migration` (`permissions`) accepted options they never used, so callers could believe they requested behaviour that was never generated. Each now throws an actionable error; explicit `false` is still accepted. `generate_migration` gained a working `ifNotExists` flag, and `scaffold_crud` reports `supported_options` plus `options_applied` in its result. Covered by `src/__tests__/generator-options.test.ts`.
+
 ## 1.3.0
 
 **Breaking changes in generated output.** The MCP tool names and arguments are unchanged, but the generated artifacts moved. Regenerate affected addons or adapt the paths manually.
