@@ -115,15 +115,16 @@ describe('defineTool', () => {
     expect(fail.structuredContent.code).toBe('NOPE');
   });
 
-  test('errorResult cause содержит stack при Error', async () => {
+  test('errorResult omits internal stack / скрывает стек / 不返回内部堆栈', async () => {
     const server = new FakeMcpServer();
     defineTool(asMcpServer(server), 'with_stack', 'desc', {}, async () => {
       throw new Error('err-with-stack');
     });
     const result = (await callHandler(server)) as {
-      structuredContent: { cause: string };
+      structuredContent: { cause?: string; tool: string };
     };
-    expect(result.structuredContent.cause).toContain('err-with-stack');
+    expect(result.structuredContent.cause).toBeUndefined();
+    expect(result.structuredContent.tool).toBe('with_stack');
   });
 
   test('errorResult cause не определён для не-Error', async () => {

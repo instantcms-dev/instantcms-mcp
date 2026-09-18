@@ -235,6 +235,12 @@ git push && git push --tags
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
+### Языки инструкций / Instruction languages / 说明语言
+
+- RU: Новые и изменённые инструкции проекта публикуются на русском, английском и упрощённом китайском. Быстрый старт доступен как MCP resource `instantcms://quickstart`.
+- EN: New and updated project instructions are published in Russian, English, and Simplified Chinese. The quickstart is available as the MCP resource `instantcms://quickstart`.
+- 中文：新增和更新的项目说明以俄语、英语及简体中文发布。快速入门可通过 MCP 资源 `instantcms://quickstart` 获取。
+
 ### Группы инструментов
 
 | Registry                     | Количество | Что входит                                                                       |

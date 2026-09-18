@@ -29,7 +29,6 @@ export function defineTool(
       const message = err instanceof Error ? err.message : String(err);
       return errorResult('TOOL_EXECUTION_ERROR', message, {
         tool: name,
-        cause: err instanceof Error ? err.stack : undefined,
       });
     }
   });

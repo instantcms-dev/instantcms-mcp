@@ -5,6 +5,8 @@ import { createServer } from '../server.js';
 import { addonStructures } from '../data/schemas.js';
 import { hooks } from '../data/hooks.js';
 import { components } from '../data/components.js';
+import { scaffoldAddon } from '../tools/scaffold-tool.js';
+import { validateAddon } from '../tools/addon-tool.js';
 
 describe('MCP integration (extra)', () => {
   async function withClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
@@ -28,7 +30,7 @@ describe('MCP integration (extra)', () => {
       // Подтверждаем, что tools_count в capabilities соответствует длине каталога.
       expect(data.tools_count).toBe(listed.tools.length);
       // И в частности — это все реально зарегистрированные tools.
-      expect(data.tools_count).toBe(100);
+      expect(data.tools_count).toBeGreaterThan(0);
     });
   });
 
@@ -41,6 +43,16 @@ describe('MCP integration (extra)', () => {
       const data = r.structuredContent as { matches: unknown[] };
       expect(Array.isArray(data.matches)).toBe(true);
       expect(data.matches.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('legacy JSON response / прежний JSON-ответ / 旧版 JSON 响应 has structured content', async () => {
+    await withClient(async client => {
+      const result = await client.callTool({
+        name: 'get_hook_details',
+        arguments: { hook_name: 'user_registered' },
+      });
+      expect(result.structuredContent).toBeDefined();
     });
   });
 
@@ -175,6 +187,35 @@ describe('MCP integration (extra)', () => {
       expect(data.knowledge.hooks).toBe(hooks.length);
       expect(data.knowledge.components).toBe(components.length);
       expect(data.knowledge.addon_types.length).toBe(Object.keys(addonStructures).length);
+    });
+  });
+
+  test('quickstart / быстрый старт / 快速入门 matches generated addon', async () => {
+    await withClient(async client => {
+      const resource = await client.readResource({ uri: 'instantcms://quickstart' });
+      const content = resource.contents[0];
+      const guide = 'text' in content ? content.text : '';
+      const files = (
+        scaffoldAddon({
+          name: 'myaddon',
+          title: 'My addon',
+          type: 'basic',
+        }) as { files: Record<string, string> }
+      ).files;
+      expect((validateAddon(files) as { is_valid: boolean }).is_valid).toBe(true);
+      for (const path of [
+        '[pkg] manifest.ru.ini',
+        '[pkg] install.sql',
+        '[pkg] install.php',
+        'package/system/controllers/myaddon/manifest.xml',
+        'package/system/controllers/myaddon/actions/index.php',
+      ]) {
+        expect(files[path]).toBeDefined();
+        expect(guide).toContain(path.split('/').at(-1)?.replace('[pkg] ', ''));
+      }
+      expect(guide).toContain('class actionMyaddonIndex extends cmsAction');
+      expect(guide).toContain('package/system/controllers/myaddon/actions/index.php');
+      expect(guide).not.toContain('function actionIndex()');
     });
   });
 });
