@@ -159,6 +159,7 @@ git push && git push --tags
 | `scaffold_seo`                                                                                            | рантайм: хук `render_page` внедряет Open Graph и JSON-LD в страницу         |
 | `scaffold_filter`                                                                                         | рантайм: грид с фильтрами открывается в админке                             |
 | `scaffold_addon` (with_routes)                                                                            | рантайм: ЧПУ из `routes.php` через метод `route()`                          |
+| `scaffold_crud` (with_api_model)                                                                          | рантайм: контракт API и токены выдаются и проверяются                       |
 | `scaffold_form`                                                                                           | рантайм: класс формы загружается и собирает структуру                       |
 | `scaffold_grid`                                                                                           | рантайм: функция грида возвращает колонки с фильтрами                       |
 | `scaffold_cron`                                                                                           | рантайм: задача планировщика регистрируется и выполняется                   |

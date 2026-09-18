@@ -136,3 +136,80 @@ describe('addon routes', () => {
     );
   });
 });
+
+/**
+ * Токены API: контракт генерируется вместе с моделью CRUD, чтобы защищённые
+ * endpoint-ы работали без ручного кода.
+ */
+describe('api tokens', () => {
+  const options = { with_api_model: true };
+  const fields = [{ name: 'title', type: 'varchar', title: 'Заголовок' }];
+
+  test('with_api_model добавляет выдачу и проверку токена', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields,
+      options,
+    }) as { files: Record<string, string> };
+
+    const model = result.files['package/system/controllers/demo/model.php'];
+    expect(model).toContain('public function createApiToken(int $user_id');
+    expect(model).toContain('public function getApiUserByToken(string $token): ?array');
+  });
+
+  test('токен хранится хешем, а не открытым текстом', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields,
+      options,
+    }) as { files: Record<string, string> };
+    const model = result.files['package/system/controllers/demo/model.php'];
+
+    expect(model).toContain("hash('sha256', $token)");
+    expect(model).toContain('random_bytes(32)');
+    // Открытый токен только возвращается вызывающему.
+    expect(model).toContain('return $token;');
+  });
+
+  test('проверка учитывает активность и срок действия', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields,
+      options,
+    }) as { files: Record<string, string> };
+    const model = result.files['package/system/controllers/demo/model.php'];
+
+    expect(model).toContain("empty($row['is_active'])");
+    expect(model).toContain("strtotime($row['expires_at']) < time()");
+    expect(model).toContain("['is_active' => 0]");
+  });
+
+  test('install.sql создаёт таблицу токенов только вместе с контрактом', () => {
+    const withTokens = scaffoldCrud({
+      addon_name: 'demo',
+      fields,
+      options,
+    }) as { files: Record<string, string> };
+    const sql = withTokens.files['[pkg] install.sql'];
+    expect(sql).toContain('`cms_demo_api_tokens`');
+    expect(sql).toContain('UNIQUE KEY `token_hash`');
+
+    const withoutTokens = scaffoldCrud({ addon_name: 'demo', fields }) as {
+      files: Record<string, string>;
+    };
+    expect(withoutTokens.files['[pkg] install.sql']).not.toContain('api_tokens');
+  });
+
+  test('контракт не конфликтует с методами cmsModel', () => {
+    const result = scaffoldCrud({
+      addon_name: 'demo',
+      fields,
+      options,
+    }) as { files: Record<string, string> };
+    const model = result.files['package/system/controllers/demo/model.php'];
+
+    for (const reserved of ['getItem', 'getItemById', 'insert', 'update', 'delete']) {
+      expect(model).not.toMatch(new RegExp(`function\\s+${reserved}\\s*\\(`));
+    }
+  });
+});

@@ -116,7 +116,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     files[`${tpl}/category.tpl.php`] = generateTplCategory(name, NAME);
   }
 
-  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory);
+  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory, withApiModel);
 
   return {
     addon_name: name,
@@ -161,8 +161,9 @@ function capitalize(str: string): string {
 function generateApiModelMethods(name: string): string {
   return `
     // ── Контракт для scaffold_api ───────────────────────────────────────────
-    // Публичные endpoint-ы работают сразу. Защищённые требуют метода
-    // getApiUserByToken(): реализуйте проверку токена под свой проект.
+    // Публичные endpoint-ы работают сразу, защищённые — по токену из таблицы
+    // ${name}_api_tokens. Токен хранится хешем (sha256), в открытом виде
+    // показывается только при выдаче.
 
     public function getApiList(int $page, int $perpage): array {
         return array_values($this->getPublished($perpage, ($page - 1) * $perpage));
@@ -186,6 +187,61 @@ function generateApiModelMethods(name: string): string {
 
     public function deleteApiItem(int $id): bool {
         return (bool) $this->delete('${name}_items', $id);
+    }
+
+    /**
+     * Выдаёт токен доступа и возвращает его в открытом виде.
+     * Сохраняется только хеш, поэтому показать токен можно один раз.
+     *
+     * @param int         $user_id    Владелец токена
+     * @param string|null $expires_at Дата окончания в формате Y-m-d H:i:s
+     * @return string
+     */
+    public function createApiToken(int $user_id, ?string $expires_at = null): string {
+
+        $token = bin2hex(random_bytes(32));
+
+        $this->insert('${name}_api_tokens', [
+            'user_id'    => $user_id,
+            'token_hash' => hash('sha256', $token),
+            'is_active'  => 1,
+            'expires_at' => $expires_at,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $token;
+    }
+
+    /**
+     * Ищет пользователя по токену. Отзывает просроченные токены.
+     *
+     * @param string $token
+     * @return array|null
+     */
+    public function getApiUserByToken(string $token): ?array {
+
+        if ($token === '') {
+            return null;
+        }
+
+        $row = $this->getItemByField('${name}_api_tokens', 'token_hash', hash('sha256', $token));
+        if (!$row || empty($row['is_active'])) {
+            return null;
+        }
+
+        if (!empty($row['expires_at']) && strtotime($row['expires_at']) < time()) {
+            $this->update('${name}_api_tokens', $row['id'], ['is_active' => 0]);
+            return null;
+        }
+
+        $user = $this->getItemById('users', (int) $row['user_id']);
+        if (!$user) {
+            return null;
+        }
+
+        $this->update('${name}_api_tokens', $row['id'], ['last_used_at' => date('Y-m-d H:i:s')]);
+
+        return $user;
     }
 `;
 }
@@ -820,7 +876,29 @@ function sqlColumnName(field: CrdField): string {
   return field.name.replace(/[^a-z0-9_]/g, '_');
 }
 
-function generateSql(name: string, fields: CrdField[], useCategory: boolean): string {
+function generateApiTokensTable(name: string): string {
+  return `
+CREATE TABLE IF NOT EXISTS \`cms_${name}_api_tokens\` (
+    \`id\`           int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`user_id\`      int(10) unsigned NOT NULL,
+    \`token_hash\`   char(64) NOT NULL,
+    \`is_active\`    tinyint(1) unsigned NOT NULL DEFAULT 1,
+    \`expires_at\`   datetime DEFAULT NULL,
+    \`created_at\`   datetime NOT NULL,
+    \`last_used_at\` datetime DEFAULT NULL,
+    PRIMARY KEY (\`id\`),
+    UNIQUE KEY \`token_hash\` (\`token_hash\`),
+    KEY \`user_id\` (\`user_id\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+}
+
+function generateSql(
+  name: string,
+  fields: CrdField[],
+  useCategory: boolean,
+  withApiModel: boolean
+): string {
   const custom = fields
     .filter(field => !SYSTEM_FIELDS.has(field.name) && !field.is_system)
     .map(field => `    \`${sqlColumnName(field)}\` ${sqlType(field.type)},`);
@@ -856,7 +934,7 @@ ${custom.join('\n')}
     KEY \`is_pub\` (\`is_pub\`),
     KEY \`date_pub\` (\`date_pub\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-${categoryTable}`;
+${categoryTable}${withApiModel ? generateApiTokensTable(name) : ''}`;
 }
 
 function generateLang(name: string, NAME: string, fields: CrdField[]): string {

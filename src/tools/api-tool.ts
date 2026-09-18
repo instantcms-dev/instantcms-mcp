@@ -101,7 +101,7 @@ export function scaffoldApi(opts: ScaffoldApiOptions): object {
     model_contract: MODEL_CONTRACT,
     limitations: [
       'Не самостоятельное дополнение: actions нужно добавить в существующий контроллер и настроить маршруты.',
-      `Реализуйте контракт модели (${MODEL_CONTRACT.length} методов) — без него endpoints отвечают 501 NOT_IMPLEMENTED, а не падают.`,
+      `Реализуйте контракт модели (${MODEL_CONTRACT.length} методов) — без него endpoints отвечают 501 NOT_IMPLEMENTED, а не падают. scaffold_crud с опцией with_api_model создаёт контракт целиком, включая токены.`,
       'Разбор JSON-тела запроса не реализован: параметры читаются через request->get().',
       'PHP не заполняет $_POST для PUT/PATCH/DELETE — передавайте параметры и токен в строке запроса.',
       'Проверьте права доступа, валидацию входных данных и способ выдачи токенов перед публикацией.',
