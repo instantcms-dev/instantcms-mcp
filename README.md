@@ -80,6 +80,23 @@ npm run check
 
 `npm run check` выполняет проверку provenance/generated metadata, TypeScript, unit-тестов и конфигураций AI-клиентов. Интеграционный MCP smoke-test запускается отдельно командой `npm run test:integration`.
 
+## Проверка генераторов на реальном InstantCMS
+
+`npm run verify:generated` разворачивает сгенерированный артефакт в тестовом экземпляре InstantCMS, прогоняет HTTP-сценарии и удаляет всё созданное.
+
+```bash
+npm run verify:generated -- \
+  --scenario crud --name mydemo \
+  --site ~/Sites/idev.test --base-url https://idev.test \
+  --db-name idev.test --db-user root --db-password secret \
+  --insecure --yes --cleanup
+```
+
+- `--scenario`: `crud`, `api`, `addon` или `widget`.
+- Без `--yes` скрипт только печатает план.
+- `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
+- Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
+
 ## Основные MCP-инструменты
 
 Сервер регистрирует 100 инструментов. Ниже перечислены базовые точки входа; расширенные инструменты охватывают CRUD, БД, миграции, формы, гриды, API, email, cron, permissions, SEO, импорт/экспорт, cache, webhooks, OAuth, widgets, углублённую разработку и визуальное тестирование шаблонов, загрузку и аудит существующих проектов, patch generation и планирование обновлений.
