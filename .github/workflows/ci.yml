@@ -27,6 +27,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure PHP linter is available
+        run: |
+          if ! command -v php >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y php-cli
+          fi
+          php -v
+
       - name: Run TypeScript check
         run: npx tsc --noEmit
 
@@ -79,7 +87,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Ensure PHP linter is available
+        run: |
+          if ! command -v php >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y php-cli
+          fi
+          php -v
       - name: Generate knowledge from latest stable InstantCMS
         run: npm run knowledge:update -- --ref latest
       - name: Verify generated source
         run: npm run typecheck && npm test -- --runInBand
+        env:
+          ICMS_REQUIRE_SOURCE: '1'
+          ICMS_REQUIRE_PHP: '1'

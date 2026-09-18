@@ -38,8 +38,22 @@ import { scaffoldTemplate } from '../tools/scaffold-tool.js';
 import { scaffoldTest } from '../tools/test-tool.js';
 import { scaffoldWidget } from '../tools/widget-tool.js';
 
-const SITE = path.join(os.homedir(), 'Sites', 'idev.test');
+function locateSource(): string | null {
+  const candidates = [
+    process.env.ICMS_SOURCE,
+    path.join(os.homedir(), 'Sites', 'idev.test'),
+    path.join(process.cwd(), '.cache', 'icms2'),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  return (
+    candidates.find(candidate => fs.existsSync(path.join(candidate, 'system', 'core'))) ?? null
+  );
+}
+
+const SITE = locateSource();
+const sourceRequired = process.env.ICMS_REQUIRE_SOURCE === '1';
 const read = (rel: string): string => {
+  if (!SITE) return '';
   try {
     return fs.readFileSync(path.join(SITE, rel), 'utf8');
   } catch {
@@ -485,7 +499,7 @@ interface Finding {
 const findings: Finding[] = [];
 const summary: Array<{ name: string; files: number; php: number; errors: number }> = [];
 
-for (const testCase of cases) {
+for (const testCase of SITE ? cases : []) {
   let result: Record<string, unknown>;
   try {
     result = testCase.run();
@@ -555,7 +569,7 @@ for (const testCase of cases) {
 
     for (const t of new Set(content.match(/icms\\traits\\[a-zA-Z\\]+/g) ?? [])) {
       const rel = t.replace(/^icms\\/, '').replace(/\\/g, '/');
-      if (!fs.existsSync(path.join(SITE, 'system', rel + '.php'))) {
+      if (!fs.existsSync(path.join(SITE as string, 'system', rel + '.php'))) {
         findings.push({ generator: testCase.name, kind: 'MISSING_TRAIT', detail: `${file}: ${t}` });
       }
     }
@@ -690,9 +704,19 @@ function propsOfContent(content: string): Map<string, string> {
   return out;
 }
 
-if (!fs.existsSync(SITE)) {
+if (!SITE && sourceRequired) {
+  throw new Error(
+    'ICMS_REQUIRE_SOURCE=1, но исходники InstantCMS не найдены: задайте ICMS_SOURCE или подготовьте .cache/icms2'
+  );
+}
+
+if (!SITE) {
   describe.skip('generator runtime contract (нет источника InstantCMS)', () => {
-    test('skipped', () => {});
+    test('skipped: исходники InstantCMS не найдены', () => {
+      console.warn(
+        'all-generators-runtime: пропущено — нет ICMS_SOURCE, ~/Sites/idev.test или .cache/icms2'
+      );
+    });
   });
 } else {
   describe('generator runtime contract', () => {
