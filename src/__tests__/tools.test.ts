@@ -1572,45 +1572,90 @@ describe('OAuth Tool', () => {
 });
 
 describe('Component Tool', () => {
-  test('scaffoldComponent generates component files', () => {
+  test('scaffoldComponent generates a real controller package', () => {
     const result = scaffoldComponent({
       addon_name: 'my_component',
     }) as any;
     expect(result).toHaveProperty('addon_name', 'my_component');
     expect(result).toHaveProperty('controllers_count', 1);
-    expect('my_component/manifest.json' in result.files).toBe(true);
-    expect('my_component/backend.php' in result.files).toBe(true);
-    expect('my_component/frontend.php' in result.files).toBe(true);
-    expect('my_component/model.php' in result.files).toBe(true);
+    expect(result.files['[pkg] manifest.ru.ini']).toBeDefined();
+    expect(result.files['[pkg] install.sql']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/frontend.php']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/model.php']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/backend.php']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/actions/index.php']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/actions/view.php']).toBeDefined();
+    expect(result.files['package/system/controllers/my_component/routes.php']).toBeDefined();
+    expect(
+      result.files['package/templates/modern/controllers/my_component/index.tpl.php']
+    ).toBeDefined();
   });
 
-  test('scaffoldComponent generates manifest with correct structure', () => {
+  test('scaffoldComponent uses kernel class-name conventions', () => {
+    const result = scaffoldComponent({ addon_name: 'my_component' }) as any;
+    const frontend = result.files['package/system/controllers/my_component/frontend.php'];
+    const model = result.files['package/system/controllers/my_component/model.php'];
+    const backend = result.files['package/system/controllers/my_component/backend.php'];
+    const index = result.files['package/system/controllers/my_component/actions/index.php'];
+    expect(frontend).toContain('class my_component extends cmsFrontend');
+    expect(model).toContain('class modelMyComponent extends cmsModel');
+    expect(backend).toContain('class backendMyComponent extends cmsBackend');
+    expect(index).toContain('class actionMyComponentIndex extends cmsAction');
+    expect(frontend).not.toContain('$cms_config');
+  });
+
+  test('scaffoldComponent writes a real INI manifest with type component', () => {
     const result = scaffoldComponent({
       addon_name: 'test_comp',
       controllers: [{ name: 'items', actions: ['index', 'view'], use_model: true }],
     }) as any;
-    const manifest = result.files['test_comp/manifest.json'];
-    expect(manifest).toContain("'type' => 'component'");
-    expect(manifest).toContain("'name' => 'test_comp'");
+    const manifest = result.files['[pkg] manifest.ru.ini'];
+    expect(manifest).toContain('[install]');
+    expect(manifest).toContain('type = component');
+    expect(manifest).toContain('name = items');
+    expect('test_comp/manifest.json' in result.files).toBe(false);
   });
 
-  test('scaffoldComponent with options generates additional files', () => {
+  test('scaffoldComponent with routes adds routes, menu is rejected', () => {
     const result = scaffoldComponent({
       addon_name: 'full_comp',
-      options: { with_routes: true, with_menu: true },
+      options: { with_routes: true },
     }) as any;
-    expect('full_comp/routes.php' in result.files).toBe(true);
-    expect('full_comp/menu.php' in result.files).toBe(true);
+    expect(result.files['package/system/controllers/full_comp/routes.php']).toBeDefined();
+    expect(Object.keys(result.files).some((path: string) => path.endsWith('menu.php'))).toBe(false);
+    expect(() =>
+      scaffoldComponent({ addon_name: 'with_menu', options: { with_menu: true } })
+    ).toThrow(/with_menu/);
   });
 
-  test('scaffoldComponent generates backend with controllers', () => {
+  test('scaffoldComponent supports several controllers in one package', () => {
+    const result = scaffoldComponent({
+      addon_name: 'multi',
+      controllers: [
+        { name: 'news', actions: ['index', 'view'], use_model: true },
+        { name: 'docs', actions: ['index'] },
+      ],
+      options: { with_admin: false },
+    }) as any;
+    expect(result).toHaveProperty('controllers_count', 2);
+    expect(result.files['package/system/controllers/news/frontend.php']).toBeDefined();
+    expect(result.files['package/system/controllers/docs/frontend.php']).toBeDefined();
+    expect(result.files['package/system/controllers/news/actions/view.php']).toBeDefined();
+    expect(result.files['package/system/controllers/docs/actions/index.php']).toBeDefined();
+    expect(result.files['package/system/controllers/news/backend.php']).toBeUndefined();
+    expect(result.files['[pkg] install.sql']).toContain('cms_news_items');
+  });
+
+  test('scaffoldComponent generates backend and arbitrary actions', () => {
     const result = scaffoldComponent({
       addon_name: 'backend_test',
       controllers: [{ name: 'products', actions: ['index', 'add', 'edit'] }],
     }) as any;
-    const backend = result.files['backend_test/backend.php'];
-    expect(backend).toContain('BackendTestBackend');
+    const backend = result.files['package/system/controllers/products/backend.php'];
+    const addAction = result.files['package/system/controllers/products/actions/add.php'];
+    expect(backend).toContain('class backendProducts extends cmsBackend');
     expect(backend).toContain('getBackendMenu');
+    expect(addAction).toContain('class actionProductsAdd extends cmsAction');
   });
 });
 

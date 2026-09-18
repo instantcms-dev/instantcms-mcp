@@ -24,6 +24,7 @@ import { scaffoldAddon } from '../src/tools/scaffold-tool.js';
 import { scaffoldAdminPartial } from '../src/tools/admin-partial-tool.js';
 import { missingDirs, removeEmptyDirs } from '../src/utils/site-deploy.js';
 import { scaffoldApi } from '../src/tools/api-tool.js';
+import { scaffoldComponent } from '../src/tools/component-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
 import { scaffoldEmail } from '../src/tools/email-tool.js';
@@ -833,6 +834,60 @@ echo $missing ? 'missing:' . implode(',', $missing) : 'ok';`,
         ],
       };
     }
+    case 'component': {
+      // Реальный multi-controller пакет: frontend/model/backend/actions/шаблоны.
+      const result = scaffoldComponent({
+        addon_name: options.name,
+        controllers: [{ name: options.name, actions: ['index', 'view'], use_model: true }],
+        options: { theme: options.theme, with_routes: true },
+      }) as { files: Record<string, string> };
+      put(result.files);
+
+      const Name = options.name
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+
+      return {
+        files,
+        sql,
+        tables,
+        controller: { name: options.name, title: 'Verify component', isBackend: 0 },
+        seed: [
+          {
+            table: `cms_${options.name}_items`,
+            columns: 'user_id,title,text,date_pub,is_pub',
+            values: `1,'Материал компонента','Текст компонента',NOW(),1`,
+          },
+        ],
+        runtimePhp: {
+          note: 'классы компонента созданы по конвенции ядра',
+          script: `require_once PATH . '/system/controllers/${options.name}/frontend.php';
+require_once PATH . '/system/controllers/${options.name}/model.php';
+require_once PATH . '/system/controllers/${options.name}/actions/index.php';
+require_once PATH . '/system/controllers/${options.name}/actions/view.php';
+require_once PATH . '/system/controllers/${options.name}/backend.php';
+
+$required = [
+    '${options.name}'            => '${options.name} extends cmsFrontend',
+    'model${Name}'               => 'model${Name} extends cmsModel',
+    'backend${Name}'             => 'backend${Name} extends cmsBackend',
+    'action${Name}Index'         => 'action${Name}Index extends cmsAction',
+    'action${Name}View'          => 'action${Name}View extends cmsAction',
+];
+
+$missing = [];
+foreach ($required as $class => $expected) {
+    if (!class_exists($class, false)) {
+        $missing[] = $expected;
+    }
+}
+
+echo $missing ? 'missing:' . implode(',', $missing) : 'ok';`,
+          expect: output => output.trim() === 'ok',
+        },
+      };
+    }
     case 'template_override': {
       // Переопределение шаблона темы: файл рендерится через getTemplateFileName().
       const result = scaffoldLayoutOverride({
@@ -1196,6 +1251,7 @@ async function runChecks(options: Options, artifact: Artifact): Promise<CheckRes
     'routes',
     'crud_options',
     'crud_slug',
+    'component',
   ].includes(options.scenario);
   const first = hasItemsTable ? idOf('is_pub=1') : 0;
   const hidden = hasItemsTable ? idOf('is_pub=0') : 0;
@@ -1424,6 +1480,19 @@ echo $model->createApiToken(1);
     add('CSV содержит заголовок title', 1, csv.body.includes('title') ? 1 : 0);
   }
 
+  if (options.scenario === 'component') {
+    const index = await httpStatus(options, `${base}/${name}/`);
+    add(`GET /${name}/`, 200, index.status);
+    add('список компонента отрисован', 1, index.body.includes('Материал компонента') ? 1 : 0);
+
+    const view = await httpStatus(options, `${base}/${name}/view/${first}`);
+    add(`GET /${name}/view/${first}`, 200, view.status);
+    add('страница материала компонента', 1, view.body.includes('Материал компонента') ? 1 : 0);
+
+    const missing = await httpStatus(options, `${base}/${name}/view/99999`);
+    add(`GET /${name}/view/99999`, 404, missing.status);
+  }
+
   if (options.scenario === 'cron') {
     const hookName = artifact.schedulerTask?.hook ?? 'cleanup';
 
@@ -1488,7 +1557,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|component|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');

@@ -1,10 +1,25 @@
 /**
  * @fileoverview Component scaffolding tool for InstantCMS
- * Generates complete components with backend, frontend, model, and routes
+ * Generates real multi-controller addon packages: frontend, model, backend,
+ * actions, routes, language files and templates.
+ *
+ * Проверено по исходникам InstantCMS 2.18.2:
+ * - frontend-контроллер — файл `system/controllers/<ctrl>/frontend.php`,
+ *   класс называется ровно `<ctrl>` (`cmsCore::getController()`);
+ * - backend — `system/controllers/<ctrl>/backend.php`, класс `backend<Ctrl>`;
+ *   `cmsBackend::__construct()` снимает префикс `backend` из имени класса;
+ * - модель — `model<Ctrl>` автозагружается из `system/controllers/<ctrl>/model.php`;
+ * - экшены — отдельные файлы `actions/<action>.php`, класс
+ *   `action` + string_to_camel(controller) + string_to_camel(action);
+ * - пакет устанавливается по `manifest.ru.ini` (INI), все каталоги
+ *   `system/controllers/*` регистрируются автоматически;
+ * - шаблоны — `templates/<theme>/controllers/<ctrl>/<action>.tpl.php`.
  */
 
 import { z } from 'zod';
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
+import { quoteIni, quotePhp } from '../utils/serialization';
+import { rejectUnsupportedOptions } from '../utils/generator-options';
 
 /**
  * Single controller definition
@@ -28,6 +43,10 @@ interface ScaffoldComponentOptions {
   controllers?: ComponentController[];
   /** Additional configuration */
   options?: {
+    /** Title used in manifest and language files */
+    title?: string;
+    /** Frontend theme for templates */
+    theme?: string;
     /** Generate frontend controller */
     with_frontend?: boolean;
     /** Generate admin backend */
@@ -36,350 +55,374 @@ interface ScaffoldComponentOptions {
     with_model?: boolean;
     /** Generate routes */
     with_routes?: boolean;
-    /** Generate menu item */
+    /** Menu registration: не поддерживается (см. limitations) */
     with_menu?: boolean;
   };
 }
 
-/**
- * Generates component manifest
- */
-function generateManifest(
-  name: string,
-  Name: string,
-  controllers: ComponentController[],
-  options: Record<string, boolean>
-): string {
-  return `<?php
-// InstantCMS 2. manifest.json
+const CONTROLLER_NAME = /^[a-z][a-z0-9_]{1,63}$/;
+const ACTION_NAME = /^[a-z][a-z0-9_]*$/;
 
-return [
-    'type' => 'component',
-    'name' => '${name}',
-    'title' => '${Name}',
-    'description' => '${Name} component',
-    'icon' => 'component_${name}',
-    'version' => '1.0.0',
-    'category' => 'content',
-    'files' => [
-        'backend.php',
-        'frontend.php',
-        'model.php',
-        'routes.php',
-    ],
-    'controllers' => ['${controllers.map(c => c.name).join("', '")}'],
-    'options' => [
-        'frontend' => ${options.with_frontend},
-        'admin' => ${options.with_admin},
-    ],
-    'dependencies' => [],
-];`;
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function upperCamel(value: string): string {
+  return value
+    .split('_')
+    .map(part => (part ? capitalize(part) : ''))
+    .join('');
+}
+
+interface NormalizedController {
+  name: string;
+  Name: string;
+  actions: string[];
+  model: boolean;
 }
 
 /**
- * Generates backend controller
+ * Генерирует manifest.ru.ini пакета (INI, а не JSON).
  */
-function generateBackend(
+function generateManifest(
   name: string,
-  Name: string,
-  _controllers: ComponentController[],
-  _options: Record<string, boolean>
+  title: string,
+  controllers: NormalizedController[]
 ): string {
-  return `<?php
-// InstantCMS 2. ${name}/backend.php
+  return `[info]
+title = ${quoteIni(title)}
+description = ${quoteIni(`Компонент ${title}`)}
+image_hint =
 
-class ${Name}Backend extends cmsBackend {
+[version]
+major = 1
+minor = 0
+build = 0
+
+[author]
+name = ${quoteIni('Author')}
+url = ${quoteIni('https://example.com')}
+
+[install]
+type = component
+name = ${controllers[0]?.name ?? name}`;
+}
+
+function generateFrontend(ctrl: NormalizedController, withRoutes: boolean): string {
+  const routeMethod = withRoutes
+    ? `
+    /**
+     * Разбор ЧПУ из routes.php. Ядро вызывает route(), когда экшен по имени
+     * не найден (cmsController::executeAction), а parseRoute() кладёт
+     * именованные параметры маршрута в request.
+     */
+    public function route($uri) {
+
+        $action_name = $this->parseRoute($uri);
+
+        if (!$action_name) {
+            return cmsCore::error404();
+        }
+
+        return $this->runAction($action_name);
+    }
+`
+    : '';
+
+  return `<?php
+
+class ${ctrl.name} extends cmsFrontend {
+
+    public const ROUTE_NAME = ${quotePhp(ctrl.name)};
 
     protected $useOptions = true;
-    protected $showTaxonomy = true;
+${routeMethod}}`;
+}
 
-    public function __construct($request) {
-        parent::__construct($request);
+function generateRoutes(ctrl: NormalizedController): string {
+  return `<?php
 
-        cmsTemplate::getInstance()->addChainLinks(
-            'Настройки',
-            $this->cms_config->href_to('controllers', '${name}')
-        );
+function routes_${ctrl.name}() {
+
+    return [
+        [
+            'pattern' => '/^view\\/(\\d+)$/i',
+            'action'  => 'view',
+            1         => 'id'
+        ],
+        [
+            'pattern' => '/^page\\/(\\d+)$/i',
+            'action'  => 'index',
+            1         => 'page'
+        ],
+        [
+            'pattern' => '/^$/',
+            'action'  => 'index'
+        ]
+    ];
+
+}`;
+}
+
+function generateModel(ctrl: NormalizedController): string {
+  return `<?php
+
+class model${ctrl.Name} extends cmsModel {
+
+    public function getItems(int $limit = 10, int $offset = 0): array {
+        return $this->filterEqual('is_pub', 1)
+                    ->orderBy('date_pub', 'desc')
+                    ->limit($offset, $limit)
+                    ->get('${ctrl.name}_items') ?: [];
     }
+
+    public function getCountItems(): int {
+        return (int) $this->filterEqual('is_pub', 1)->getCount('${ctrl.name}_items');
+    }
+
+    public function findItem($id) {
+        return $this->getItemById('${ctrl.name}_items', (int) $id);
+    }
+
+    public function addItem(array $data) {
+        $data['user_id']  = cmsUser::getInstance()->id;
+        $data['date_pub'] = $data['date_pub'] ?? date('Y-m-d H:i:s');
+
+        return $this->insert('${ctrl.name}_items', $data);
+    }
+}`;
+}
+
+function generateBackend(ctrl: NormalizedController): string {
+  const NAME = ctrl.name.toUpperCase();
+  return `<?php
+
+class backend${ctrl.Name} extends cmsBackend {
+
+    public $useDefaultOptionsAction = true;
+    public $useDefaultPermissionsAction = true;
 
     public function getBackendMenu() {
         return [
             [
-                'title' => '${Name}',
-                'url' => $this->cms_config->href_to(''),
-                'options' => ['icon' => 'component_${name}'],
+                'title'   => LANG_${NAME}_TITLE,
+                'url'     => href_to($this->root_url),
+                'options' => ['icon' => 'list'],
             ],
-            [
-                'title' => 'Настройки',
-                'url' => $this->cms_config->href_to('options'),
-                'icon' => 'settings',
-            ],
-        ];
-    }
-
-    public function validateVariants($${name}_item) {
-        return true;
-    }
-
-    public function getContentDescription($item) {
-        return '';
-    }
-
-    public function actionToggleEnabled($${name}_item) {
-        return $this->redirectToAction('index');
-    }
-}`;
-}
-
-/**
- * Generates frontend controller
- */
-function generateFrontend(name: string, Name: string, controllers: ComponentController[]): string {
-  const firstController = controllers[0]?.name || 'index';
-  return `<?php
-// InstantCMS 2. ${name}/frontend.php
-
-class ${Name}Frontend extends cmsFrontend {
-
-    protected $useOptions = false;
-
-    public function __construct($request) {
-        parent::__construct($request);
-
-        $this->setContext('${Name}', '${firstController}');
-    }
-
-    public function routes() {
-        return include __DIR__ . '/routes.php';
-    }
-
-    public function beforeWallPost($item, $user) {
-        return $item;
-    }
-
-    public function getSeoPatterns() {
-        return [
-            'index' => [
-                'title' => '{${name}_page}.title | {site.name}',
-                'description' => '{${name}_page}.description',
-                'keywords' => '{${name}_page}.keywords',
-            ],
-        ];
-    }
-
-    public function getTagCategory() {
-        return [
-            'name' => '${name}',
-            'title' => '${Name}',
         ];
     }
 }`;
 }
 
-/**
- * Generates model class
- */
-function generateModel(name: string, Name: string, _controllers: ComponentController[]): string {
+function generateActionIndex(ctrl: NormalizedController): string {
+  const NAME = ctrl.name.toUpperCase();
   return `<?php
-// InstantCMS 2. ${name}/model.php
 
-class ${Name}Model extends cmsModel {
+class action${ctrl.Name}Index extends cmsAction {
 
-    public $table = '${name}';
-    public $cat_table = '${name}_cats';
+    public function run() {
 
-    public function __construct() {
-        parent::__construct();
-
-        $this->useCategories = true;
-        $this->cats_table = $this->cat_table;
-    }
-
-    public function get${Name}($id, $field = 'id') {
-        return $this->getItem($this->table, function ($item) {
-            $item['user'] = cmsModel::getInstance('users')->getUser($item['user_id']);
-            return $item;
-        }, [$field => $id]);
-    }
-
-    public function get${Name}s($filters = [], $order = 'id DESC', $page = 1, $perpage = 20) {
-        $this->filterColumns($filters);
-
-        return $this->get($this->table, function ($item) {
-            $item['user'] = cmsModel::getInstance('users')->getUser($item['user_id']);
-            return $item;
-        }, $filters, $order, $page, $perpage);
-    }
-
-    public function getCategories() {
-        return $this->get($this->cat_table, function ($item) {
-            return $item;
-        }, [], 'ordering ASC');
-    }
-
-    public function add${Name}($data) {
-        $data['user_id'] = cmsUser::getInstance()->id;
-        $data['date_pub'] = date('Y-m-d H:i:s');
-
-        return $this->insert($this->table, $data);
-    }
-
-    public function update${Name}($id, $data) {
-        $data['updated_at'] = date('Y-m-d H:i:s');
-
-        return $this->update($this->table, $id, $data);
-    }
-
-    public function delete${Name}($id) {
-        return $this->delete($this->table, $id, [
-            'images' => ['path' => 'upload/${name}/', 'field' => 'image'],
-        ]);
-    }
-
-    public function countItems($category_id = null) {
-        $this->filterIsNull('is_deleted');
-
-        if ($category_id) {
-            $this->filterEqual('category_id', $category_id);
+        $items = [];
+        if (isset($this->model) && method_exists($this->model, 'getItems')) {
+            $items = $this->model->getItems(10, 0);
         }
 
-        return $this->getCount($this->table);
+        $this->cms_template->setPageTitle(LANG_${NAME}_TITLE);
+        $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE);
+
+        return $this->cms_template->render('index', [
+            'items'  => $items,
+            'action' => 'index',
+        ]);
     }
 }`;
 }
 
-/**
- * Generates routes configuration
- */
-function generateRoutes(name: string, Name: string, controllers: ComponentController[]): string {
-  const routes = controllers
-    .map(c => {
-      return `    '${c.name}' => [
-        '/' => ['${Name}Frontend', 'actionIndex', '{${c.name}_page}'],
-        '/{slug}' => ['${Name}Frontend', 'actionView', '{slug}'],
-    ],`;
-    })
-    .join('\n');
-
+function generateActionView(ctrl: NormalizedController): string {
   return `<?php
-// InstantCMS 2. ${name}/routes.php
 
-return [
-${routes}
-];`;
-}
+class action${ctrl.Name}View extends cmsAction {
 
-/**
- * Generates backend index controller
- */
-function generateBackendIndex(name: string, Name: string): string {
-  return `<?php
-// InstantCMS 2. ${name}/backend/index.php
+    public function run($id = null) {
 
-class ${Name}Backend extends cmsBackend {
+        $id = (int) $this->request->get('id', $id);
 
-    public function actionIndex() {
-        $grid = $this->loadDataGrid('${name}');
-
-        $this->renderTemplate('index', [
-            'grid' => $grid,
-        ]);
-    }
-
-    public function actionAdd() {
-        $form = $this->getForm('${name}');
-
-        if ($this->request->has('submit')) {
-            $data = $form->parse($this->request, ['submit']);
-
-            if ($form->validate($this, $data)) {
-                $id = $this->model->add${Name}($data);
-
-                cmsUser::addSessionMessage('Запись добавлена', 'success');
-                $this->redirectToAction('edit', $id);
-            }
+        $item = null;
+        if (isset($this->model) && method_exists($this->model, 'findItem')) {
+            $item = $this->model->findItem($id);
         }
-
-        $this->renderTemplate('form', [
-            'form' => $form,
-        ]);
-    }
-
-    public function actionEdit($id) {
-        $item = $this->model->get${Name}($id);
 
         if (!$item) {
-            cmsCore::error404();
+            return cmsCore::error404();
         }
 
-        $form = $this->getForm('${name}');
+        $this->cms_template->setPageTitle($item['title']);
 
-        if ($this->request->has('submit')) {
-            $data = $form->parse($this->request, ['submit']);
-
-            if ($form->validate($this, $data)) {
-                $this->model->update${Name}($id, $data);
-
-                cmsUser::addSessionMessage('Запись сохранена', 'success');
-                $this->redirectToAction('edit', $id);
-            }
-        }
-
-        $this->renderTemplate('form', [
+        return $this->cms_template->render('view', [
             'item' => $item,
-            'form' => $form,
         ]);
-    }
-
-    public function actionDelete($id) {
-        $this->model->delete${Name}($id);
-
-        cmsUser::addSessionMessage('Запись удалена', 'success');
-        $this->redirectToAction('index');
     }
 }`;
 }
 
-/**
- * Generates menu configuration
- */
-function generateMenu(name: string, Name: string, controllers: ComponentController[]): string {
-  const firstController = controllers[0]?.name || name;
+function generateActionGeneric(ctrl: NormalizedController, action: string): string {
+  const NAME = ctrl.name.toUpperCase();
   return `<?php
-// InstantCMS 2. ${name}/menu.php
 
-return [
-    'url' => href_to('${firstController}'),
-    'title' => '${Name}',
-    'icon' => 'component_${name}',
-    'visibility' => ['0' => 'all', '1' => 'auth', '2' => 'nonauth'],
-];`;
+class action${ctrl.Name}${upperCamel(action)} extends cmsAction {
+
+    public function run($id = null) {
+
+        $this->cms_template->setPageTitle(LANG_${NAME}_TITLE);
+
+        return $this->cms_template->render(${quotePhp(action)}, [
+            'id'     => $id,
+            'action' => ${quotePhp(action)},
+            'items'  => [],
+        ]);
+    }
+}`;
+}
+
+function generateLang(ctrl: NormalizedController, title: string): string {
+  const NAME = ctrl.name.toUpperCase();
+  const defines = [
+    `define('LANG_${NAME}_TITLE', ${quotePhp(title)});`,
+    `define('LANG_${NAME}_DESC', ${quotePhp(`Компонент ${title}`)});`,
+  ];
+  for (const action of ctrl.actions) {
+    defines.push(
+      `define('LANG_${NAME}_ACTION_${action.toUpperCase()}', ${quotePhp(`${title}: ${action}`)});`
+    );
+  }
+  return `<?php
+
+${defines.join('\n')}
+`;
+}
+
+function generateTplIndex(ctrl: NormalizedController): string {
+  const NAME = ctrl.name.toUpperCase();
+  return `<?php
+/**
+ * @var array $items
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_TITLE); ?></h1>
+
+<?php if ($items) { ?>
+    <ul class="list-unstyled mb-4">
+        <?php foreach ($items as $item) { ?>
+            <li class="mb-2">
+                <a href="<?php echo href_to('${ctrl.name}', 'view', $item['id']); ?>">
+                    <?php echo html($item['title']); ?>
+                </a>
+                <span class="text-muted small"><?php echo html_date($item['date_pub'], true); ?></span>
+            </li>
+        <?php } ?>
+    </ul>
+<?php } else { ?>
+    <p class="text-muted"><?php echo html(LANG_${NAME}_DESC); ?></p>
+<?php } ?>
+`;
+}
+
+function generateTplView(ctrl: NormalizedController): string {
+  const NAME = ctrl.name.toUpperCase();
+  return `<?php
+/**
+ * @var array $item
+ */
+?>
+<article>
+    <h1><?php echo html($item['title']); ?></h1>
+
+    <div class="text-muted small mb-3"><?php echo html_date($item['date_pub'], true); ?></div>
+
+    <?php if (!empty($item['text'])) { ?>
+        <div class="mb-4"><?php echo $item['text']; ?></div>
+    <?php } ?>
+
+    <p>
+        <a href="<?php echo href_to('${ctrl.name}'); ?>"><?php echo html(LANG_${NAME}_TITLE); ?></a>
+    </p>
+</article>
+`;
+}
+
+function generateTplGeneric(ctrl: NormalizedController): string {
+  const NAME = ctrl.name.toUpperCase();
+  return `<?php
+/**
+ * @var mixed  $id
+ * @var string $action
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_TITLE); ?></h1>
+
+<p>
+    <?php echo html($action); ?>
+    <?php if ($id !== null) { ?>
+        (id: <?php echo (int) $id; ?>)
+    <?php } ?>
+</p>
+`;
+}
+
+function generateSql(controllers: NormalizedController[]): string {
+  const tables = controllers
+    .filter(ctrl => ctrl.model)
+    .map(
+      ctrl => `CREATE TABLE IF NOT EXISTS \`cms_${ctrl.name}_items\` (
+    \`id\`       int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`user_id\`  int(10) unsigned NOT NULL DEFAULT 0,
+    \`title\`    varchar(255) NOT NULL DEFAULT '',
+    \`text\`     text,
+    \`date_pub\` datetime NOT NULL,
+    \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT 1,
+    PRIMARY KEY (\`id\`),
+    KEY \`user_id\` (\`user_id\`),
+    KEY \`is_pub\` (\`is_pub\`),
+    KEY \`date_pub\` (\`date_pub\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
+    )
+    .join('\n\n');
+
+  return `-- Замените cms_ на реальный префикс БД из system/config/config.php
+${tables}`;
 }
 
 /**
- * Generates controller configuration
+ * install.php: контроллеры пакета регистрирует сам менеджер дополнений
+ * (`componentInstall()`), а `install.sql` импортируется автоматически.
+ * Здесь только дополнительная инициализация.
  */
-function generateConfig(name: string, _Name: string, controllers: ComponentController[]): string {
+function generateInstallPhp(name: string): string {
   return `<?php
-// InstantCMS 2. system/config/controllers/${name}.php
 
-return [
-    'enabled' => true,
-    'controllers' => ['${controllers.map(c => c.name).join("', '")}'],
-    'options' => [
-        'is_premod' => false,
-        'is_tags' => true,
-        'is_rs' => true,
-        'hits_to_top' => true,
-        'profile_on' => true,
-        'pub_days' => 0,
-        'front_edit' => false,
-    ],
-];`;
+/**
+ * Дополнительная инициализация при установке пакета ${name}.
+ * SQL из install.sql импортируется автоматически, контроллеры регистрирует
+ * менеджер дополнений (installer::componentInstall()).
+ *
+ * @param array $install_options Опции установки из формы пакета
+ * @return bool|string true при успехе либо текст ошибки
+ */
+function install_package(array $install_options = []) {
+    cmsCore::loadControllerLanguage(${quotePhp(name)});
+    return true;
 }
 
 /**
- * Generates a complete component for InstantCMS
+ * Вызывается после завершения установки пакета.
+ */
+function after_install_package(array $install_options = []) {
+    return true;
+}`;
+}
+
+/**
+ * Generates a real multi-controller component package for InstantCMS.
  *
  * @param opts - Configuration options for the component
  * @returns Object containing generated files and metadata
@@ -388,76 +431,154 @@ return [
  * ```typescript
  * const result = scaffoldComponent({
  *   addon_name: 'board',
- *   controllers: [{ name: 'index', actions: ['index', 'view', 'add', 'edit'], use_model: true }],
- *   options: { with_frontend: true, with_model: true }
+ *   controllers: [{ name: 'board', actions: ['index', 'view'], use_model: true }],
+ *   options: { with_frontend: true, with_model: true, with_routes: true }
  * });
  * ```
  */
 export function scaffoldComponent(opts: ScaffoldComponentOptions): ScaffoldResult {
+  rejectUnsupportedOptions('scaffold_component', opts.options, {
+    with_menu:
+      'пункты меню регистрируются страницами/настройками сайта, а не файлом menu.php; добавьте их после установки',
+  });
+
   const { lowercase, UpperCamelCase } = normalizeAddonName(opts.addon_name);
-  const files: Record<string, string> = {};
 
   const options = {
+    title: opts.options?.title ?? UpperCamelCase,
+    theme: opts.options?.theme ?? 'modern',
     with_frontend: opts.options?.with_frontend ?? true,
     with_admin: opts.options?.with_admin ?? true,
     with_model: opts.options?.with_model ?? true,
     with_routes: opts.options?.with_routes ?? true,
-    with_menu: opts.options?.with_menu ?? true,
   };
 
-  const controllers = opts.controllers || [
-    { name: 'index', actions: ['index', 'view'], use_model: true },
-  ];
+  const rawControllers =
+    opts.controllers && opts.controllers.length
+      ? opts.controllers
+      : [{ name: lowercase, actions: ['index', 'view'], use_model: true }];
 
-  files[`${lowercase}/manifest.json`] = generateManifest(
-    lowercase,
-    UpperCamelCase,
-    controllers,
-    options
-  );
-  files[`${lowercase}/backend.php`] = generateBackend(
-    lowercase,
-    UpperCamelCase,
-    controllers,
-    options
-  );
+  const seen = new Set<string>();
+  const controllers: NormalizedController[] = rawControllers.map(controller => {
+    if (!CONTROLLER_NAME.test(controller.name)) {
+      throw new Error(
+        `component: неверное имя контроллера «${controller.name}» — нужны строчные латинские буквы, цифры и _`
+      );
+    }
+    if (seen.has(controller.name)) {
+      throw new Error(`component: контроллер «${controller.name}» указан дважды`);
+    }
+    seen.add(controller.name);
 
-  if (options.with_frontend) {
-    files[`${lowercase}/frontend.php`] = generateFrontend(lowercase, UpperCamelCase, controllers);
+    const actions = Array.from(
+      new Set(
+        (controller.actions?.length ? controller.actions : ['index']).map(a => a.toLowerCase())
+      )
+    );
+    for (const action of actions) {
+      if (!ACTION_NAME.test(action) || action === 'route') {
+        throw new Error(
+          `component: неверное имя экшена «${action}» у контроллера ${controller.name}`
+        );
+      }
+    }
+
+    const model =
+      controller.use_model === true || (controller.use_model !== false && options.with_model);
+
+    return { name: controller.name, Name: upperCamel(controller.name), actions, model };
+  });
+
+  const files: Record<string, string> = {};
+
+  files['[pkg] manifest.ru.ini'] = generateManifest(lowercase, options.title, controllers);
+  files['[pkg] install.php'] = generateInstallPhp(lowercase);
+
+  const sql = generateSql(controllers);
+  if (sql.includes('CREATE TABLE')) {
+    files['[pkg] install.sql'] = sql;
   }
 
-  if (options.with_model || controllers.some(c => c.use_model)) {
-    files[`${lowercase}/model.php`] = generateModel(lowercase, UpperCamelCase, controllers);
+  for (const ctrl of controllers) {
+    const ctrlPath = `package/system/controllers/${ctrl.name}`;
+
+    if (options.with_frontend) {
+      files[`${ctrlPath}/frontend.php`] = generateFrontend(ctrl, options.with_routes);
+
+      if (options.with_routes) {
+        files[`${ctrlPath}/routes.php`] = generateRoutes(ctrl);
+      }
+
+      for (const action of ctrl.actions) {
+        if (action === 'index') {
+          files[`${ctrlPath}/actions/index.php`] = generateActionIndex(ctrl);
+        } else if (action === 'view') {
+          files[`${ctrlPath}/actions/view.php`] = generateActionView(ctrl);
+        } else {
+          files[`${ctrlPath}/actions/${action}.php`] = generateActionGeneric(ctrl, action);
+        }
+
+        const tpl =
+          action === 'index'
+            ? generateTplIndex(ctrl)
+            : action === 'view'
+              ? generateTplView(ctrl)
+              : generateTplGeneric(ctrl);
+        files[`package/templates/${options.theme}/controllers/${ctrl.name}/${action}.tpl.php`] =
+          tpl;
+      }
+    }
+
+    if (ctrl.model) {
+      files[`${ctrlPath}/model.php`] = generateModel(ctrl);
+    }
+
+    if (options.with_admin) {
+      files[`${ctrlPath}/backend.php`] = generateBackend(ctrl);
+    }
+
+    files[`package/system/languages/ru/controllers/${ctrl.name}/${ctrl.name}.php`] = generateLang(
+      ctrl,
+      options.title
+    );
   }
-
-  if (options.with_routes) {
-    files[`${lowercase}/routes.php`] = generateRoutes(lowercase, UpperCamelCase, controllers);
-  }
-
-  files[`${lowercase}/backend/index.php`] = generateBackendIndex(lowercase, UpperCamelCase);
-
-  if (options.with_menu) {
-    files[`${lowercase}/menu.php`] = generateMenu(lowercase, UpperCamelCase, controllers);
-  }
-
-  files[`system/config/controllers/${lowercase}.php`] = generateConfig(
-    lowercase,
-    UpperCamelCase,
-    controllers
-  );
 
   return {
-    scaffold_status: 'experimental',
-    limitations: [
-      'Все файлы кладутся в <name>/ вместо system/controllers/<name>/.',
-      'Имена классов не по конвенции ядра: frontend-контроллер — <name>, backend — backend<Name>.',
-      'manifest.json вместо manifest.ru.ini/manifest.xml: проверьте требования менеджера дополнений.',
-      'Рантайм-проверка на живом InstantCMS не проходила.',
-    ],
     addon_name: lowercase,
     files,
     controllers_count: controllers.length,
+    controllers: controllers.map(ctrl => ({
+      name: ctrl.name,
+      class: ctrl.name,
+      model_class: ctrl.model ? `model${ctrl.Name}` : null,
+      backend_class: options.with_admin ? `backend${ctrl.Name}` : null,
+      actions: ctrl.actions,
+      table: ctrl.model ? `${ctrl.name}_items` : null,
+    })),
     options,
+    supported_options: [
+      'title',
+      'theme',
+      'with_frontend',
+      'with_admin',
+      'with_model',
+      'with_routes',
+    ],
+    structure_notes: [
+      `Один пакет — много контроллеров: system/controllers/<ctrl>/{frontend.php,model.php,backend.php,actions/*.php}`,
+      'Frontend-класс называется ровно как контроллер, backend — backend<Ctrl>',
+      `Шаблоны: templates/${options.theme}/controllers/<ctrl>/<action>.tpl.php`,
+      `Языковые файлы: system/languages/ru/controllers/<ctrl>/<ctrl>.php`,
+      'Манифест пакета — manifest.ru.ini; все каталоги system/controllers/* регистрируются менеджером дополнений',
+    ],
+    limitations: [
+      'Backend-класс генерируется без экшенов и шаблонов: добавьте нужные backend/actions/*.php и шаблоны admincoreui.',
+      'Экшены, кроме index/view, отдают заготовку: реализуйте логику под конкретный сценарий.',
+      options.with_routes
+        ? 'ЧПУ покрывает только index/view; для своих правил дополните routes.php и метод route().'
+        : 'Routes не создавались (with_routes: false): доступ по /<ctrl>/<action>/<params>.',
+      'Регистрация пунктов меню не генерируется (with_menu отклоняется).',
+    ],
   };
 }
 
@@ -480,11 +601,13 @@ export const componentToolSchema = {
         .describe('Контроллеры'),
       options: z
         .object({
+          title: z.string().optional().describe('Название компонента'),
+          theme: z.string().optional().describe('Тема для шаблонов (по умолчанию modern)'),
           with_frontend: z.boolean().optional().describe('С frontend'),
           with_admin: z.boolean().optional().describe('С админкой'),
           with_model: z.boolean().optional().describe('С моделью'),
           with_routes: z.boolean().optional().describe('С роутами'),
-          with_menu: z.boolean().optional().describe('С меню'),
+          with_menu: z.boolean().optional().describe('Не поддерживается: отклоняется'),
         })
         .optional()
         .describe('Опции'),
@@ -494,8 +617,8 @@ export const componentToolSchema = {
   inputExamples: [
     {
       addon_name: 'board',
-      controllers: [{ name: 'index', actions: ['index', 'view', 'add', 'edit'], use_model: true }],
-      options: { with_frontend: true, with_model: true },
+      controllers: [{ name: 'board', actions: ['index', 'view'], use_model: true }],
+      options: { with_frontend: true, with_model: true, with_routes: true },
     },
   ],
 };
