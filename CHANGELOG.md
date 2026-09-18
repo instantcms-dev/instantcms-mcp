@@ -10,6 +10,8 @@
 
 - **Addon routes actually work now.** `scaffold_addon` with `type: with_routes` generated a `routes.php` but no `route()` method, and ICMS2 only consults that file from `cmsController::executeAction` when the requested action has no action file and the controller defines `route()` — so the generated file was dead code. The generated `frontend.php` now defines `route($uri)` calling `parseRoute()`, the patterns pass named parameters (`id` for `/<addon>/<id>.html`, `page` for `/<addon>/page/N`), and the generated `index`/`view` actions read those values from the request as well as from their arguments, because `parseRoute()` stores request parameters rather than action arguments. Verified on a live instance (`/addon/`, `/addon/page/1`, `/addon/<id>.html`, direct `/addon/view/<id>` return 200; a missing id returns 404), and the new `routes` scenario runs in CI. The README verification matrix was also corrected: `form`, `grid` and `cron` became runtime-verified in earlier work but were still listed as static-only.
 
+- **API tokens work out of the box.** `scaffold_crud` with `with_api_model` now generates the whole contract `scaffold_api` calls, including authentication: `createApiToken($user_id, $expires_at)` returns a 64-character token while only its SHA-256 hash is stored in a new `{name}_api_tokens` table (added to `install.sql`), and `getApiUserByToken($token)` resolves the user, rejects inactive and expired tokens (marking the latter inactive) and records `last_used_at`. Protected endpoints therefore return 201 with a valid token and 401 without or with a foreign one, instead of `501 NOT_IMPLEMENTED`. Verified live and covered by the extended `integration` scenario plus five unit tests.
+
 ## 1.4.0
 
 ### Breaking changes

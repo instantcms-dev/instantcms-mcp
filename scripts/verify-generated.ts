@@ -785,6 +785,41 @@ ${artifact.runtimePhp.script}
     });
     add('POST /api_v1_create без токена', 401, protegido.status);
 
+    // Токен выдаётся тем же методом, который генерирует scaffold_crud.
+    const tokenScript = `<?php
+if (PHP_SAPI !== 'cli') { die('404'); }
+require_once __DIR__ . '/bootstrap.php';
+chdir(PATH);
+$core->initLanguage();
+$model = cmsCore::getModel('${name}');
+echo $model->createApiToken(1);
+`;
+    const tokenPath = path.join(options.site, '_verify_token.php');
+    fs.writeFileSync(tokenPath, tokenScript);
+
+    let token = '';
+    try {
+      const executed = spawnSync('php', [tokenPath], { encoding: 'utf8' });
+      token = (executed.stdout || '').trim();
+    } finally {
+      fs.rmSync(tokenPath, { force: true });
+    }
+    add('токен выдан через createApiToken()', 1, token.length === 64 ? 1 : 0);
+
+    if (token) {
+      const created = await httpStatus(options, `${base}/${name}/api_v1_create?token=${token}`, {
+        method: 'POST',
+        body: new URLSearchParams({ title: 'Создано по токену', price: '777' }),
+      });
+      add('POST /api_v1_create с токеном', 201, created.status);
+
+      const foreign = await httpStatus(options, `${base}/${name}/api_v1_create?token=deadbeef`, {
+        method: 'POST',
+        body: new URLSearchParams({ title: 'x' }),
+      });
+      add('POST /api_v1_create с чужим токеном', 401, foreign.status);
+    }
+
     const home = await httpStatus(options, `${base}/`);
     add('виджет отрисован на главной', 1, home.body.includes(`widget_${name}_recent`) ? 1 : 0);
   }
