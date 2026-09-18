@@ -821,72 +821,80 @@ describe('Cron Tool', () => {
 });
 
 describe('Permission Tool', () => {
-  test('scaffoldPermission generates permission files', () => {
+  test('scaffoldPermission регистрирует правила через install_package', () => {
     const result = scaffoldPermission({
       name: 'blog_post',
       title: 'Записи блога',
     }) as any;
+
     expect(result).toHaveProperty('addon_name', 'blog_post');
-    expect(result).toHaveProperty('title', 'Записи блога');
-    expect(result).toHaveProperty('permissions_count', 4);
-    expect('blog_post/manifest.json' in result.files).toBe(true);
-    expect('system/config/permissions/blog_post.php' in result.files).toBe(true);
+    expect(result.scaffold_status).toBe('partial');
+
+    const install = result.files['[pkg] install.php'];
+    expect(install).toContain('function install_package(array $install_options = [])');
+    expect(install).toContain("cmsPermissions::addRule('blog_post'");
+    expect(install).not.toContain('cmsInstaller');
   });
 
-  test('scaffoldPermission includes permission checker class', () => {
+  test('правила edit/delete получают список own,all', () => {
     const result = scaffoldPermission({
       name: 'article',
       title: 'Статьи',
-      permissions: ['view', 'add', 'edit', 'delete', 'publish'],
+      permissions: ['view', 'edit', 'delete'],
     }) as any;
-    const permFile = result.files['article/permissions.php'];
-    expect(permFile).toContain('ArticlePermissions');
-    expect(permFile).toContain('function can(');
-    expect(permFile).toContain("'view'");
-    expect(permFile).toContain("'publish'");
+
+    const rules = result.rules as Array<{ name: string; type: string; options: string | null }>;
+    expect(rules.find(rule => rule.name === 'view')).toMatchObject({ type: 'flag', options: null });
+    expect(rules.find(rule => rule.name === 'edit')).toMatchObject({
+      type: 'list',
+      options: 'own,all',
+    });
   });
 
-  test('scaffoldPermission generates hook handlers', () => {
-    const result = scaffoldPermission({
-      name: 'news_item',
-      title: 'Новости',
-    }) as any;
-    const hookFile = result.files['system/hooks/news_item/permissions.hooks.php'];
-    expect(hookFile).toContain('onNewsItemPermissionsHook');
-    expect(hookFile).toContain('onContentBeforeSave');
-    expect(hookFile).toContain('onContentBeforeDelete');
+  test('языковые константы правил имеют вид LANG_RULE_*', () => {
+    const result = scaffoldPermission({ name: 'news_item', title: 'Новости' }) as any;
+    const lang = result.files['package/system/languages/ru/controllers/news_item/news_item.php'];
+    expect(lang).toContain("define('LANG_RULE_NEWS_ITEM_VIEW'");
+    expect(lang).toContain("define('LANG_RULE_NEWS_ITEM_VIEW_HINT'");
   });
 
-  test('scaffoldPermission generates admin backend', () => {
-    const result = scaffoldPermission({
-      name: 'test_perm',
-      title: 'Тест',
-      permissions: ['view', 'edit'],
-    }) as any;
-    const backendFile = result.files['test_perm/backend/permissions.php'];
-    expect(backendFile).toContain('backendTestPermPermissions');
-    expect(backendFile).toContain('actionIndex');
-    expect(backendFile).toContain('actionSave');
+  test('помощник проверок использует cmsUser::isAllowed', () => {
+    const result = scaffoldPermission({ name: 'test_perm', title: 'Тест' }) as any;
+    const checker = result.files['package/system/controllers/test_perm/permissions.php'];
+    expect(checker).toContain('class TestPermPermissions');
+    expect(checker).toContain("cmsUser::isAllowed('test_perm', 'view')");
+    expect(checker).toContain('public static function inGroup');
   });
 
-  test('scaffoldPermission with roles option', () => {
-    const result = scaffoldPermission({
+  test('withRoles отключает групповые помощники, withCategories отклоняется', () => {
+    const withoutRoles = scaffoldPermission({
       name: 'catalog',
       title: 'Каталог',
-      permissions: ['view', 'add', 'edit', 'delete', 'admin'],
-      options: { withRoles: true, withOwnership: true, withCategories: true },
+      options: { withCategories: false, withOwnership: true, withRoles: false },
     }) as any;
-    expect('catalog/roles.php' in result.files).toBe(true);
-    const rolesFile = result.files['catalog/roles.php'];
-    expect(rolesFile).toContain('admin');
-    expect(rolesFile).toContain('moderator');
-    expect(rolesFile).toContain('auth');
-    expect(rolesFile).toContain('all');
+    const checker = withoutRoles.files['package/system/controllers/catalog/permissions.php'];
+    expect(checker).not.toContain('public static function inGroup');
+
+    expect(() =>
+      scaffoldPermission({
+        name: 'catalog',
+        title: 'Каталог',
+        options: { withCategories: true, withOwnership: true, withRoles: true },
+      })
+    ).toThrow(/withCategories/);
+  });
+
+  test('вымышленных хуков и путей больше нет', () => {
+    const result = scaffoldPermission({ name: 'blog_post', title: 'Записи' }) as any;
+    const paths = Object.keys(result.files);
+    expect(paths.some(path => path.startsWith('system/hooks/'))).toBe(false);
+    expect(paths.some(path => path.startsWith('system/config/permissions/'))).toBe(false);
+    expect(paths.some(path => path.startsWith('blog_post/'))).toBe(false);
   });
 });
 
 describe('Filter Tool', () => {
-  test('scaffoldFilter generates filter files', () => {
+  test('scaffoldFilter создаёт функцию грида с фильтрами', () => {
     const result = scaffoldFilter({
       addon_name: 'catalog',
       fields: [
@@ -894,124 +902,118 @@ describe('Filter Tool', () => {
         { field: 'category_id', type: 'select', label: 'Категория' },
       ],
     }) as any;
-    expect(result).toHaveProperty('addon_name', 'catalog');
-    expect(result).toHaveProperty('filters_count', 2);
-    expect('catalog/filters.php' in result.files).toBe(true);
-    expect('catalog/filter.form.php' in result.files).toBe(true);
+
+    expect(result.function_name).toBe('grid_catalog');
+    expect(result.scaffold_status).toBe('partial');
+
+    const grid = result.files['package/system/controllers/catalog/backend/grids/grid_catalog.php'];
+    expect(grid).toContain('function grid_catalog($controller)');
+    expect(grid).toContain("'is_filter'     => true");
+    expect(grid).toContain("'filter' => 'range'");
+    expect(grid).toContain("'filter' => 'exact'");
   });
 
-  test('scaffoldFilter generates filter class with conditions', () => {
+  test('типы фильтров соответствуют ICMS2', () => {
     const result = scaffoldFilter({
       addon_name: 'products',
       fields: [
         { field: 'name', type: 'text', label: 'Название' },
         { field: 'price', type: 'range', label: 'Цена' },
-        { field: 'in_stock', type: 'checkbox', label: 'В наличии' },
+        { field: 'date_pub', type: 'date', label: 'Дата' },
+        { field: 'is_active', type: 'checkbox', label: 'Активен' },
       ],
     }) as any;
-    const filterFile = result.files['products/filters.php'];
-    expect(filterFile).toContain('ProductsFilter');
-    expect(filterFile).toContain('function apply(');
-    expect(filterFile).toContain("'text'");
-    expect(filterFile).toContain("'range'");
-    expect(filterFile).toContain("'checkbox'");
+
+    expect(result.filter_fields).toEqual([
+      { field: 'name', type: 'text', filter: 'like' },
+      { field: 'price', type: 'range', filter: 'range' },
+      { field: 'date_pub', type: 'date', filter: 'range_date' },
+      { field: 'is_active', type: 'checkbox', filter: null },
+    ]);
   });
 
-  test('scaffoldFilter generates form fields', () => {
-    const result = scaffoldFilter({
-      addon_name: 'test_filter',
-      fields: [
-        { field: 'category', type: 'select', label: 'Категория' },
-        { field: 'date_from', type: 'date', label: 'Дата от' },
-      ],
-    }) as any;
-    const formFile = result.files['test_filter/filter.form.php'];
-    expect(formFile).toContain('fieldList');
-    expect(formFile).toContain('fieldDate');
-  });
-
-  test('scaffoldFilter generates hook handlers', () => {
+  test('языковые константы колонок создаются', () => {
     const result = scaffoldFilter({
       addon_name: 'news',
       fields: [{ field: 'title', type: 'text', label: 'Заголовок' }],
     }) as any;
-    const hookFile = result.files['system/hooks/news/filter.hooks.php'];
-    expect(hookFile).toContain('onNewsFilterHook');
-    expect(hookFile).toContain('onBeforeLoadModel');
-    expect(hookFile).toContain('onBeforeRender');
+    const lang = result.files['package/system/languages/ru/controllers/news/news.php'];
+    expect(lang).toContain("define('LANG_NEWS_TITLE', 'Заголовок');");
   });
 
-  test('scaffoldFilter with save_filters option', () => {
-    const result = scaffoldFilter({
-      addon_name: 'articles',
-      fields: [{ field: 'author', type: 'text', label: 'Автор' }],
-      options: { save_filters: true },
-    }) as any;
-    expect('articles/saved_filters.php' in result.files).toBe(true);
-    const savedFile = result.files['articles/saved_filters.php'];
-    expect(savedFile).toContain('ArticlesSavedFilters');
-    expect(savedFile).toContain('function save(');
-    expect(savedFile).toContain('function load(');
+  test('AJAX, URL-параметры и сохранённые фильтры отклоняются', () => {
+    for (const option of ['use_ajax', 'use_url_params', 'save_filters'] as const) {
+      expect(() =>
+        scaffoldFilter({
+          addon_name: 'articles',
+          fields: [{ field: 'author', type: 'text', label: 'Автор' }],
+          options: { [option]: true },
+        })
+      ).toThrow(new RegExp(option));
+    }
+  });
+
+  test('без полей генератор сообщает об ошибке', () => {
+    expect(() => scaffoldFilter({ addon_name: 'empty_addon', fields: [] })).toThrow(
+      /поля|столбец/i
+    );
   });
 });
 
 describe('SEO Tool', () => {
-  test('scaffoldSeo generates SEO files', () => {
-    const result = scaffoldSeo({
-      addon_name: 'blog',
-    }) as any;
-    expect(result).toHaveProperty('addon_name', 'blog');
-    expect(result).toHaveProperty('fields_count', 3);
-    expect('blog/seo.php' in result.files).toBe(true);
-    expect('system/hooks/blog/seo.hooks.php' in result.files).toBe(true);
+  test('scaffoldSeo создаёт помощник и хук render_page', () => {
+    const result = scaffoldSeo({ addon_name: 'blog' }) as any;
+
+    expect(result.scaffold_status).toBe('partial');
+    expect('package/system/controllers/blog/seo.php' in result.files).toBe(true);
+
+    const hook = result.files['package/system/controllers/blog/hooks/render_page.php'];
+    expect(hook).toContain('class onBlogRenderPage extends cmsAction');
+    expect(hook).toContain('public function run($html)');
+    expect(hook).toContain("require_once __DIR__ . '/../seo.php';");
   });
 
-  test('scaffoldSeo generates sitemap when enabled', () => {
-    const result = scaffoldSeo({
-      addon_name: 'news',
-      options: { use_sitemap: true },
-    }) as any;
-    expect('news/sitemap.php' in result.files).toBe(true);
-    const sitemap = result.files['news/sitemap.php'];
-    expect(sitemap).toContain('NewsSitemap');
-    expect(sitemap).toContain('function getItems(');
-    expect(sitemap).toContain('function generateXml(');
+  test('карта сайта создаётся только по запросу и с реальным хуком', () => {
+    const without = scaffoldSeo({ addon_name: 'news' }) as any;
+    expect(Object.keys(without.files).some(path => path.includes('sitemap'))).toBe(false);
+
+    const withSitemap = scaffoldSeo({ addon_name: 'news', options: { use_sitemap: true } }) as any;
+    const sitemap =
+      withSitemap.files['package/system/controllers/news/hooks/sitemap_urls_list_news.php'];
+    expect(sitemap).toContain('class onNewsSitemapUrlsListNews extends cmsAction');
+    expect(sitemap).toContain('public function run($data)');
   });
 
-  test('scaffoldSeo generates schema.org when enabled', () => {
+  test('разметка Schema.org и Open Graph включаются опциями', () => {
     const result = scaffoldSeo({
       addon_name: 'articles',
-      options: { use_schema_org: true },
+      options: { use_schema_org: true, use_og_tags: true },
     }) as any;
-    expect('articles/schema.php' in result.files).toBe(true);
-    const schema = result.files['articles/schema.php'];
-    expect(schema).toContain('ArticlesSchemaOrg');
-    expect(schema).toContain('function getArticleSchema(');
+    const hook = result.files['package/system/controllers/articles/hooks/render_page.php'];
+    expect(hook).toContain('application/ld+json');
+    expect(hook).toContain("'og:title'");
+
+    const withoutSchema = scaffoldSeo({
+      addon_name: 'articles',
+      options: { use_schema_org: false, use_og_tags: false },
+    }) as any;
+    const plain = withoutSchema.files['package/system/controllers/articles/hooks/render_page.php'];
+    expect(plain).not.toContain('application/ld+json');
+    expect(plain).not.toContain("'og:title'");
   });
 
-  test('scaffoldSeo with custom fields', () => {
-    const result = scaffoldSeo({
-      addon_name: 'products',
-      fields: [
-        { field: 'meta_title', type: 'title', value: '{item.name} - {site.name}' },
-        { field: 'meta_desc', type: 'description', value: '{item.excerpt}' },
-      ],
-    }) as any;
-    const seoFile = result.files['products/seo.php'];
-    expect(seoFile).toContain('ProductsSeo');
-    expect(seoFile).toContain('function getTitle(');
-    expect(seoFile).toContain('function getDescription(');
+  test('вымышленных методов ICMS2 в хуке нет', () => {
+    const result = scaffoldSeo({ addon_name: 'test_seo' }) as any;
+    const hook = result.files['package/system/controllers/test_seo/hooks/render_page.php'];
+    expect(hook).not.toContain('setPageDescription');
+    expect(hook).not.toContain('setPageKeywords');
+    expect(hook).not.toContain('onBeforeRender');
   });
 
-  test('scaffoldSeo generates hook handlers', () => {
-    const result = scaffoldSeo({
-      addon_name: 'test_seo',
-      options: { use_og_tags: true, use_sitemap: true },
-    }) as any;
-    const hooks = result.files['system/hooks/test_seo/seo.hooks.php'];
-    expect(hooks).toContain('onTestSeoSeoHook');
-    expect(hooks).toContain('function onBeforeRender(');
-    expect(hooks).toContain('function onAfterSave(');
+  test('неподдержанные опции отклоняются', () => {
+    expect(() =>
+      scaffoldSeo({ addon_name: 'products', options: { auto_generation: true } })
+    ).toThrow(/auto_generation/);
   });
 });
 

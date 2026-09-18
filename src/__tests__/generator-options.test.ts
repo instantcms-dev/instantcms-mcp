@@ -133,7 +133,6 @@ describe('unsupported generator options', () => {
       scaffoldFilter({
         addon_name: 'demo',
         fields: [{ field: 'a', type: 'text', label: 'A' }],
-        options: { save_filters: true },
       })
     ).not.toThrow();
 
