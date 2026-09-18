@@ -550,6 +550,13 @@ export function scaffoldOAuth(opts: ScaffoldOAuthOptions): ScaffoldResult {
   );
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Классы лежат в разных файлах и не подключают друг друга (нет require): OAuthClient не найдёт OAuthProvider/OAuthStorage.',
+      'Файлы кладутся в <name>/ вместо system/controllers/<name>/.',
+      'Хуки пишутся в несуществующий system/hooks/.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: lowercase,
     files,
     providers_count: opts.providers.length,

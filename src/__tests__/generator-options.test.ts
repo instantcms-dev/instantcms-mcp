@@ -1,6 +1,13 @@
 import { appliedOptions, rejectUnsupportedOptions } from '../utils/generator-options.js';
+import { scaffoldAdminPartial } from '../tools/admin-partial-tool.js';
 import { scaffoldApi } from '../tools/api-tool.js';
+import { scaffoldComponent } from '../tools/component-tool.js';
+import { scaffoldExternalApi } from '../tools/external-api-tool.js';
 import { scaffoldHook } from '../tools/addon-tool.js';
+import { scaffoldImportExport } from '../tools/import-export-tool.js';
+import { scaffoldLayoutOverride } from '../tools/layout-override-tool.js';
+import { scaffoldOAuth } from '../tools/oauth-tool.js';
+import { scaffoldWebhook } from '../tools/webhook-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldFilter } from '../tools/filter-tool.js';
 import { scaffoldForm } from '../tools/form-tool.js';
@@ -295,5 +302,82 @@ describe('unsupported generator options', () => {
   test('appliedOptions возвращает только поддержанные ключи', () => {
     expect(appliedOptions({ a: 1, b: 2, c: 3 }, ['a', 'c'])).toEqual({ a: 1, c: 3 });
     expect(appliedOptions(undefined, ['a'])).toEqual({});
+  });
+});
+
+/**
+ * Генераторы-прототипы: их вывод нельзя ставить на сайт без правки, и это
+ * должно быть видно вызывающему агенту в самом ответе, а не только в README.
+ */
+describe('экспериментальные генераторы помечают себя и причины', () => {
+  const cases: Array<[string, () => unknown]> = [
+    [
+      'scaffold_admin_partial',
+      () =>
+        scaffoldAdminPartial({
+          addon_name: 'genpart',
+          partials: [{ name: 'menu', type: 'sidebar' }],
+        }),
+    ],
+    [
+      'scaffold_layout_override',
+      () =>
+        scaffoldLayoutOverride({
+          addon_name: 'genlay',
+          overrides: [{ controller: 'content', template: 'modern', action: 'view' }],
+        }),
+    ],
+    [
+      'scaffold_import_export',
+      () =>
+        scaffoldImportExport({
+          addon_name: 'genie',
+          fields: [{ field: 'title', type: 'string', label: 'Название' }],
+        }),
+    ],
+    [
+      'scaffold_component',
+      () =>
+        scaffoldComponent({
+          addon_name: 'gencomp',
+          controllers: [{ name: 'items', actions: ['index'] }],
+        }),
+    ],
+    [
+      'scaffold_webhook',
+      () => scaffoldWebhook({ addon_name: 'genwh', events: ['user.registered'] }),
+    ],
+    [
+      'scaffold_external_api',
+      () =>
+        scaffoldExternalApi({
+          addon_name: 'genext',
+          base_url: 'https://api.example.com',
+          endpoints: [{ path: '/data', method: 'GET' }],
+        }),
+    ],
+    [
+      'scaffold_oauth',
+      () =>
+        scaffoldOAuth({
+          addon_name: 'genoauth',
+          providers: [
+            {
+              name: 'google',
+              client_id: 'x',
+              client_secret: 'y',
+              auth_url: 'https://a',
+              token_url: 'https://t',
+            },
+          ],
+        }),
+    ],
+  ];
+
+  test.each(cases)('%s: experimental и непустые limitations', (_name, run) => {
+    const result = run() as { scaffold_status?: string; limitations?: string[] };
+    expect(result.scaffold_status).toBe('experimental');
+    expect(Array.isArray(result.limitations)).toBe(true);
+    expect((result.limitations ?? []).length).toBeGreaterThan(0);
   });
 });

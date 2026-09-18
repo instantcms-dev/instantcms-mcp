@@ -622,6 +622,13 @@ export function scaffoldExternalApi(opts: ScaffoldExternalApiOptions): ScaffoldR
   );
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Классы лежат в разных файлах и не подключают друг друга (нет require): ApiClient не найдёт ApiAuth/ApiRequest/ApiCache.',
+      'Файлы кладутся в <name>/ вместо system/controllers/<name>/.',
+      'Хуки пишутся в несуществующий system/hooks/.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: lowercase,
     files,
     base_url: opts.base_url,

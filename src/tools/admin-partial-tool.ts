@@ -47,6 +47,13 @@ export function scaffoldAdminPartial(opts: ScaffoldAdminPartialOptions): object 
   );
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Файлы пишутся как .php, а фрагменты темы подключаются как .tpl.php через getTemplateFileName().',
+      '$this->renderPartial() в ICMS2 нет: используйте include $this->getTemplateFileName(...).',
+      'В шаблонах нет $cms_config и $this->cms_user: есть $this->sitename() и данные, переданные в шаблон.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: name,
     partials_count: opts.partials.length,
     files,

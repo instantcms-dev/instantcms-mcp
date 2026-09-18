@@ -42,6 +42,12 @@ export function scaffoldLayoutOverride(opts: ScaffoldLayoutOverrideOptions): obj
   );
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Вывод $this->breadcrumbs напечатает массив: нужен вызов метода $this->breadcrumbs([...]).',
+      'Комментарий в шаблоне ссылается на несуществующий $this->renderPartial().',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: name,
     overrides_count: opts.overrides.length,
     files,

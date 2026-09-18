@@ -447,6 +447,13 @@ export function scaffoldComponent(opts: ScaffoldComponentOptions): ScaffoldResul
   );
 
   return {
+    scaffold_status: 'experimental',
+    limitations: [
+      'Все файлы кладутся в <name>/ вместо system/controllers/<name>/.',
+      'Имена классов не по конвенции ядра: frontend-контроллер — <name>, backend — backend<Name>.',
+      'manifest.json вместо manifest.ru.ini/manifest.xml: проверьте требования менеджера дополнений.',
+      'Рантайм-проверка на живом InstantCMS не проходила.',
+    ],
     addon_name: lowercase,
     files,
     controllers_count: controllers.length,
