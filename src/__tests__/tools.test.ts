@@ -696,10 +696,10 @@ describe('Admin Partial Tool', () => {
     expect(result).toHaveProperty('addon_name', 'test_partial');
     expect(result).toHaveProperty('partials_count', 2);
     expect(
-      'package/templates/admincoreui/partials/test_partial/sidebar_menu.php' in result.files
+      'package/templates/admincoreui/assets/test_partial/sidebar_menu.tpl.php' in result.files
     ).toBe(true);
     expect(
-      'package/templates/admincoreui/partials/test_partial/panel_info.php' in result.files
+      'package/templates/admincoreui/assets/test_partial/panel_info.tpl.php' in result.files
     ).toBe(true);
   });
 
@@ -709,7 +709,7 @@ describe('Admin Partial Tool', () => {
       partials: [{ name: 'main', type: 'header', items: ['dashboard', 'users'] }],
     }) as any;
     const content =
-      result.files['package/templates/admincoreui/partials/test_partial/header_main.php'];
+      result.files['package/templates/admincoreui/assets/test_partial/header_main.tpl.php'];
     expect(content).toContain('navbar');
     expect(content).toContain('icon-');
   });
@@ -720,7 +720,7 @@ describe('Admin Partial Tool', () => {
       partials: [{ name: 'confirm', type: 'modal' }],
     }) as any;
     const content =
-      result.files['package/templates/admincoreui/partials/test_partial/modal_confirm.php'];
+      result.files['package/templates/admincoreui/assets/test_partial/modal_confirm.tpl.php'];
     expect(content).toContain('modal');
     expect(content).toContain('modal-title');
   });
@@ -731,8 +731,29 @@ describe('Admin Partial Tool', () => {
       partials: [{ name: 'menu', type: 'sidebar' }],
     }) as any;
     expect(
-      'package/templates/admincoreui/partials/test_partial/test_partial.php' in result.files
+      'package/templates/admincoreui/assets/test_partial/test_partial.tpl.php' in result.files
     ).toBe(true);
+  });
+
+  test('фрагменты не используют несуществующие символы шаблонов', () => {
+    const result = scaffoldAdminPartial({
+      addon_name: 'test_partial',
+      partials: [
+        { name: 'main', type: 'header', items: ['dashboard'] },
+        { name: 'menu', type: 'sidebar' },
+        { name: 'foot', type: 'footer' },
+      ],
+    }) as any;
+
+    for (const [path, content] of Object.entries(result.files)) {
+      expect(path.endsWith('.tpl.php')).toBe(true);
+      expect(content as string).not.toContain('$cms_config');
+      expect(content as string).not.toContain('$this->cms_user');
+      expect(content as string).not.toContain('renderPartial');
+    }
+
+    expect(result.scaffold_status).toBe('partial');
+    expect(result.limitations.length).toBeGreaterThan(0);
   });
 });
 
