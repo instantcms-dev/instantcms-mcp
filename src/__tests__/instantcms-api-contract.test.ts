@@ -65,10 +65,21 @@ function parseProperties(body: string): Map<string, Visibility> {
 }
 
 const source = locateSource();
+const sourceRequired = process.env.ICMS_REQUIRE_SOURCE === '1';
+
+if (!source && sourceRequired) {
+  throw new Error(
+    'ICMS_REQUIRE_SOURCE=1, но исходники InstantCMS не найдены: задайте ICMS_SOURCE или подготовьте .cache/icms2'
+  );
+}
 
 if (!source) {
   describe.skip('InstantCMS API contract', () => {
-    test('skipped: источник InstantCMS не найден', () => {});
+    test('skipped: источник InstantCMS не найден', () => {
+      console.warn(
+        'instantcms-api-contract: пропущено — нет ICMS_SOURCE, ~/Sites/idev.test или .cache/icms2'
+      );
+    });
   });
 } else {
   describe('InstantCMS API contract', () => {
