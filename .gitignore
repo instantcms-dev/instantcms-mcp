@@ -1,3 +1,10 @@
+# Root markdown: tracked are только README.md, AGENTS.md и CLAUDE.md.
+# Остальные корневые доки остаются на диске, но не коммитятся.
+/*.md
+!/README.md
+!/AGENTS.md
+!/CLAUDE.md
+
 # Dependencies
 node_modules/
 

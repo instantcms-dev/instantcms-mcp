@@ -271,7 +271,7 @@ AGENTS.md                    # общие инструкции coding agents
 CLAUDE.md                    # тонкий адаптер Claude
 ```
 
-Подробности устройства находятся в [ARCHITECTURE.md](ARCHITECTURE.md), правила участия — в [CONTRIBUTING.md](CONTRIBUTING.md), история изменений — в [CHANGELOG.md](CHANGELOG.md).
+Подробности по внутреннему устройству — в исходниках `src/` и справочниках `knowledge/`. Корневая документация (архитектура, история изменений, правила участия) в репозиторий не коммитится.
 
 ## Поддержание актуальности
 
@@ -410,7 +410,7 @@ npm run build
 
 Push тега `v*` или публикация GitHub Release запускает `.github/workflows/release.yml`: проверки, сборку, lint, создание ZIP и публикацию `@maxisoft/instantcms-mcp` в npm. Тег должен совпадать с версией в `package.json` и `package-lock.json`. Уже опубликованная версия пропускается; предварительные релизы публикуются с dist-tag `next`, стабильные — `latest`.
 
-Публикация использует Node.js 24, npm 11 и Trusted Publishing без `NPM_TOKEN`. В настройках npm-пакета необходимо привязать GitHub repository `instantcms-dev/instantcms-mcp` и workflow filename **`release.yml`**, без пути `.github/workflows/`. Подробности и восстановление после ошибки: [NPM_TRUSTED_PUBLISHING_SETUP.md](NPM_TRUSTED_PUBLISHING_SETUP.md).
+Публикация использует Node.js 24, npm 11 и Trusted Publishing без `NPM_TOKEN`. В настройках npm-пакета необходимо привязать GitHub repository `instantcms-dev/instantcms-mcp` и workflow filename **`release.yml`**, без пути `.github/workflows/`.
 
 ## Лицензия
 

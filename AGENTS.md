@@ -1,6 +1,6 @@
 # Instructions for coding agents
 
-This repository implements an MCP server for InstantCMS 2. Read `ARCHITECTURE.md` before changing generators, validation, or knowledge data.
+This repository implements an MCP server for InstantCMS 2. Before changing generators, validation, or knowledge data, review the relevant sources in `src/` and the provenance layer in `knowledge/`.
 
 ## Required checks
 
