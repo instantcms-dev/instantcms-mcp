@@ -41,13 +41,13 @@ const SYSTEM_FIELDS = new Set(['id', 'title', 'user_id', 'date_pub', 'is_pub', '
  */
 export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   rejectUnsupportedOptions('scaffold_crud', opts.options, {
-    use_tags: 'теги контента не генерируются — добавьте таблицу и хук вручную',
-    use_comments: 'подключите контроллер comments через хук content_after_add_approve',
-    use_rating: 'рейтинг настраивается на уровне контент-типа, генератор его не создаёт',
-    use_moderation: 'модерация требует отдельного экшена и прав — не генерируется',
-    use_seo: 'SEO-поля и метатеги добавляются вручную',
-    use_content: 'регистрация типа контента не автоматизирована',
-    list_template: 'вариант шаблона списка не генерируется — правьте index.tpl.php вручную',
+    use_tags:
+      'нужны хук tags_search_subjects, привязка в шаблон и таблица связей — это отдельный объём',
+    use_comments: 'нужен хук comments_targets и вывод виджета комментариев в шаблоне материала',
+    use_rating: 'нужен реестр целей рейтинга и вывод в шаблоне — отдельный объём',
+    use_moderation:
+      'модерация делается на уровне контент-типа (пре-модерация) — для своего контроллера нужен отдельный экшен и права',
+    use_content: 'регистрация типа контента не автоматизирована — это уровень контент-типов',
   });
 
   const name = opts.addon_name;
@@ -66,6 +66,8 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   const NAME = name.toUpperCase();
   const useCategory = Boolean(opts.options?.use_category);
   const withApiModel = Boolean(opts.options?.with_api_model);
+  const useSeo = Boolean(opts.options?.use_seo);
+  const listTemplate = opts.options?.list_template || 'grid';
   const theme = opts.options?.theme || 'modern';
   if (!/^[a-z][a-z0-9_]{0,63}$/.test(theme)) throw new Error('Invalid theme name');
 
@@ -92,12 +94,19 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   files[`${ctrl}/backend/actions/items_edit.php`] = generateBackendItemsEdit(name, Name, NAME);
   files[`${ctrl}/backend/actions/items_delete.php`] = generateBackendItemsDelete(name, Name);
   files[`${ctrl}/backend/grids/grid_items.php`] = generateGridItems(name, NAME);
-  files[`${ctrl}/backend/forms/form_item.php`] = generateFormItem(opts.fields, Name, NAME, 'Item');
+  files[`${ctrl}/backend/forms/form_item.php`] = generateFormItem(
+    opts.fields,
+    Name,
+    NAME,
+    'Item',
+    useSeo
+  );
   files[`${ctrl}/forms/form_item_public.php`] = generateFormItem(
     opts.fields,
     Name,
     NAME,
-    'ItemPublic'
+    'ItemPublic',
+    useSeo
   );
 
   files[`package/system/languages/ru/controllers/${name}/${name}.php`] = generateLang(
@@ -107,7 +116,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
   );
 
   const tpl = `package/templates/${theme}/controllers/${name}`;
-  files[`${tpl}/index.tpl.php`] = generateTplIndex(name, NAME);
+  files[`${tpl}/index.tpl.php`] = generateTplIndex(name, NAME, listTemplate);
   files[`${tpl}/view.tpl.php`] = generateTplView(name, NAME);
   files[`${tpl}/add.tpl.php`] = generateTplForm(NAME, '_ADD');
   files[`${tpl}/edit.tpl.php`] = generateTplForm(NAME, '_EDIT');
@@ -116,7 +125,7 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
     files[`${tpl}/category.tpl.php`] = generateTplCategory(name, NAME);
   }
 
-  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory, withApiModel);
+  files['[pkg] install.sql'] = generateSql(name, opts.fields, useCategory, withApiModel, useSeo);
 
   return {
     addon_name: name,
@@ -145,8 +154,14 @@ export function scaffoldCrud(opts: ScaffoldCrudOptions): object {
       'Синтаксическая проверка не подтверждает поведение в конкретной сборке InstantCMS.',
     ],
     options: opts.options || {},
-    supported_options: ['theme', 'use_category', 'with_api_model'],
-    options_applied: appliedOptions(opts.options, ['theme', 'use_category', 'with_api_model']),
+    supported_options: ['theme', 'use_category', 'with_api_model', 'use_seo', 'list_template'],
+    options_applied: appliedOptions(opts.options, [
+      'theme',
+      'use_category',
+      'with_api_model',
+      'use_seo',
+      'list_template',
+    ]),
   };
 }
 
@@ -363,8 +378,13 @@ class action${Name}View extends cmsAction {
 
         $item = cmsEventsManager::hook('${name}_before_item', $item);
 
-        $this->cms_template->setPageTitle($item['title']);
-        $this->cms_template->setMeta('', $item['description'] ?? '');
+        $this->cms_template->setPageTitle(
+            !empty($item['meta_title']) ? $item['meta_title'] : $item['title']
+        );
+        $this->cms_template->setMeta(
+            $item['meta_keywords'] ?? '',
+            !empty($item['meta_description']) ? $item['meta_description'] : ($item['description'] ?? '')
+        );
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to(${name}::ROUTE_NAME));
         $this->cms_template->addBreadcrumb($item['title']);
 
@@ -767,7 +787,8 @@ function generateFormItem(
   fields: CrdField[],
   Name: string,
   NAME: string,
-  formClassSuffix: string
+  formClassSuffix: string,
+  useSeo: boolean
 ): string {
   let formCode = `<?php
 
@@ -808,6 +829,22 @@ class form${Name}${formClassSuffix} extends cmsForm {
     }
 
     formCode += `                    new ${fieldClass}('${field.name}', ${phpValue(fieldOptions)}),
+`;
+  }
+
+  if (useSeo) {
+    formCode += `                    new fieldString('meta_title', [
+                        'title' => LANG_${NAME}_META_TITLE,
+                        'rules' => [['max_length', 255]],
+                    ]),
+                    new fieldString('meta_description', [
+                        'title' => LANG_${NAME}_META_DESCRIPTION,
+                        'rules' => [['max_length', 255]],
+                    ]),
+                    new fieldString('meta_keywords', [
+                        'title' => LANG_${NAME}_META_KEYWORDS,
+                        'rules' => [['max_length', 255]],
+                    ]),
 `;
   }
 
@@ -897,7 +934,8 @@ function generateSql(
   name: string,
   fields: CrdField[],
   useCategory: boolean,
-  withApiModel: boolean
+  withApiModel: boolean,
+  useSeo: boolean
 ): string {
   const custom = fields
     .filter(field => !SYSTEM_FIELDS.has(field.name) && !field.is_system)
@@ -905,6 +943,13 @@ function generateSql(
 
   const categoryColumn = useCategory
     ? `    \`category_id\` int(10) unsigned NOT NULL DEFAULT 0,`
+    : '';
+
+  // SEO-поля: их применяет экшен view через cmsTemplate::setMeta().
+  const seoColumns = useSeo
+    ? `    \`meta_title\`       varchar(255) NOT NULL DEFAULT '',
+    \`meta_description\` varchar(255) NOT NULL DEFAULT '',
+    \`meta_keywords\`    varchar(255) NOT NULL DEFAULT '',`
     : '';
 
   const categoryTable = useCategory
@@ -926,6 +971,7 @@ CREATE TABLE IF NOT EXISTS \`cms_${name}_items\` (
 ${categoryColumn}
     \`user_id\`  int(10) unsigned NOT NULL DEFAULT 0,
     \`title\`    varchar(255) NOT NULL DEFAULT '',
+${seoColumns}
 ${custom.join('\n')}
     \`date_pub\` datetime NOT NULL,
     \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT 1,
@@ -948,6 +994,9 @@ define('LANG_${NAME}_DELETE_SUCCESS', ${quotePhp('Запись успешно у
 define('LANG_${NAME}_NOT_FOUND', ${quotePhp('Ничего не найдено')});
 define('LANG_${NAME}_IS_PUB', ${quotePhp('Опубликовано')});
 define('LANG_${NAME}_BASIC', ${quotePhp('Основное')});
+define('LANG_${NAME}_META_TITLE', ${quotePhp('SEO: заголовок')});
+define('LANG_${NAME}_META_DESCRIPTION', ${quotePhp('SEO: описание')});
+define('LANG_${NAME}_META_KEYWORDS', ${quotePhp('SEO: ключевые слова')});
 define('LANG_${NAME}_DELETE_CONFIRM', ${quotePhp('Удалить запись?')});
 
 define('LANG_${NAME}_CP_TITLE', ${quotePhp('Управление')});
@@ -971,8 +1020,8 @@ define('LANG_${NAME}_CP_DELETE', ${quotePhp('Удаление элемента')
   return lang;
 }
 
-function generateTplIndex(name: string, NAME: string): string {
-  return `<?php
+function generateTplIndex(name: string, NAME: string, listTemplate: string): string {
+  const header = `<?php
 /**
  * @var array  $items
  * @var int    $total
@@ -984,7 +1033,59 @@ function generateTplIndex(name: string, NAME: string): string {
 <h1><?php echo html(LANG_${NAME}_TITLE); ?></h1>
 
 <?php if ($items) { ?>
-    <div class="row">
+`;
+
+  const footer = `
+    <?php echo html_pagebar($page, $perpage, $total, $page_url); ?>
+<?php } else { ?>
+    <p class="text-muted"><?php echo html(LANG_${NAME}_NOT_FOUND); ?></p>
+<?php } ?>
+`;
+
+  const itemLink = (inner: string): string =>
+    `                <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">\n                    ${inner}\n                </a>`;
+
+  if (listTemplate === 'table') {
+    return `${header}    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th><?php echo html(LANG_TITLE); ?></th>
+                <th class="text-right"><?php echo html(LANG_DATE_PUB); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($items as $item) { ?>
+                <tr>
+                    <td>
+                        <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                            <?php echo html($item['title']); ?>
+                        </a>
+                    </td>
+                    <td class="text-right text-muted small">
+                        <?php echo html_date($item['date_pub'], true); ?>
+                    </td>
+                </tr>
+            <?php } ?>
+        </tbody>
+    </table>
+${footer}`;
+  }
+
+  if (listTemplate === 'list') {
+    return `${header}    <div class="list-group">
+        <?php foreach ($items as $item) { ?>
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    ${itemLink("<?php echo html($item['title']); ?>")}
+                    <span class="text-muted small"><?php echo html_date($item['date_pub'], true); ?></span>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
+${footer}`;
+  }
+
+  return `${header}    <div class="row">
         <?php foreach ($items as $item) { ?>
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
@@ -1000,12 +1101,7 @@ function generateTplIndex(name: string, NAME: string): string {
             </div>
         <?php } ?>
     </div>
-
-    <?php echo html_pagebar($page, $perpage, $total, $page_url); ?>
-<?php } else { ?>
-    <p class="text-muted"><?php echo html(LANG_${NAME}_NOT_FOUND); ?></p>
-<?php } ?>
-`;
+${footer}`;
 }
 
 function generateTplView(name: string, NAME: string): string {
