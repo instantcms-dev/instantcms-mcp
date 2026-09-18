@@ -7,7 +7,7 @@
     "instantcms-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "check:ai": "node scripts/check-ai-configs.mjs",
     "knowledge:build": "tsx scripts/build-knowledge.ts",
@@ -54,6 +54,7 @@
   },
   "files": [
     "dist",
+    "!dist/__tests__",
     "README.md",
     "LICENSE"
   ],
