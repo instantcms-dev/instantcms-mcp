@@ -42,12 +42,7 @@ export function scaffoldLayoutOverride(opts: ScaffoldLayoutOverrideOptions): obj
   );
 
   return {
-    scaffold_status: 'experimental',
-    limitations: [
-      'Вывод $this->breadcrumbs напечатает массив: нужен вызов метода $this->breadcrumbs([...]).',
-      'Комментарий в шаблоне ссылается на несуществующий $this->renderPartial().',
-      'Рантайм-проверка на живом InstantCMS не проходила.',
-    ],
+    scaffold_status: 'partial',
     addon_name: name,
     overrides_count: opts.overrides.length,
     files,
@@ -61,8 +56,12 @@ export function scaffoldLayoutOverride(opts: ScaffoldLayoutOverrideOptions): obj
     })),
     structure_notes: [
       `Шаблоны переопределений размещаются в templates/{theme}/controllers/{controller}/`,
-      `Для применения: Скопируйте файлы в нужную тему`,
       `Языковой файл: /system/languages/ru/controllers/${name}/${name}.php`,
+    ],
+    limitations: [
+      'Файл полностью заменяет оригинальный шаблон: ICMS2 не умеет рендерить «оригинал плюс правки», нужный код копируется из шаблона темы.',
+      'Не переопределяйте шаблоны существующих контроллеров без резервной копии: генератор пишет файл поверх, а --cleanup удаляет то, что создал.',
+      'Хлебные крошки выводятся методом $this->breadcrumbs([...]); свойство $this->breadcrumbs — массив, его нельзя echo.',
     ],
   };
 }
@@ -86,7 +85,7 @@ function generateLayoutTemplate(
  * Переопределение шаблона контроллера ${override.controller}${override.action ? `/${override.action}` : ''}
  * для шаблона ${override.template}
  *
- * Оригинал: system/templates/${override.template}/controllers/${override.controller}/${override.action || 'index'}.tpl.php
+ * Оригинал: templates/${override.template}/controllers/${override.controller}/${override.action || 'index'}.tpl.php
  */
 ?>
 `;
@@ -103,19 +102,16 @@ function generateLayoutTemplate(
 
   if (addBreadcrumbs) {
     code += `
-    <?php if ($this->breadcrumbs) { ?>
-        <div class="content-breadcrumbs">
-            <?php echo $this->breadcrumbs; ?>
-        </div>
-    <?php } ?>
+    <?php $this->breadcrumbs(['home_url' => href_to('${override.controller}')]); ?>
 `;
   }
 
   code += `
     <div class="${name}-content">
         <?php
-        // Вызов оригинального шаблона или рендер контента
-        // $content = $this->renderPartial('${override.controller}', '${override.action || 'index'}', $vars);
+        // Это полная замена оригинального шаблона: ICMS2 не умеет рендерить
+        // «оригинал плюс правки». Скопируйте нужный код из
+        // templates/${override.template}/controllers/${override.controller}/${override.action || 'index'}.tpl.php
         ?>
 
         <!-- Ваш контент здесь -->

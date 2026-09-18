@@ -666,8 +666,21 @@ describe('Layout Override Tool', () => {
       options: { use_wrapper: true, add_breadcrumbs: true },
     }) as any;
     const content = result.files['templates/modern/controllers/content/index.tpl.php'];
-    expect(content).toContain('content-breadcrumbs');
     expect(content).toContain('test_override-sidebar');
+  });
+
+  test('хлебные крошки выводятся методом, а не echo массива', () => {
+    const result = scaffoldLayoutOverride({
+      addon_name: 'test_override',
+      overrides: [{ controller: 'content', template: 'modern', action: 'view' }],
+    }) as any;
+    const content = result.files['templates/modern/controllers/content/view.tpl.php'];
+
+    expect(content).toContain("$this->breadcrumbs(['home_url' => href_to('content')]);");
+    expect(content).not.toContain('echo $this->breadcrumbs;');
+    expect(content).not.toContain('renderPartial');
+    expect(result.scaffold_status).toBe('partial');
+    expect(result.limitations.length).toBeGreaterThan(0);
   });
 });
 
