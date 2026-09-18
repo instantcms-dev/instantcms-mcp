@@ -6,6 +6,8 @@
 
 - **Every generator scenario now runs against a live InstantCMS in CI.** `scripts/install-instantcms.mjs` (aliased as `npm run verify:install-icms`) performs a headless install: it copies the pinned upstream, creates the database from `install/languages/ru/sql/base.sql` (schema plus controllers, widgets, events, groups and the admin user) and `widgets_bind_modern.sql` (without it the theme renders pages empty because the "page body" widget is not bound), then writes `config.php`. A new CI job starts MariaDB, installs the site, serves it with `php -S` and runs all eight `verify:generated` scenarios — 35 checks on `crud`, `api`, `addon`, `widget`, `cron`, `form`, `grid` and `integration`. Previously those checks were manual and local only.
 
+- **Knowledge confidence is now enforced, not declared.** `knowledge/catalog.yaml` gained a `provenance` field (`generated` or `curated`) and `scripts/build-knowledge.ts` rejects `confidence: verified` unless the runtime file is machine-generated from the pinned upstream. This surfaced an unearned claim: `src/data/schemas.ts` — hand-written documentation, and the file that taught the non-existent `cmsInstaller` class — was marked `verified`; it is now honestly `inferred`/`curated`. The summary (verified 9, inferred 3) is exposed through `get_server_capabilities` as `knowledge.sources`, and the rule is covered by `src/__tests__/knowledge-catalog.test.ts`, including a negative check that a curated file cannot claim `verified`.
+
 ## 1.4.0
 
 ### Breaking changes

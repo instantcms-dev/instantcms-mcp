@@ -143,6 +143,8 @@ git push && git push --tags
 
 Без исходников проверка пропускается; в CI её выполняет job `upstream-compatibility`, где выставляется `ICMS_REQUIRE_SOURCE=1` и данные должны совпасть с upstream.
 
+Уровень достоверности каждого источника задан в `knowledge/catalog.yaml` и **проверяется сборкой**: `verified` допустим только для файлов, созданных парсером закреплённого исходника, а рукописные данные помечаются `curated` и `inferred`. `npm run knowledge:build` падает, если достоверность завышена. Текущая сводка доступна в `get_server_capabilities` (`knowledge.sources`).
+
 ## Матрица проверки генераторов
 
 Проверено на живом InstantCMS 2.18.2 (скрипт `npm run verify:generated` и ручные сценарии).
