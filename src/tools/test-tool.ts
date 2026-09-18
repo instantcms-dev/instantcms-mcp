@@ -76,25 +76,36 @@ class ${Name}Test extends TestCase {
   if (mockDb) {
     code += `    protected $db;
 
-    protected function setUp(): void {
-        parent::setUp();
-        $this->db = $this->createMock(\\icms\\db\\DatabaseConnection::class);
-    }
-
-    protected function tearDown(): void {
-        unset($this->db);
-        parent::tearDown();
-    }
-
 `;
   }
 
   if (mockCache) {
     code += `    protected $cache;
 
-    protected function setUp(): void {
+`;
+  }
+
+  if (mockDb || mockCache) {
+    code += `    protected function setUp(): void {
         parent::setUp();
-        $this->cache = $this->createMock(\\icms\\cache\\Cache::class);
+`;
+    if (mockDb) {
+      code += `        $this->db = $this->createMock(\\icms\\db\\DatabaseConnection::class);
+`;
+    }
+    if (mockCache) {
+      code += `        $this->cache = $this->createMock(\\icms\\cache\\Cache::class);
+`;
+    }
+    code += `    }
+
+`;
+  }
+
+  if (mockDb) {
+    code += `    protected function tearDown(): void {
+        unset($this->db);
+        parent::tearDown();
     }
 
 `;

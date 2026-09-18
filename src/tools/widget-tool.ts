@@ -1,10 +1,18 @@
 /**
  * @fileoverview Widget scaffolding tool for InstantCMS
  * Generates widgets with options, templates, and configuration
+ *
+ * Конвенции проверены по InstantCMS 2.18.2:
+ *  - путь:      system/controllers/{controller}/widgets/{widget}/
+ *  - класс:     widget{Controller}{Widget} extends cmsWidget
+ *  - форма:     formWidget{Controller}{Widget}Options extends cmsForm
+ *  - шаблон:    templates/{theme}/controllers/{controller}/widgets/{widget}/{widget}.tpl.php
+ *  - опции:     $this->getOption('name', $default); поля формы с префиксом options:
  */
 
 import { z } from 'zod';
 import { normalizeAddonName, type ScaffoldResult } from '../types/scaffold';
+import { phpValue, quotePhp } from '../utils/serialization.js';
 
 /**
  * Widget option field types
@@ -50,267 +58,204 @@ interface ScaffoldWidgetOptions {
   options_config?: {
     /** Generate template file */
     with_template?: boolean;
-    /** Generate CSS styles */
+    /** Inline styles inside the template */
     with_styles?: boolean;
     /** Enable widget caching */
     with_cache?: boolean;
   };
 }
 
+/** Имя контроллера в CamelCase: recent_posts → RecentPosts */
+function camel(value: string): string {
+  return value
+    .split('_')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+}
+
+function optionDefault(option: WidgetOption): string {
+  if (option.default === undefined) {
+    return 'null';
+  }
+  return phpValue(option.default);
+}
+
 /**
- * Generates widget class
+ * Генерирует класс виджета: widget{Controller}{Widget} extends cmsWidget
  */
 function generateWidgetClass(
-  name: string,
-  widget: string,
+  controller: string,
   Widget: string,
+  Controller: string,
   options: WidgetOption[],
-  options_config: Record<string, boolean>
+  withCache: boolean
 ): string {
-  const optionDefaults = options
-    .map(o => {
-      const defaultVal = typeof o.default === 'string' ? `'${o.default}'` : (o.default ?? 'null');
-      return `        '${o.name}' => ${defaultVal},`;
+  const optionsCode = options
+    .filter(option => option.name !== 'title')
+    .map(option => {
+      const cast = option.type === 'number' ? '(int) ' : '';
+      const fallback = option.default !== undefined ? optionDefault(option) : 'false';
+      return `        $${option.name} = ${cast}$this->getOption(${quotePhp(option.name)}, ${fallback});`;
     })
     .join('\n');
 
+  const templateVars = options
+    .filter(option => option.name !== 'title')
+    .map(option => `            '${option.name}' => $${option.name},`)
+    .join('\n');
+
+  const limitOption = options.find(option => option.type === 'number');
+
   return `<?php
-// InstantCMS 2. ${name}/widgets/${widget}.php
 
-class ${Widget}Widget extends cmsWidget {
+class widget${Controller}${Widget} extends cmsWidget {
 
-    public $is_cacheable = ${options_config.with_cache};
+    public $is_cacheable = ${withCache ? 'true' : 'false'};
 
     public function run() {
-        $options = $this->getOptions([
-${optionDefaults}
-        ]);
 
-        $data = [
-            'widget' => $this,
-            'options' => $options,
-            'title' => $options['title'],
-        ];
+${optionsCode ? optionsCode + '\n\n' : ''}        $model = cmsCore::getModel(${quotePhp(controller)});
 
-        return $this->renderTemplate('${widget}', $data);
-    }
+        // Таблица {controller}_items — замените на свою модель/запрос при необходимости.
+        $items = $model->filterEqual('is_pub', 1)
+                       ->orderBy('date_pub', 'desc')
+                       ->limit(${limitOption ? `$${limitOption.name}` : '10'})
+                       ->get(${quotePhp(`${controller}_items`)}) ?: [];
 
-    public function getCacheKey() {
+        if (!$items) {
+            return false;
+        }
+
         return [
-            cmsConfig::get('cur_lang'),
-            $this->getOption('widget_id'),
-            $this->getOption('page'),
+            'items' => $items,
+${templateVars}
         ];
     }
 
-    public function validateOptions($options) {
-        return $options;
-    }
-
-    public function getSizeOptions() {
-        return [
-            'full' => 'Во всю ширину',
-            'half' => 'Половина ширины',
-            'third' => 'Треть ширины',
-        ];
-    }
 }`;
 }
 
 /**
- * Generates widget options class
+ * Генерирует форму опций: formWidget{Controller}{Widget}Options extends cmsForm
  */
-function generateWidgetOptions(widget: string, Widget: string, options: WidgetOption[]): string {
+function generateWidgetOptions(
+  Widget: string,
+  Controller: string,
+  options: WidgetOption[]
+): string {
   const fieldsCode = options
-    .map(o => {
-      switch (o.type) {
-        case 'text':
-          return `        $form->addField('${o.name}', new fieldString('${o.label}'));`;
+    .map(option => {
+      const fieldName = `options:${option.name}`;
+      const base: Record<string, unknown> = {
+        title: option.label,
+      };
+      if (!(option.type === 'checkbox' && option.default === undefined)) {
+        base.default = option.default ?? (option.type === 'checkbox' ? false : null);
+      }
+
+      switch (option.type) {
         case 'number':
-          return `        $form->addField('${o.name}', new fieldNumber('${o.label}'));`;
+          return `                    new fieldNumber(${quotePhp(fieldName)}, ${phpValue({ ...base, default: option.default ?? 0 })}),`;
         case 'select': {
-          const optsStr = (o.options || [])
-            .map(opt => `'${opt.value}' => '${opt.label}'`)
-            .join(', ');
-          return `        $form->addField('${o.name}', new fieldList('${o.label}', ['options' => [${optsStr}]]));`;
+          const items: Record<string, string> = {};
+          for (const item of option.options ?? []) {
+            items[item.value] = item.label;
+          }
+          return `                    new fieldList(${quotePhp(fieldName)}, ${phpValue({ ...base, items })}),`;
         }
         case 'checkbox':
-          return `        $form->addField('${o.name}', new fieldCheckbox('${o.label}'));`;
+          return `                    new fieldCheckbox(${quotePhp(fieldName)}, ${phpValue({ ...base, default: option.default ?? false })}),`;
         case 'textarea':
-          return `        $form->addField('${o.name}', new fieldText('${o.label}'));`;
+          return `                    new fieldText(${quotePhp(fieldName)}, ${phpValue(base)}),`;
         case 'image':
-          return `        $form->addField('${o.name}', new fieldImage('${o.label}'));`;
+          return `                    new fieldImage(${quotePhp(fieldName)}, ${phpValue(base)}),`;
         default:
-          return `        $form->addField('${o.name}', new fieldString('${o.label}'));`;
+          return `                    new fieldString(${quotePhp(fieldName)}, ${phpValue({ ...base, default: option.default ?? '' })}),`;
       }
     })
     .join('\n');
 
   return `<?php
-// InstantCMS 2. widgets/${widget}.options.php
 
-class ${Widget}WidgetOptions {
+class formWidget${Controller}${Widget}Options extends cmsForm {
 
-    public static function getConfigForm($form) {
+    public function init() {
+
+        return [
+            [
+                'type'   => 'fieldset',
+                'title'  => LANG_OPTIONS,
+                'childs' => [
 ${fieldsCode}
-
-        return $form;
-    }
-
-    public static function getDefaultOptions() {
-        return [
-${options
-  .map(o => {
-    const defaultVal = typeof o.default === 'string' ? `'${o.default}'` : (o.default ?? 'null');
-    return `            '${o.name}' => ${defaultVal},`;
-  })
-  .join('\n')}
+                ],
+            ],
         ];
     }
 
-    public static function getOptionLabels() {
-        return [
-${options.map(o => `            '${o.name}' => '${o.label}',`).join('\n')}
-        ];
-    }
 }`;
 }
 
 /**
- * Generates widget template
+ * Генерирует шаблон виджета.
  */
-function generateWidgetTemplate(widget: string, _Widget: string, _options: WidgetOption[]): string {
-  return `<?php
-// InstantCMS 2. widgets/${widget}.html.php
-
-\\$widget = \\$data['widget'];
-\\$options = \\$data['options'];
-\\$title = \\$options['title'] ?? '';
-\\$limit = \\$options['limit'] ?? 5;
-?>
-
-<?php if (\\$title): ?>
-<h3 class="widget-title"><?php echo \\$title; ?></h3>
-<?php endif; ?>
-
-<div class="${widget}-widget">
-    <div class="widget-content">
-        <!-- Widget content here -->
-    </div>
-</div>
-
+function generateWidgetTemplate(controller: string, widget: string, withStyles: boolean): string {
+  const styles = withStyles
+    ? `
 <style>
-.widget-${widget} {
-    padding: 0;
-}
-.widget-${widget} .widget-title {
-    margin: 0 0 15px 0;
-    font-size: 18px;
-}
-.widget-${widget} .widget-content {
-    padding: 10px 0;
+.widget_${controller}_${widget} .item + .item {
+    border-top: 1px solid rgba(0, 0, 0, .075);
+    margin-top: .5rem;
+    padding-top: .5rem;
 }
 </style>
-`;
-}
+`
+    : '';
 
-/**
- * Generates widget CSS styles
- */
-function generateWidgetStyles(widget: string, _options: WidgetOption[]): string {
-  return `/* InstantCMS 2. ${widget} widget styles */
-
-.${widget}-widget {
-    padding: 0;
-}
-
-.${widget}-widget .widget-title {
-    margin: 0 0 15px 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.${widget}-widget .widget-content {
-    padding: 10px 0;
-}
-
-.${widget}-widget .item {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.${widget}-widget .item:last-child {
-    border-bottom: none;
-}
-
-.${widget}-widget .item-title {
-    font-weight: 500;
-}
-
-.${widget}-widget .item-date {
-    font-size: 12px;
-    color: #999;
-}
-`;
-}
-
-/**
- * Generates widget configuration
- */
-function generateWidgetConfig(
-  name: string,
-  widget: string,
-  Widget: string,
-  options: WidgetOption[]
-): string {
   return `<?php
-// InstantCMS 2. system/config/widgets/${widget}.php
-
-return [
-    'widget' => '${widget}',
-    'component' => '${name}',
-    'class' => '${Widget}Widget',
-    'options_class' => '${Widget}WidgetOptions',
-    'title' => '${Widget}',
-    'description' => '',
-    'version' => '1.0.0',
-    'author' => '',
-    'options' => [
-${options.map(o => `        '${o.name}' => '${o.label}',`).join('\n')}
-    ],
-    'size_options' => [
-        'full',
-        'half',
-        'third',
-    ],
-];`;
+/**
+ * @var array $items
+ */
+?>
+<div class="widget_${controller}_${widget}">
+    <?php if ($items) { ?>
+        <div class="widget_${controller}_${widget}_list">
+            <?php foreach ($items as $item) { ?>
+                <div class="item">
+                    <a href="<?php echo href_to(${quotePhp(controller)}, 'view', $item['id']); ?>">
+                        <?php echo html($item['title']); ?>
+                    </a>
+                    <div class="text-muted small"><?php echo html_date($item['date_pub'], true); ?></div>
+                </div>
+            <?php } ?>
+        </div>
+    <?php } ?>
+</div>
+${styles}`;
 }
 
 /**
  * Generates a complete widget for InstantCMS
- *
- * @param opts - Configuration options for the widget
- * @returns Object containing generated files and metadata
  *
  * @example
  * ```typescript
  * const result = scaffoldWidget({
  *   addon_name: 'blog',
  *   widget_name: 'recent_posts',
- *   options: [
- *     { name: 'title', type: 'text', label: 'Заголовок', default: 'Последние записи' },
- *     { name: 'limit', type: 'number', label: 'Количество', default: 5 }
- *   ]
+ *   options: [{ name: 'limit', type: 'number', label: 'Количество', default: 5 }]
  * });
  * ```
  */
 export function scaffoldWidget(opts: ScaffoldWidgetOptions): ScaffoldResult {
   const { lowercase } = normalizeAddonName(opts.addon_name);
-  const widget = opts.widget_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  const Widget = widget
-    .split('_')
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('');
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(lowercase)) throw new Error('Invalid addon name');
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(opts.widget_name)) throw new Error('Invalid widget name');
+
+  const widget = opts.widget_name;
+  const Widget = camel(widget);
+  const Controller = camel(lowercase);
+  const theme = 'modern';
+
   const files: Record<string, string> = {};
 
   const options_config = {
@@ -324,41 +269,40 @@ export function scaffoldWidget(opts: ScaffoldWidgetOptions): ScaffoldResult {
     { name: 'limit', type: 'number' as const, label: 'Количество', default: 5 },
   ];
 
-  files[`${lowercase}/widgets/${widget}.php`] = generateWidgetClass(
+  const widgetDir = `package/system/controllers/${lowercase}/widgets/${widget}`;
+
+  files[`${widgetDir}/widget.php`] = generateWidgetClass(
     lowercase,
-    widget,
     Widget,
+    Controller,
     options,
-    options_config
+    options_config.with_cache
   );
-  files[`${lowercase}/widgets/${widget}.options.php`] = generateWidgetOptions(
-    widget,
-    Widget,
-    options
-  );
-  files[`${lowercase}/widgets/${widget}.html.php`] = generateWidgetTemplate(
-    widget,
-    Widget,
-    options
-  );
+  files[`${widgetDir}/options.form.php`] = generateWidgetOptions(Widget, Controller, options);
 
-  if (options_config.with_styles) {
-    files[`${lowercase}/widgets/${widget}.css`] = generateWidgetStyles(widget, options);
+  if (options_config.with_template) {
+    files[
+      `package/templates/${theme}/controllers/${lowercase}/widgets/${widget}/${widget}.tpl.php`
+    ] = generateWidgetTemplate(lowercase, widget, options_config.with_styles);
   }
-
-  files[`system/config/widgets/${widget}.php`] = generateWidgetConfig(
-    lowercase,
-    widget,
-    Widget,
-    options
-  );
 
   return {
     addon_name: lowercase,
     files,
     widget_name: widget,
+    widget_class: `widget${Controller}${Widget}`,
     options_count: options.length,
     options_config,
+    structure_notes: [
+      `Класс виджета: widget${Controller}${Widget} (файл system/controllers/${lowercase}/widgets/${widget}/widget.php)`,
+      `Форма опций: formWidget${Controller}${Widget}Options (файл options.form.php)`,
+      `Шаблон: templates/${theme}/controllers/${lowercase}/widgets/${widget}/${widget}.tpl.php`,
+      'Опции читаются через $this->getOption(), поля формы имеют префикс options:',
+    ],
+    limitations: [
+      'Виджет обращается к таблице {controller}_items — замените запрос на свою модель.',
+      'Права доступа, кэш-инвалидация и позиции виджета настраиваются в админке.',
+    ],
   };
 }
 

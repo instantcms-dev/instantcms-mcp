@@ -82,7 +82,7 @@ function generateLayoutTemplate(
  *
  * Оригинал: system/templates/${override.template}/controllers/${override.controller}/${override.action || 'index'}.tpl.php
  */
-
+?>
 `;
 
   if (useWrapper) {

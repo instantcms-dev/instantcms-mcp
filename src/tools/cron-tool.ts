@@ -101,30 +101,30 @@ require_once PATH . '/core/bootstrap.php';
       useLock
         ? `
 // Блокировка от повторного запуска
-\\$${name}_lock_file = cmsConfig::get('cache_path') . '/${name}_cron.lock';
+$${name}_lock_file = cmsConfig::get('cache_path') . '/${name}_cron.lock';
 
 function ${name}_is_locked() {
-    global \\$${name}_lock_file;
-    if (!file_exists(\\$${name}_lock_file)) {
+    global $${name}_lock_file;
+    if (!file_exists($${name}_lock_file)) {
         return false;
     }
-    $stat = stat(\\$${name}_lock_file);
+    $stat = stat($${name}_lock_file);
     if (time() - $stat['mtime'] > 3600) {
-        unlink(\\$${name}_lock_file);
+        unlink($${name}_lock_file);
         return false;
     }
     return true;
 }
 
 function ${name}_lock() {
-    global \\$${name}_lock_file;
-    touch(\\$${name}_lock_file);
+    global $${name}_lock_file;
+    touch($${name}_lock_file);
 }
 
 function ${name}_unlock() {
-    global \\$${name}_lock_file;
-    if (file_exists(\\$${name}_lock_file)) {
-        unlink(\\$${name}_lock_file);
+    global $${name}_lock_file;
+    if (file_exists($${name}_lock_file)) {
+        unlink($${name}_lock_file);
     }
 }
 
@@ -140,14 +140,14 @@ ${
   logExecution
     ? `
 // Логирование
-\\$${name}_log_file = cmsConfig::get('root_path') . '/cache/logs/${name}.log';
+$${name}_log_file = cmsConfig::get('root_path') . '/cache/logs/${name}.log';
 function ${name}_log($message) {
-    global \\$${name}_log_file;
-    $dir = dirname(\\$${name}_log_file);
+    global $${name}_log_file;
+    $dir = dirname($${name}_log_file);
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
-    file_put_contents(\\$${name}_log_file, date('Y-m-d H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND);
+    file_put_contents($${name}_log_file, date('Y-m-d H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND);
 }
 
 ${name}_log('Cron started');
@@ -211,16 +211,14 @@ ${taskElements}
 function generateLang(name: string, NAME: string, tasks: CronTask[]): string {
   const langEntries = tasks
     .map(t => {
-      return `    'LANG_${NAME}_TASK_${t.name.toUpperCase()}' => '${t.description ?? t.name}',`;
+      return `define('LANG_${NAME}_TASK_${t.name.toUpperCase()}', '${t.description ?? t.name}');`;
     })
     .join('\n');
 
   return `<?php
 // InstantCMS 2. ${name} language file
 
-return [
 ${langEntries}
-];
 `;
 }
 

@@ -288,7 +288,7 @@ class on${Name}FilterHook {
             ${Name}Filter::getInstance()->apply($model, $filters);
 
             // Сохраняем в сессию
-            cmsUser::sessionPut('${name}_filters', $filters);
+            cmsUser::sessionSet('${name}_filters', $filters);
         }
     }
 

@@ -103,9 +103,9 @@ function generateImportClass(
         case 'datetime':
           return `        '${f.field}' => isset($row['${f.label}']) ? date('Y-m-d H:i:s', strtotime($row['${f.label}'])) : null,`;
         case 'select':
-          return `        '${f.field}' => \\$row['${f.label}'] ?? null,`;
+          return `        '${f.field}' => $row['${f.label}'] ?? null,`;
         default:
-          return `        '${f.field}' => \\$row['${f.label}'] ?? null,`;
+          return `        '${f.field}' => $row['${f.label}'] ?? null,`;
       }
     })
     .join('\n');
@@ -113,7 +113,7 @@ function generateImportClass(
   const validation = fields
     .filter(f => f.required)
     .map(f => {
-      return `            if (empty(\\$item['${f.field}'])) {
+      return `            if (empty($item['${f.field}'])) {
                 throw new Exception('Поле ${f.label || f.field} обязательно для заполнения');
             }`;
     })
@@ -246,7 +246,7 @@ function generateExportClass(
 
   const fieldMapping = fields
     .map(f => {
-      return `            '${f.field}' => \\$item['${f.field}'],`;
+      return `            '${f.field}' => $item['${f.field}'],`;
     })
     .join('\n');
 

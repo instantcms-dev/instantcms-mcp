@@ -156,8 +156,9 @@ export function validateAddon(structure: Record<string, string>): object {
   const files = Object.keys(structure);
   const addonName = extractAddonName(structure);
 
-  // Обязательные файлы
-  const required = ['manifest.xml', 'install.php', 'uninstall.php', 'frontend.php'];
+  // Обязательные файлы. install.sql/install.php необязательны: SQL импортируется
+  // автоматически, install.php — только хук install_package(). uninstall-хука в ядре нет.
+  const required = ['manifest.xml', 'frontend.php'];
   for (const req of required) {
     if (!files.includes(req)) {
       errors.push(`Отсутствует обязательный файл: ${req}`);
@@ -231,34 +232,29 @@ export function validateAddon(structure: Record<string, string>): object {
     }
   }
 
-  // Проверки install.php
+  // Проверки install.php: в ICMS2 установщик вызывает функцию install_package()
   if (structure['install.php']) {
     const install = structure['install.php'];
-    if (!install.includes('cmsInstaller')) {
-      errors.push('install.php: класс должен наследовать cmsInstaller');
+    if (!/function\s+install_package\s*\(/.test(install)) {
+      errors.push(
+        'install.php: нужна функция install_package(array $install_options = []) — установщик ICMS2 вызывает именно её'
+      );
     }
-    if (!install.includes('public function install()')) {
-      errors.push('install.php: отсутствует метод install()');
+    if (install.includes('extends cmsInstaller')) {
+      errors.push(
+        'install.php: класс-установщик не поддерживается ICMS2; используйте функцию install_package()'
+      );
     }
-    // Проверка создания таблиц
-    if (!install.includes('createTable') && !install.includes('query')) {
-      warnings.push('install.php: не найдено создание таблиц (createTable или query)');
+    if (!install.includes('install.sql')) {
+      warnings.push('install.php: таблицы обычно создаются из install.sql (в корне пакета)');
     }
   }
 
-  // Проверки uninstall.php
+  // uninstall.php в ICMS2 не поддерживается: удаление выполняет администратор вручную
   if (structure['uninstall.php']) {
-    const uninstall = structure['uninstall.php'];
-    if (!uninstall.includes('cmsInstaller')) {
-      errors.push('uninstall.php: класс должен наследовать cmsInstaller');
-    }
-    if (!uninstall.includes('public function uninstall()')) {
-      errors.push('uninstall.php: отсутствует метод uninstall()');
-    }
-    // Проверка удаления таблиц
-    if (!uninstall.includes('dropTable')) {
-      warnings.push('uninstall.php: не найдено удаление таблиц (dropTable)');
-    }
+    warnings.push(
+      'uninstall.php: ядро ICMS2 не вызывает скрипт удаления — файл останется мёртвым кодом'
+    );
   }
 
   // Проверки хуков
@@ -1418,21 +1414,16 @@ export function scaffoldHook(params: {
   // Путь к файлу
   const filePath = `hooks/${hook_name}.php`;
 
-  // Генерация параметров для run метода
-  let paramsCode = '';
+  // Параметры хука описываем в docblock: в ICMS2 обработчик принимает $data.
   let paramsDoc = '';
+  let paramsHint = '';
   const returnCode = 'return $data;';
 
   if (systemHook) {
     const hookParams = systemHook.parameters;
     if (hookParams.length > 0 && hookParams[0].name !== '$data') {
       paramsDoc = hookParams.map(p => ` * @param ${p.type} ${p.name} ${p.description}`).join('\n');
-      paramsCode = hookParams
-        .map(p => {
-          const paramName = p.name.startsWith('$') ? p.name.slice(1) : p.name;
-          return `        ${paramName} = $data['${paramName}'] ?? null`;
-        })
-        .join(',\n');
+      paramsHint = hookParams.map(p => `        // ${p.name} — ${p.description}`).join('\n');
     }
   }
 
@@ -1450,8 +1441,8 @@ ${paramsDoc}
  */
 class ${className} extends cmsAction {
 
-    public function run(${paramsCode ? '\n' + paramsCode + '\n    ' : ''}) {
-
+    public function run($data) {
+${paramsHint ? '\n' + paramsHint + '\n' : ''}
 ${
   isFilter
     ? `        // Фильтр: модифицируйте $data и верните

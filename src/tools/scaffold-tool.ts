@@ -20,6 +20,7 @@ export function scaffoldAddon(opts: ScaffoldAddonOptions): object {
   const name = opts.name;
   const Name = name.split('_').map(capitalize).join('');
   const NAME = name.toUpperCase();
+  const hasBackend = opts.type === 'with_admin';
   const version = opts.version || '1.0.0';
   const author = opts.author || 'Author';
   const author_url = opts.author_url || 'https://example.com';
@@ -130,29 +131,28 @@ ${hookEntries || '        <!-- <hook controller="${name}" name="user_registered"
     </hooks>
 </addon>`;
 
-  // ── install.php / uninstall.php ───────────────────────────────────────────────
-  files[`${ctrl}/install.php`] = `<?php
+  // ── install.php (пакетный установщик) ─────────────────────────────────────────
+  // В ICMS2 2.18.2 установщик пакета вызывает ФУНКЦИИ install_package() и
+  // after_install_package() из install.php в корне пакета; install.sql
+  // импортируется автоматически. Отдельного uninstall-хука в ядре нет.
+  files['[pkg] install.php'] = `<?php
 
-class install${Name} extends cmsInstaller {
+/**
+ * Дополнительная инициализация при установке пакета.
+ * SQL из install.sql импортируется автоматически.
+ *
+ * @param array $install_options Опции установки из формы пакета
+ * @return bool|string true при успехе либо текст ошибки
+ */
+function install_package(array $install_options = []) {
+    return true;
+}
 
-    public function install() {
-        // SQL выполняется автоматически из install.sql при установке пакета.
-        // Здесь можно добавить дополнительную инициализацию:
-        // $this->addOption('${name}', 'perpage', 10);
-        return true;
-    }
-
-}`;
-
-  files[`${ctrl}/uninstall.php`] = `<?php
-
-class uninstall${Name} extends cmsInstaller {
-
-    public function uninstall() {
-        $this->db->query("DROP TABLE IF EXISTS \`{$this->db->prefix}${name}_items\`");
-        return true;
-    }
-
+/**
+ * Вызывается после завершения установки пакета.
+ */
+function after_install_package(array $install_options = []) {
+    return true;
 }`;
 
   // ── actions/index.php ────────────────────────────────────────────────────────
@@ -160,10 +160,10 @@ class uninstall${Name} extends cmsInstaller {
 
 class action${Name}Index extends cmsAction {
 
-    public function run() {
+    public function run($page = 1) {
 
-        $page    = $this->request->get('page', 1);
-        $perpage = $this->options['perpage'] ?? 10;
+        $page    = max(1, (int) $page);
+        $perpage = !empty($this->options['perpage']) ? (int) $this->options['perpage'] : 10;
 
         $total = $this->model->filterEqual('is_pub', 1)->getCount('${name}_items');
 
@@ -171,16 +171,16 @@ class action${Name}Index extends cmsAction {
             ->filterEqual('is_pub', 1)
             ->orderBy('date_pub', 'desc')
             ->limitPage($page, $perpage)
-            ->get('${name}_items');
+            ->get('${name}_items') ?: [];
 
-        $this->cms_template->setTitle(LANG_${NAME}_TITLE);
+        $this->cms_template->setPageTitle(LANG_${NAME}_TITLE);
 
-        // Шаблон: /templates/{theme}/controllers/${name}/index.tpl.php
         return $this->cms_template->render('index', [
-            'items'   => $items,
-            'total'   => $total,
-            'page'    => (int) $page,
-            'perpage' => (int) $perpage,
+            'items'    => $items,
+            'total'    => $total,
+            'page'     => $page,
+            'perpage'  => $perpage,
+            'page_url' => href_to('${name}'),
         ]);
     }
 
@@ -191,28 +191,39 @@ class action${Name}Index extends cmsAction {
 
 class action${Name}View extends cmsAction {
 
-    public function run() {
+    public function run($id = 0) {
 
-        $id   = $this->request->get('id', 0);
         $item = $this->model->getItemByField('${name}_items', 'id', (int) $id);
 
-        if (!$item || !$item['is_pub']) {
+        if (!$item || empty($item['is_pub'])) {
             return cmsCore::error404();
         }
 
         $item = cmsEventsManager::hook('${name}_before_item', $item);
 
-        $this->cms_template->setTitle($item['title']);
+        $this->cms_template->setPageTitle($item['title']);
+        $this->cms_template->setMeta('', $item['text'] ?? '');
         $this->cms_template->addBreadcrumb(LANG_${NAME}_TITLE, href_to('${name}'));
         $this->cms_template->addBreadcrumb($item['title']);
 
-        // Шаблон: /templates/{theme}/controllers/${name}/view.tpl.php
         return $this->cms_template->render('view', [
             'item' => $item,
         ]);
     }
 
 }`;
+
+  // ── Шаблоны темы ─────────────────────────────────────────────────────────────
+  const theme = 'modern';
+  const tpl = `package/templates/${theme}/controllers/${name}`;
+  files[`${tpl}/index.tpl.php`] = generateThemeIndex(name, NAME);
+  files[`${tpl}/view.tpl.php`] = generateThemeView(name, NAME);
+
+  // ── Шаблон дашборда бэкенда (тема админки) ───────────────────────────────────
+  if (hasBackend) {
+    files[`package/templates/admincoreui/controllers/${name}/index.tpl.php`] =
+      generateBackendIndexTemplate(NAME);
+  }
 
   // ── routes.php — только для with_routes ─────────────────────────────────────
   if (opts.type === 'with_routes') {
@@ -230,6 +241,9 @@ define('LANG_${NAME}_ADD',       'Добавить');
 define('LANG_${NAME}_EDIT',      'Редактировать');
 define('LANG_${NAME}_DELETE',    'Удалить');
 define('LANG_${NAME}_NOT_FOUND', 'Ничего не найдено');
+define('LANG_${NAME}_IS_PUB',    'Опубликовано');
+define('LANG_${NAME}_TEXT',      'Текст');
+define('LANG_${NAME}_PUBLISHED_ONLY', 'Только опубликованные');
 
 // Константы для бэкенда (рекомендуется префикс _CP_):
 define('LANG_${NAME}_CP_TITLE',  '${title}');
@@ -306,7 +320,7 @@ class on${Name}${hookCamel} extends cmsAction {
   // ── Виджет (if with_widget) ──────────────────────────────────────────────────
   if (opts.type === 'with_widget') {
     files[`${ctrl}/widgets/list/widget.php`] = generateWidget(name, Name);
-    files[`${ctrl}/widgets/list/options.form.php`] = generateWidgetOptionsForm(Name);
+    files[`${ctrl}/widgets/list/options.form.php`] = generateWidgetOptionsForm(Name, NAME);
   }
 
   return {
@@ -361,7 +375,7 @@ return [
     ]
 ];`,
     'main.tpl.php': `<!DOCTYPE html>
-<html lang="<?= LANG_CODE ?>">
+<html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -530,8 +544,7 @@ class action${Name}Index extends cmsAction {
 
         $stats = $this->model->getStats();
 
-        // Шаблон: /templates/admincoreui/controllers/${name}/index.tpl.php
-        return $this->cms_template->render([
+        return $this->cms_template->render('index', [
             'stats' => $stats,
         ]);
     }
@@ -643,7 +656,7 @@ class action${Name}ItemsAdd extends cmsAction {
 }
 
 // backend/grids/grid_items.php — ФУНКЦИЯ, не класс!
-function generateGridItems(name: string, _Name: string, _NAME: string): string {
+function generateGridItems(name: string, _Name: string, NAME: string): string {
   return `<?php
 // ВАЖНО: грид — это ФУНКЦИЯ, а не класс!
 // Имя функции = grid_ + значение $this->grid_name из экшена
@@ -679,7 +692,7 @@ function grid_items($controller) {
             }
         ],
         'is_pub' => [
-            'title'       => LANG_IS_PUB,
+            'title'       => LANG_${NAME}_IS_PUB,
             'width'       => 60,
             'flag'        => true,
             'flag_toggle' => href_to($controller->root_url, 'toggle_item', ['{id}', '${name}_items', 'is_pub'])
@@ -696,7 +709,7 @@ function grid_items($controller) {
             'title'   => LANG_DELETE,
             'class'   => 'text-danger',
             'icon'    => 'times-circle',
-            'confirm' => LANG_DELETE_CONFIRM,
+            'confirm' => LANG_DELETE_SELECTED_CONFIRM,
             'href'    => href_to($controller->root_url, 'items', ['delete', '{id}'])
         ]
     ];
@@ -710,7 +723,7 @@ function grid_items($controller) {
 }
 
 // backend/forms/form_item.php
-function generateFormItem(Name: string, _NAME: string): string {
+function generateFormItem(Name: string, NAME: string): string {
   return `<?php
 
 class form${Name}Item extends cmsForm {
@@ -728,14 +741,14 @@ class form${Name}Item extends cmsForm {
                         'rules' => [['required'], ['max_length', 255]]
                     ]),
                     new fieldHtml('text', [
-                        'title' => LANG_TEXT
+                        'title' => LANG_${NAME}_TEXT
                     ]),
                     new fieldDate('date_pub', [
                         'title'   => LANG_DATE_PUB,
                         'default' => date('Y-m-d H:i:s')
                     ]),
                     new fieldCheckbox('is_pub', [
-                        'title'   => LANG_IS_PUB,
+                        'title'   => LANG_${NAME}_IS_PUB,
                         'default' => 1
                     ])
                 ]
@@ -764,7 +777,7 @@ class form${Name}Options extends cmsForm {
                         'rules'   => [['required'], ['min', 1]]
                     ]),
                     new fieldCheckbox('use_moderation', [
-                        'title' => LANG_USE_MODERATION
+                        'title' => LANG_MODERATION
                     ])
                 ]
             ]
@@ -813,7 +826,7 @@ class widget${Name}List extends cmsWidget {
 
 // widgets/list/options.form.php
 // Класс: formWidget{Name}ListOptions (не formWidget{Name}List!)
-function generateWidgetOptionsForm(Name: string): string {
+function generateWidgetOptionsForm(Name: string, NAME: string): string {
   return `<?php
 // Класс опций виджета: formWidget + PascalCase(controller) + PascalCase(widget) + Options
 
@@ -833,7 +846,7 @@ class formWidget${Name}ListOptions extends cmsForm {
                     new fieldList('options:is_pub', [
                         'title'   => LANG_SHOW,
                         'default' => 1,
-                        'items'   => [1 => LANG_PUBLISHED_ONLY, 0 => LANG_ALL]
+                        'items'   => [1 => LANG_${NAME}_PUBLISHED_ONLY, 0 => LANG_ALL]
                     ])
                 ]
             ]
@@ -870,4 +883,109 @@ function routes_${name}() {
     ];
 
 }`;
+}
+
+/**
+ * Шаблон списка: /templates/{theme}/controllers/{addon}/index.tpl.php
+ * Использует конвенции ICMS2: html(), html_date(), html_pagebar().
+ */
+function generateThemeIndex(name: string, NAME: string): string {
+  return `<?php
+/**
+ * @var array  $items
+ * @var int    $total
+ * @var int    $page
+ * @var int    $perpage
+ * @var string $page_url
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_TITLE); ?></h1>
+
+<?php if ($items) { ?>
+    <div class="row">
+        <?php foreach ($items as $item) { ?>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h5 mb-2">
+                            <a href="<?php echo href_to('${name}', 'view', $item['id']); ?>">
+                                <?php echo html($item['title']); ?>
+                            </a>
+                        </h2>
+                        <div class="text-muted small"><?php echo html_date($item['date_pub'], true); ?></div>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
+
+    <?php echo html_pagebar($page, $perpage, $total, $page_url); ?>
+<?php } else { ?>
+    <p class="text-muted"><?php echo html(LANG_${NAME}_NOT_FOUND); ?></p>
+<?php } ?>
+`;
+}
+
+/**
+ * Шаблон материала: /templates/{theme}/controllers/{addon}/view.tpl.php
+ */
+function generateThemeView(name: string, NAME: string): string {
+  return `<?php
+/**
+ * @var array $item
+ */
+?>
+<article>
+    <h1><?php echo html($item['title']); ?></h1>
+
+    <div class="text-muted small mb-3"><?php echo html_date($item['date_pub'], true); ?></div>
+
+    <?php if (!empty($item['text'])) { ?>
+        <div class="mb-4"><?php echo html($item['text']); ?></div>
+    <?php } ?>
+
+    <p>
+        <a href="<?php echo href_to('${name}'); ?>"><?php echo html(LANG_${NAME}_TITLE); ?></a>
+    </p>
+</article>
+`;
+}
+
+/**
+ * Дашборд бэкенда: /templates/admincoreui/controllers/{addon}/index.tpl.php
+ * Отрисовывается админ-темой admincoreui.
+ */
+function generateBackendIndexTemplate(NAME: string): string {
+  return `<?php
+/**
+ * @var array $stats
+ */
+?>
+<h1><?php echo html(LANG_${NAME}_CP_TITLE); ?></h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted"><?php echo html(LANG_${NAME}_CP_ITEMS); ?></div>
+                <div class="h3 mb-0"><?php echo (int) ($stats['total'] ?? 0); ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted"><?php echo html(LANG_${NAME}_IS_PUB); ?></div>
+                <div class="h3 mb-0"><?php echo (int) ($stats['published'] ?? 0); ?></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="mt-3">
+    <a class="btn btn-primary" href="<?php echo href_to($this->controller->root_url, 'items'); ?>">
+        <?php echo html(LANG_${NAME}_CP_ITEMS); ?>
+    </a>
+</p>
+`;
 }

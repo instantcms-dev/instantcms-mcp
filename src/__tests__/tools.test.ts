@@ -128,9 +128,8 @@ describe('Addon Tool', () => {
   test('validateAddon passes valid addon', () => {
     const result = validateAddon({
       'manifest.xml': '<addon><name>test</name><title>Test</title><version>1.0</version></addon>',
-      'install.php': 'class installerTest extends cmsInstaller { public function install() {} }',
-      'uninstall.php':
-        'class uninstallerTest extends cmsInstaller { public function uninstall() {} }',
+      'install.php':
+        '<?php function install_package(array $install_options = []) { /* install.sql */ return true; }',
       'frontend.php': 'class test extends cmsFrontend { public function actionIndex() {} }',
     }) as any;
     expect(result.is_valid).toBe(true);
@@ -402,9 +401,9 @@ describe('Grid Tool', () => {
       grid_name: 'items',
       columns: [{ name: 'title', title: 'Title' }],
       actions: [
-        { title: 'VIEW', href: "href_to('test_grid', '{id}')", icon: 'eye' },
+        { title: 'LANG_VIEW', href: "href_to('test_grid', '{id}')", icon: 'eye' },
         {
-          title: 'EDIT',
+          title: 'LANG_EDIT',
           href: "href_to($controller->root_url, 'items', ['edit', '{id}'])",
           icon: 'pen',
         },
@@ -1437,9 +1436,16 @@ describe('Widget Tool', () => {
     }) as any;
     expect(result).toHaveProperty('addon_name', 'blog');
     expect(result).toHaveProperty('widget_name', 'recent_posts');
-    expect('blog/widgets/recent_posts.php' in result.files).toBe(true);
-    expect('blog/widgets/recent_posts.options.php' in result.files).toBe(true);
-    expect('blog/widgets/recent_posts.html.php' in result.files).toBe(true);
+    expect('package/system/controllers/blog/widgets/recent_posts/widget.php' in result.files).toBe(
+      true
+    );
+    expect(
+      'package/system/controllers/blog/widgets/recent_posts/options.form.php' in result.files
+    ).toBe(true);
+    expect(
+      'package/templates/modern/controllers/blog/widgets/recent_posts/recent_posts.tpl.php' in
+        result.files
+    ).toBe(true);
   });
 
   test('scaffoldWidget generates widget class with options', () => {
@@ -1451,18 +1457,29 @@ describe('Widget Tool', () => {
         { name: 'limit', type: 'number', label: 'Количество', default: 5 },
       ],
     }) as any;
-    const widgetFile = result.files['news/widgets/latest_news.php'];
-    expect(widgetFile).toContain('LatestNewsWidget');
-    expect(widgetFile).toContain('getOptions');
+    const widgetFile =
+      result.files['package/system/controllers/news/widgets/latest_news/widget.php'];
+    expect(widgetFile).toContain('class widgetNewsLatestNews extends cmsWidget');
+    expect(widgetFile).toContain("getOption('limit', 5)");
+
+    const optionsFile =
+      result.files['package/system/controllers/news/widgets/latest_news/options.form.php'];
+    expect(optionsFile).toContain('class formWidgetNewsLatestNewsOptions extends cmsForm');
+    expect(optionsFile).toContain("'options:limit'");
   });
 
-  test('scaffoldWidget with styles generates CSS', () => {
+  test('scaffoldWidget with styles inlines styles into the template', () => {
     const result = scaffoldWidget({
       addon_name: 'test_widget',
       widget_name: 'custom',
       options_config: { with_styles: true },
     }) as any;
-    expect('test_widget/widgets/custom.css' in result.files).toBe(true);
+    const template =
+      result.files[
+        'package/templates/modern/controllers/test_widget/widgets/custom/custom.tpl.php'
+      ];
+    expect(template).toContain('<style>');
+    expect(template).toContain('widget_test_widget_custom');
   });
 });
 
@@ -1674,7 +1691,8 @@ describe('Migration Tool', () => {
       { name: 'created_at', type: 'datetime' },
     ]) as any;
     expect(result.sql).toContain('NOT NULL');
-    expect(result.install_php).toContain('createTable');
+    expect(result.install_php).toContain('<?php');
+    expect(result.install_php).toContain('install_package');
   });
 
   test('generateFieldSuggestions returns suggestions', () => {

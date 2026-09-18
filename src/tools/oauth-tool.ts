@@ -340,7 +340,8 @@ ${
 
     public function redirectToProvider($provider) {
         $auth_url = $this->client->getAuthUrl($provider);
-        cmsCore::redirect($auth_url);
+        cmsCore::getInstance()->response->redirect($auth_url);
+        exit;
     }
 }`;
 }

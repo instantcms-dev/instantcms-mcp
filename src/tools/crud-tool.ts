@@ -138,7 +138,7 @@ function capitalize(str: string): string {
 function generateModel(name: string, Name: string, useCategory: boolean): string {
   const categoryMethods = useCategory
     ? `
-    public function getCategoryBySlug(string $slug) {
+    public function getItemCategoryBySlug(string $slug) {
         return $this->getItemByField('${name}_categories', 'slug', $slug);
     }
 
@@ -405,7 +405,7 @@ class action${Name}Category extends cmsAction {
 
     public function run($slug = '') {
 
-        $category = $this->model->getCategoryBySlug((string) $slug);
+        $category = $this->model->getItemCategoryBySlug((string) $slug);
 
         if (!$category) {
             return cmsCore::error404();

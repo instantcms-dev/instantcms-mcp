@@ -286,7 +286,7 @@ class backend${nameCapital}Permissions extends cmsBackend {
     public function actionIndex() {
         $this->renderTemplate('permissions', [
             'permissions' => ${nameCapital}Permissions::getInstance()->getAvailablePermissions(),
-            'roles' => $this->model->getRoles(),
+            'roles' => cmsCore::getModel('users')->getGroups(false),
         ]);
     }
 

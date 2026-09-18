@@ -26,8 +26,7 @@ export const controllerDirectoryLayout = `
 ├── backend.php                      ← class backend{Name} extends cmsBackend
 ├── model.php                        ← class model{Name} extends cmsModel
 ├── manifest.xml                     ← метаданные, хуки, зависимости
-├── install.php                      ← class install{Name} extends cmsInstaller
-├── uninstall.php                    ← class uninstall{Name} extends cmsInstaller
+├── install.php                      ← function install_package() (корень пакета)
 ├── routes.php                       ← function routes_{name}() { return [...] }
 ├── compatibility.php                ← trait для обратной совместимости (опц.)
 │
@@ -125,9 +124,10 @@ backend/model.php: class modelBackend{Name} extends model{Name}
 Формы опций виджетов (widgets/{widget_name}/options.form.php):
   → class formWidget{Name}{WidgetName}Options extends cmsForm
 
-Установщик:
-  install.php   → class install{Name} extends cmsInstaller
-  uninstall.php → class uninstall{Name} extends cmsInstaller
+Установщик (ICMS2 2.18.2):
+  install.sql   → импортируется автоматически из корня пакета
+  install.php   → function install_package(array $install_options = [])
+  uninstall.php → не поддерживается ядром (удаление вручную)
 
 Примеры для addon name = "catalog":
   frontend.php → class catalog extends cmsFrontend
@@ -143,19 +143,20 @@ backend/model.php: class modelBackend{Name} extends model{Name}
 
 export const addonStructures: Record<string, AddonStructure> = {
   basic: {
-    type: "basic",
-    description: "Минимальное дополнение — только фронтенд без админ-панели",
+    type: 'basic',
+    description: 'Минимальное дополнение — только фронтенд без админ-панели',
     notes: [
-      "Языковой файл расположен ВНЕ папки контроллера: /system/languages/ru/controllers/{name}/{name}.php",
-      "Шаблоны расположены в /templates/{theme}/controllers/{name}/{action}.tpl.php",
-      "Экшены — отдельные файлы в actions/*.php, один файл = один экшен",
-      "frontend.php использует route() + runAction(), не содержит встроенных методов-экшенов"
+      'Языковой файл расположен ВНЕ папки контроллера: /system/languages/ru/controllers/{name}/{name}.php',
+      'Шаблоны расположены в /templates/{theme}/controllers/{name}/{action}.tpl.php',
+      'Экшены — отдельные файлы в actions/*.php, один файл = один экшен',
+      'frontend.php использует route() + runAction(), не содержит встроенных методов-экшенов',
     ],
     files: [
       {
-        path: "frontend.php",
+        path: 'frontend.php',
         required: true,
-        description: "Основной контроллер фронтенда. Наследует cmsFrontend. Содержит только route() + бизнес-логику. Экшены вынесены в отдельные файлы actions/*.php.",
+        description:
+          'Основной контроллер фронтенда. Наследует cmsFrontend. Содержит только route() + бизнес-логику. Экшены вынесены в отдельные файлы actions/*.php.',
         template: `<?php
 /**
  * @property \\model{Name} $model
@@ -168,12 +169,13 @@ class {name} extends cmsFrontend {
     // parseRoute() разбирает URI и определяет экшен
     // runAction() запускает найденный экшен из actions/{action}.php
 
-}`
+}`,
       },
       {
-        path: "actions/index.php",
+        path: 'actions/index.php',
         required: true,
-        description: "Экшен главной страницы. Имя класса: action{Name}Index. Все экшены наследуют cmsAction и имеют метод run().",
+        description:
+          'Экшен главной страницы. Имя класса: action{Name}Index. Все экшены наследуют cmsAction и имеют метод run().',
         template: `<?php
 
 class action{Name}Index extends cmsAction {
@@ -205,12 +207,12 @@ class action{Name}Index extends cmsAction {
         ]);
     }
 
-}`
+}`,
       },
       {
-        path: "actions/view.php",
+        path: 'actions/view.php',
         required: false,
-        description: "Экшен просмотра одного элемента",
+        description: 'Экшен просмотра одного элемента',
         template: `<?php
 
 class action{Name}View extends cmsAction {
@@ -231,12 +233,13 @@ class action{Name}View extends cmsAction {
         ]);
     }
 
-}`
+}`,
       },
       {
-        path: "model.php",
+        path: 'model.php',
         required: true,
-        description: "Модель базы данных. Наследует cmsModel. Содержит специфичные запросы для контроллера.",
+        description:
+          'Модель базы данных. Наследует cmsModel. Содержит специфичные запросы для контроллера.',
         template: `<?php
 
 class model{Name} extends cmsModel {
@@ -258,12 +261,13 @@ class model{Name} extends cmsModel {
                     ->getItem($table);
     }
 
-}`
+}`,
       },
       {
-        path: "[ВНЕШНИЙ] system/languages/ru/controllers/{name}/{name}.php",
+        path: '[ВНЕШНИЙ] system/languages/ru/controllers/{name}/{name}.php',
         required: true,
-        description: "Языковой файл. ВАЖНО: находится ВНЕ папки контроллера, в /system/languages/{lang}/controllers/{name}/",
+        description:
+          'Языковой файл. ВАЖНО: находится ВНЕ папки контроллера, в /system/languages/{lang}/controllers/{name}/',
         template: `<?php
 // Файл: /system/languages/ru/controllers/{name}/{name}.php
 // ВАЖНО: файл расположен в /system/languages/, а НЕ в /system/controllers/!
@@ -277,12 +281,12 @@ define('LANG_{NAME}_NOT_FOUND', 'Ничего не найдено');
 // Константы для бэкенда (префикс _CP_)
 define('LANG_{NAME}_CP_TITLE',  'Моё дополнение');
 define('LANG_{NAME}_CP_ITEMS',  'Элементы');
-define('LANG_{NAME}_CP_ADD',    'Добавить элемент');`
+define('LANG_{NAME}_CP_ADD',    'Добавить элемент');`,
       },
       {
-        path: "manifest.xml",
+        path: 'manifest.xml',
         required: true,
-        description: "Метаданные дополнения: название, версия, зависимости, хуки",
+        description: 'Метаданные дополнения: название, версия, зависимости, хуки',
         template: `<?xml version="1.0" encoding="utf-8"?>
 <addon>
     <name>{name}</name>
@@ -302,75 +306,62 @@ define('LANG_{NAME}_CP_ADD',    'Добавить элемент');`
         <!-- Регистрация хуков: -->
         <!-- <hook controller="{name}" name="content_after_add_approve" /> -->
     </hooks>
-</addon>`
+</addon>`,
       },
       {
-        path: "install.php",
-        required: true,
-        description: "Скрипт установки. Создаёт таблицы БД через $this->db->query().",
-        template: `<?php
-
-class install{Name} extends cmsInstaller {
-
-    public function install() {
-
-        $this->db->query("CREATE TABLE IF NOT EXISTS \`{prefix}{name}_items\` (
-            \`id\`       int(10) unsigned NOT NULL AUTO_INCREMENT,
-            \`user_id\`  int(10) unsigned NOT NULL DEFAULT '0',
-            \`title\`    varchar(255) NOT NULL DEFAULT '',
-            \`text\`     text,
-            \`date_pub\` datetime NOT NULL,
-            \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT '1',
-            PRIMARY KEY (\`id\`),
-            KEY \`user_id\` (\`user_id\`),
-            KEY \`is_pub\` (\`is_pub\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-        return true;
-    }
-
-}`
+        path: 'install.sql',
+        required: false,
+        description: 'SQL-дамп, импортируется автоматически из корня пакета при установке.',
+        template: `-- Замените cms_ на реальный префикс БД из system/config/config.php
+CREATE TABLE IF NOT EXISTS \`cms_{name}_items\` (
+    \`id\`       int(10) unsigned NOT NULL AUTO_INCREMENT,
+    \`user_id\`  int(10) unsigned NOT NULL DEFAULT 0,
+    \`title\`    varchar(255) NOT NULL DEFAULT '',
+    \`text\`     text,
+    \`date_pub\` datetime NOT NULL,
+    \`is_pub\`   tinyint(1) unsigned NOT NULL DEFAULT 1,
+    PRIMARY KEY (\`id\`),
+    KEY \`user_id\` (\`user_id\`),
+    KEY \`is_pub\` (\`is_pub\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
       },
       {
-        path: "uninstall.php",
-        required: true,
-        description: "Скрипт удаления. Удаляет таблицы и данные.",
+        path: 'install.php',
+        required: false,
+        description: 'Необязательная логика установки. Ядро вызывает функцию install_package().',
         template: `<?php
 
-class uninstall{Name} extends cmsInstaller {
-
-    public function uninstall() {
-        $this->db->query("DROP TABLE IF EXISTS \`{prefix}{name}_items\`");
-        return true;
-    }
-
-}`
-      }
-    ]
+function install_package(array $install_options = []) {
+    return true;
+}`,
+      },
+    ],
   },
 
   with_admin: {
-    type: "with_admin",
-    description: "Дополнение с полноценной админ-панелью: backend.php + backend/actions/ + backend/grids/ + backend/forms/",
+    type: 'with_admin',
+    description:
+      'Дополнение с полноценной админ-панелью: backend.php + backend/actions/ + backend/grids/ + backend/forms/',
     notes: [
-      "backend.php содержит getBackendMenu() и before() — НЕ содержит методы-экшены",
-      "Каждый бэкенд экшен — отдельный файл в backend/actions/",
-      "Списки используют trait listgrid: table_name + grid_name + tool_buttons в __construct()",
-      "Формы используют trait formItem: table_name + form_name + success_url в __construct()",
+      'backend.php содержит getBackendMenu() и before() — НЕ содержит методы-экшены',
+      'Каждый бэкенд экшен — отдельный файл в backend/actions/',
+      'Списки используют trait listgrid: table_name + grid_name + tool_buttons в __construct()',
+      'Формы используют trait formItem: table_name + form_name + success_url в __construct()',
       "Гриды — ФУНКЦИИ (не классы): function grid_{name}($controller) { return ['options'=>..., 'columns'=>..., 'actions'=>...] }",
-      "Формы для бэкенда — КЛАССЫ: class form{Name}Item extends cmsForm { public function init($do, ...) {...} }"
+      'Формы для бэкенда — КЛАССЫ: class form{Name}Item extends cmsForm { public function init($do, ...) {...} }',
     ],
     files: [
       {
-        path: "frontend.php",
+        path: 'frontend.php',
         required: true,
-        description: "Фронтенд контроллер (см. basic)",
-        template: `// Аналогично basic, см. выше`
+        description: 'Фронтенд контроллер (см. basic)',
+        template: `// Аналогично basic, см. выше`,
       },
       {
-        path: "backend.php",
+        path: 'backend.php',
         required: true,
-        description: "Контроллер бэкенда. Содержит getBackendMenu(), before(), опции. НЕ содержит inline экшены — они в backend/actions/.",
+        description:
+          'Контроллер бэкенда. Содержит getBackendMenu(), before(), опции. НЕ содержит inline экшены — они в backend/actions/.',
         template: `<?php
 /**
  * @property \\modelBackend{Name} $model
@@ -433,12 +424,13 @@ class backend{Name} extends cmsBackend {
         ];
     }
 
-}`
+}`,
       },
       {
-        path: "backend/model.php",
+        path: 'backend/model.php',
         required: false,
-        description: "Расширение модели для бэкенда. Добавляет JOIN-ы и агрегации для отображения в гридах.",
+        description:
+          'Расширение модели для бэкенда. Добавляет JOIN-ы и агрегации для отображения в гридах.',
         template: `<?php
 /**
  * Расширение модели для нужд бэкенда
@@ -459,12 +451,13 @@ class modelBackend{Name} extends model{Name} {
                     ->get('{name}_items');
     }
 
-}`
+}`,
       },
       {
-        path: "backend/actions/items.php",
+        path: 'backend/actions/items.php',
         required: true,
-        description: "Бэкенд экшен — список элементов. Использует trait listgrid. Вся логика через свойства в __construct().",
+        description:
+          'Бэкенд экшен — список элементов. Использует trait listgrid. Вся логика через свойства в __construct().',
         template: `<?php
 
 class action{Name}Items extends cmsAction {
@@ -501,12 +494,13 @@ class action{Name}Items extends cmsAction {
         $this->external_action_prefix = 'items_';
     }
 
-}`
+}`,
       },
       {
-        path: "backend/actions/items_add.php",
+        path: 'backend/actions/items_add.php',
         required: true,
-        description: "Бэкенд экшен — добавление/редактирование. Использует trait formItem. Обрабатывает и add, и edit через один файл.",
+        description:
+          'Бэкенд экшен — добавление/редактирование. Использует trait formItem. Обрабатывает и add, и edit через один файл.',
         template: `<?php
 
 class action{Name}ItemsAdd extends cmsAction {
@@ -549,12 +543,12 @@ class action{Name}ItemsAdd extends cmsAction {
         // $this->update_callback = function($data) { ... };
     }
 
-}`
+}`,
       },
       {
-        path: "backend/actions/index.php",
+        path: 'backend/actions/index.php',
         required: false,
-        description: "Дашборд бэкенда (главная страница раздела). Кастомный экшен без трейтов.",
+        description: 'Дашборд бэкенда (главная страница раздела). Кастомный экшен без трейтов.',
         template: `<?php
 /**
  * @property \\modelBackend{Name} $model
@@ -579,12 +573,13 @@ class action{Name}Index extends cmsAction {
         ]);
     }
 
-}`
+}`,
       },
       {
-        path: "backend/grids/grid_items.php",
+        path: 'backend/grids/grid_items.php',
         required: true,
-        description: "Определение грида для списка. ФУНКЦИЯ, не класс. Возвращает массив с options, columns, actions.",
+        description:
+          'Определение грида для списка. ФУНКЦИЯ, не класс. Возвращает массив с options, columns, actions.',
         template: `<?php
 // ВАЖНО: грид — это ФУНКЦИЯ, не класс!
 // Имя функции = grid_ + имя грида (то, что указано в $this->grid_name)
@@ -707,12 +702,13 @@ function grid_items($controller) {
         'columns' => $columns,
         'actions' => $actions
     ];
-}`
+}`,
       },
       {
-        path: "backend/forms/form_item.php",
+        path: 'backend/forms/form_item.php',
         required: true,
-        description: "Форма добавления/редактирования элемента в бэкенде. Класс наследует cmsForm. Метод init($do, ...) принимает 'add' или 'edit'.",
+        description:
+          "Форма добавления/редактирования элемента в бэкенде. Класс наследует cmsForm. Метод init($do, ...) принимает 'add' или 'edit'.",
         template: `<?php
 
 class form{Name}Item extends cmsForm {
@@ -779,12 +775,13 @@ class form{Name}Item extends cmsForm {
         ];
     }
 
-}`
+}`,
       },
       {
-        path: "backend/forms/form_options.php",
+        path: 'backend/forms/form_options.php',
         required: false,
-        description: "Форма настроек дополнения. Используется автоматически при useDefaultOptionsAction = true.",
+        description:
+          'Форма настроек дополнения. Используется автоматически при useDefaultOptionsAction = true.',
         template: `<?php
 
 class form{Name}Options extends cmsForm {
@@ -808,25 +805,25 @@ class form{Name}Options extends cmsForm {
         ];
     }
 
-}`
-      }
-    ]
+}`,
+      },
+    ],
   },
 
   with_hooks: {
-    type: "with_hooks",
-    description: "Дополнение, интегрирующееся с другими компонентами через хуки системы событий",
+    type: 'with_hooks',
+    description: 'Дополнение, интегрирующееся с другими компонентами через хуки системы событий',
     notes: [
-      "Каждый хук — отдельный файл в hooks/, имя файла = имя хука",
-      "Класс: on{AddonName}{HookName} (CamelCase имя хука)",
-      "Хук ДОЛЖЕН быть зарегистрирован в manifest.xml",
-      "Хук ОБЯЗАТЕЛЬНО должен возвращать $data (для filter-хуков)"
+      'Каждый хук — отдельный файл в hooks/, имя файла = имя хука',
+      'Класс: on{AddonName}{HookName} (CamelCase имя хука)',
+      'Хук ДОЛЖЕН быть зарегистрирован в manifest.xml',
+      'Хук ОБЯЗАТЕЛЬНО должен возвращать $data (для filter-хуков)',
     ],
     files: [
       {
-        path: "hooks/content_after_add_approve.php",
+        path: 'hooks/content_after_add_approve.php',
         required: true,
-        description: "Пример хука. Файл = имя хука. Класс: on{Name}ContentAfterAddApprove.",
+        description: 'Пример хука. Файл = имя хука. Класс: on{Name}ContentAfterAddApprove.',
         template: `<?php
 // Файл: hooks/content_after_add_approve.php
 // Хук срабатывает после одобрения нового материала контента
@@ -857,12 +854,12 @@ class on{Name}ContentAfterAddApprove extends cmsAction {
         return $data;
     }
 
-}`
+}`,
       },
       {
-        path: "hooks/user_registered.php",
+        path: 'hooks/user_registered.php',
         required: false,
-        description: "Пример action-хука (не возвращает данные)",
+        description: 'Пример action-хука (не возвращает данные)',
         template: `<?php
 // action-хук: вызывается как событие, возврат не обязателен
 
@@ -881,12 +878,12 @@ class on{Name}UserRegistered extends cmsAction {
         return $data;
     }
 
-}`
+}`,
       },
       {
-        path: "manifest.xml (с хуками)",
+        path: 'manifest.xml (с хуками)',
         required: true,
-        description: "Хуки должны быть зарегистрированы в manifest.xml",
+        description: 'Хуки должны быть зарегистрированы в manifest.xml',
         template: `<?xml version="1.0" encoding="utf-8"?>
 <addon>
     <name>{name}</name>
@@ -895,24 +892,25 @@ class on{Name}UserRegistered extends cmsAction {
         <hook controller="{name}" name="content_after_add_approve" />
         <hook controller="{name}" name="user_registered" />
     </hooks>
-</addon>`
-      }
-    ]
+</addon>`,
+      },
+    ],
   },
 
   with_routes: {
-    type: "with_routes",
-    description: "Дополнение с кастомными маршрутами URL. routes.php — функция, возвращающая массив правил.",
+    type: 'with_routes',
+    description:
+      'Дополнение с кастомными маршрутами URL. routes.php — функция, возвращающая массив правил.',
     notes: [
-      "Функция routes_{name}() должна возвращать массив маршрутов",
-      "Паттерн — регулярное выражение, числовые ключи — карта capture-групп к параметрам",
-      "action — имя экшена (файл actions/{action}.php, класс action{Name}{Action})"
+      'Функция routes_{name}() должна возвращать массив маршрутов',
+      'Паттерн — регулярное выражение, числовые ключи — карта capture-групп к параметрам',
+      'action — имя экшена (файл actions/{action}.php, класс action{Name}{Action})',
     ],
     files: [
       {
-        path: "routes.php",
+        path: 'routes.php',
         required: false,
-        description: "Кастомные маршруты URL. Функция routes_{name}() возвращает массив правил.",
+        description: 'Кастомные маршруты URL. Функция routes_{name}() возвращает массив правил.',
         template: `<?php
 
 function routes_{name}() {
@@ -947,27 +945,28 @@ function routes_{name}() {
         ]
     ];
 
-}`
-      }
-    ]
+}`,
+      },
+    ],
   },
 
   with_widget: {
-    type: "with_widget",
-    description: "Дополнение с виджетом для публичных страниц. Виджет: widget.php + options.form.php.",
+    type: 'with_widget',
+    description:
+      'Дополнение с виджетом для публичных страниц. Виджет: widget.php + options.form.php.',
     notes: [
-      "Класс виджета: widget{Name}{WidgetName} extends cmsWidget",
-      "Метод run() возвращает массив переменных для шаблона или false (не выводить)",
-      "Шаблон виджета: /templates/{theme}/controllers/{name}/{widget_name}.tpl.php",
+      'Класс виджета: widget{Name}{WidgetName} extends cmsWidget',
+      'Метод run() возвращает массив переменных для шаблона или false (не выводить)',
+      'Шаблон виджета: /templates/{theme}/controllers/{name}/{widget_name}.tpl.php',
       "Опции читаются через $this->getOption('key', default)",
-      "Для отключения кэша: public $is_cacheable = false",
-      "Доступны: $this->cms_user, $this->cms_template, $this->cms_config, $this->cms_core"
+      'Для отключения кэша: public $is_cacheable = false',
+      'Доступны: $this->cms_user, $this->cms_template, $this->cms_config, $this->cms_core',
     ],
     files: [
       {
-        path: "widgets/{widget_name}/widget.php",
+        path: 'widgets/{widget_name}/widget.php',
         required: true,
-        description: "Класс виджета. Наследует cmsWidget. Метод run() — основная логика.",
+        description: 'Класс виджета. Наследует cmsWidget. Метод run() — основная логика.',
         template: `<?php
 /**
  * Виджет списка элементов
@@ -1009,12 +1008,13 @@ class widget{Name}List extends cmsWidget {
         ];
     }
 
-}`
+}`,
       },
       {
-        path: "widgets/{widget_name}/options.form.php",
+        path: 'widgets/{widget_name}/options.form.php',
         required: false,
-        description: "Форма настроек виджета в админке. Класс: formWidget{Name}{WidgetName}Options.",
+        description:
+          'Форма настроек виджета в админке. Класс: formWidget{Name}{WidgetName}Options.',
         template: `<?php
 // ВАЖНО: класс формы = formWidget + PascalCase(controller) + PascalCase(widget_name) + Options
 
@@ -1051,18 +1051,20 @@ class formWidget{Name}ListOptions extends cmsForm {
         ];
     }
 
-}`
-      }
-    ]
-  }
+}`,
+      },
+    ],
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // СТРУКТУРА ШАБЛОНА (ТЕМЫ)
 // ─────────────────────────────────────────────────────────────────────────────
 export const templateStructure = {
-  description: "Структура шаблона (темы) для InstantCMS. Все шаблоны в /templates/{theme}/. Бэкенд-шаблоны контроллеров: /templates/{theme}/controllers/{name}/backend/{action}.tpl.php. Тема admincoreui предоставляет только layout-оболочку (navbar/sidebar), а НЕ шаблоны контента контроллеров.",
-  install_note: "Шаблоны находятся в /templates/, а НЕ в /system/templates/. Бэкенд-шаблоны в подпапке backend/ внутри папки контроллера frontend-темы.",
+  description:
+    'Структура шаблона (темы) для InstantCMS. Все шаблоны в /templates/{theme}/. Бэкенд-шаблоны контроллеров: /templates/{theme}/controllers/{name}/backend/{action}.tpl.php. Тема admincoreui предоставляет только layout-оболочку (navbar/sidebar), а НЕ шаблоны контента контроллеров.',
+  install_note:
+    'Шаблоны находятся в /templates/, а НЕ в /system/templates/. Бэкенд-шаблоны в подпапке backend/ внутри папки контроллера frontend-темы.',
   directory_layout: `
 /templates/{theme_name}/
 ├── manifest.php                          ← ОБЯЗАТЕЛЬНО: метаданные шаблона
@@ -1140,9 +1142,12 @@ export const templateStructure = {
   LANG_CODE                         — код активного языка (ru, en, ...)
 `,
   inheritance: {
-    description: "Система наследования шаблонов через manifest.php. Тема может наследовать файлы из других тем.",
-    chain_resolution: "Алгоритм: setInheritNames() строит [default, ...inherited, current] → reverses → current проверяется ПЕРВЫМ. Первое найденное совпадение выигрывает.",
-    admincoreui_role: "admincoreui — ТОЛЬКО layout-оболочка для бэкенда (admin.tpl.php содержит navbar + sidebar Bootstrap 4 CoreUI). Шаблоны контента контроллеров находятся в frontend-теме (modern/controllers/{name}/backend/).",
+    description:
+      'Система наследования шаблонов через manifest.php. Тема может наследовать файлы из других тем.',
+    chain_resolution:
+      'Алгоритм: setInheritNames() строит [default, ...inherited, current] → reverses → current проверяется ПЕРВЫМ. Первое найденное совпадение выигрывает.',
+    admincoreui_role:
+      'admincoreui — ТОЛЬКО layout-оболочка для бэкенда (admin.tpl.php содержит navbar + sidebar Bootstrap 4 CoreUI). Шаблоны контента контроллеров находятся в frontend-теме (modern/controllers/{name}/backend/).',
     manifest_inherit_example: `<?php
 // templates/modern/manifest.php
 return [
@@ -1178,13 +1183,13 @@ $this->renderLayoutChild('scheme', ['rows' => $rows]);
     inheritance_chain_example: [
       "modern: 'inherit' => ['admincoreui'] — frontend-тема, наследует layout из admincoreui",
       "admincoreui: 'inherit' => ['modern'] — backend layout, наследует компоненты из modern",
-      "Поиск файла шаблона: modern → admincoreui → default (current FIRST)"
-    ]
+      'Поиск файла шаблона: modern → admincoreui → default (current FIRST)',
+    ],
   },
   required_files: [
     {
-      path: "manifest.php",
-      description: "Метаданные шаблона. Возвращает массив с title, author, properties.",
+      path: 'manifest.php',
+      description: 'Метаданные шаблона. Возвращает массив с title, author, properties.',
       template: `<?php
 return [
     // 'inherit' => ['admincoreui'],   // наследование: modern наследует из admincoreui
@@ -1204,11 +1209,11 @@ return [
         'vendor'                     => 'bootstrap4',  // CSS-фреймворк
         'style_middleware'           => 'scss'   // 'scss' если используется SCSS компиляция
     ]
-];`
+];`,
     },
     {
-      path: "main.tpl.php",
-      description: "Главный макет. HTML-скелет. Вызывает позиции виджетов и основной контент.",
+      path: 'main.tpl.php',
+      description: 'Главный макет. HTML-скелет. Вызывает позиции виджетов и основной контент.',
       template: `<!DOCTYPE html>
 <html lang="<?= LANG_CODE ?>">
 <head>
@@ -1254,34 +1259,37 @@ return [
 
     <?= $this->bottom() ?>
 </body>
-</html>`
-    }
+</html>`,
+    },
   ],
   optional_files: [
-    { path: "options.form.php", description: "Форма настроек шаблона в админке" },
-    { path: "options.css.php", description: "CSS-переменные из настроек шаблона" },
-    { path: "scheme.php", description: "Описание цветовых схем" },
-    { path: "css/main.css", description: "Основные стили" },
-    { path: "js/main.js", description: "Основные скрипты" },
-    { path: "images/", description: "Изображения шаблона" }
+    { path: 'options.form.php', description: 'Форма настроек шаблона в админке' },
+    { path: 'options.css.php', description: 'CSS-переменные из настроек шаблона' },
+    { path: 'scheme.php', description: 'Описание цветовых схем' },
+    { path: 'css/main.css', description: 'Основные стили' },
+    { path: 'js/main.js', description: 'Основные скрипты' },
+    { path: 'images/', description: 'Изображения шаблона' },
   ],
   controller_templates: {
-    description: "Шаблоны для конкретных контроллеров. Переопределяют системные шаблоны. Фронтенд и бэкенд — в одной папке frontend-темы.",
-    frontend_path: "/templates/{theme}/controllers/{name}/{action}.tpl.php",
-    backend_path: "/templates/{theme}/controllers/{name}/backend/{action}.tpl.php",
-    widget_path: "/templates/{theme}/controllers/{name}/widgets/{widget_name}/{widget_name}.tpl.php",
-    critical_note: "ВАЖНО: бэкенд-шаблоны в подпапке backend/ внутри папки frontend-темы (modern/), НЕ в папке admincoreui/!",
+    description:
+      'Шаблоны для конкретных контроллеров. Переопределяют системные шаблоны. Фронтенд и бэкенд — в одной папке frontend-темы.',
+    frontend_path: '/templates/{theme}/controllers/{name}/{action}.tpl.php',
+    backend_path: '/templates/{theme}/controllers/{name}/backend/{action}.tpl.php',
+    widget_path:
+      '/templates/{theme}/controllers/{name}/widgets/{widget_name}/{widget_name}.tpl.php',
+    critical_note:
+      'ВАЖНО: бэкенд-шаблоны в подпапке backend/ внутри папки frontend-темы (modern/), НЕ в папке admincoreui/!',
     examples: [
-      "templates/modern/controllers/content/default_list.tpl.php — список материалов (фронтенд)",
-      "templates/modern/controllers/content/default_item.tpl.php — просмотр материала (фронтенд)",
-      "templates/modern/controllers/users/profile.tpl.php — профиль пользователя (фронтенд)",
-      "templates/modern/controllers/{name}/index.tpl.php — главная страница дополнения (фронтенд)",
-      "templates/modern/controllers/{name}/backend/index.tpl.php — дашборд бэкенда",
-      "templates/modern/controllers/{name}/backend/items.tpl.php — список (бэкенд)",
-      "templates/modern/controllers/{name}/widgets/{wname}/{wname}.tpl.php — виджет"
+      'templates/modern/controllers/content/default_list.tpl.php — список материалов (фронтенд)',
+      'templates/modern/controllers/content/default_item.tpl.php — просмотр материала (фронтенд)',
+      'templates/modern/controllers/users/profile.tpl.php — профиль пользователя (фронтенд)',
+      'templates/modern/controllers/{name}/index.tpl.php — главная страница дополнения (фронтенд)',
+      'templates/modern/controllers/{name}/backend/index.tpl.php — дашборд бэкенда',
+      'templates/modern/controllers/{name}/backend/items.tpl.php — список (бэкенд)',
+      'templates/modern/controllers/{name}/widgets/{wname}/{wname}.tpl.php — виджет',
     ],
-    note: "Шаблоны в папке темы ПЕРЕОПРЕДЕЛЯЮТ системные шаблоны из /system/controllers/. Если файл не найден в теме — ищется в inherited темах, затем в default."
-  }
+    note: 'Шаблоны в папке темы ПЕРЕОПРЕДЕЛЯЮТ системные шаблоны из /system/controllers/. Если файл не найден в теме — ищется в inherited темах, затем в default.',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1289,29 +1297,30 @@ return [
 // ─────────────────────────────────────────────────────────────────────────────
 export const fieldTypes: Record<string, { description: string; example: string }> = {
   fieldString: {
-    description: "Однострочное текстовое поле (input text)",
+    description: 'Однострочное текстовое поле (input text)',
     example: `new fieldString('title', [
     'title' => LANG_TITLE,
     'rules' => [['required'], ['max_length', 255]],
     'hint'  => 'Подсказка под полем'
-])`
+])`,
   },
   fieldText: {
-    description: "Многострочное текстовое поле (textarea)",
+    description: 'Многострочное текстовое поле (textarea)',
     example: `new fieldText('description', [
     'title' => LANG_DESCRIPTION,
     'rows'  => 5
-])`
+])`,
   },
   fieldHtml: {
-    description: "HTML редактор (WYSIWYG/TinyMCE)",
+    description: 'HTML редактор (WYSIWYG/TinyMCE)',
     example: `new fieldHtml('content', [
     'title' => LANG_CONTENT,
     'rules' => [['required']]
-])`
+])`,
   },
   fieldNumber: {
-    description: "Числовое поле с опциями is_abs (только положительные), is_ceil (целые), save_zero",
+    description:
+      'Числовое поле с опциями is_abs (только положительные), is_ceil (целые), save_zero',
     example: `new fieldNumber('amount', [
     'title'   => LANG_AMOUNT,
     'default' => 0,
@@ -1321,20 +1330,20 @@ export const fieldTypes: Record<string, { description: string; example: string }
         'save_zero' => false  // не сохранять ноль
     ],
     'rules' => [['min', 0], ['max', 999999]]
-])`
+])`,
   },
   fieldList: {
-    description: "Выпадающий список (select). Поддерживает generator для динамического наполнения.",
+    description: 'Выпадающий список (select). Поддерживает generator для динамического наполнения.',
     example: `new fieldList('status', [
     'title'   => LANG_STATUS,
     'default' => 1,
     'items'   => [0 => LANG_INACTIVE, 1 => LANG_ACTIVE],
     // Или динамически:
     // 'generator' => function() { return [...]; }
-])`
+])`,
   },
   fieldListMultiple: {
-    description: "Множественный выбор (checkbox list или multiselect)",
+    description: 'Множественный выбор (checkbox list или multiselect)',
     example: `new fieldListMultiple('categories', [
     'title'     => LANG_CATEGORIES,
     'generator' => function () {
@@ -1343,69 +1352,70 @@ export const fieldTypes: Record<string, { description: string; example: string }
             'id', 'title'
         );
     }
-])`
+])`,
   },
   fieldListGroups: {
-    description: "Выбор групп пользователей. Специализированный вариант fieldList.",
+    description: 'Выбор групп пользователей. Специализированный вариант fieldList.',
     example: `new fieldListGroups('groups', [
     'hint'        => 'Группы с доступом к плану',
     'show_all'    => false,  // не показывать "Все"
     'show_guests' => false   // не показывать гостей
-])`
+])`,
   },
   fieldCheckbox: {
-    description: "Чекбокс (булево поле). default = 0 или 1.",
+    description: 'Чекбокс (булево поле). default = 0 или 1.',
     example: `new fieldCheckbox('is_enabled', [
     'title'   => LANG_IS_ENABLED,
     'label'   => 'Включить эту функцию',
     'default' => 1
-])`
+])`,
   },
   fieldImage: {
-    description: "Загрузка одного изображения с превью",
+    description: 'Загрузка одного изображения с превью',
     example: `new fieldImage('photo', [
     'title'      => LANG_PHOTO,
     'max_width'  => 1200,
     'max_height' => 900,
     'max_size'   => 5120  // KB
-])`
+])`,
   },
   fieldFile: {
-    description: "Загрузка произвольного файла",
+    description: 'Загрузка произвольного файла',
     example: `new fieldFile('attachment', [
     'title'    => LANG_ATTACHMENT,
     'max_size' => 10240
-])`
+])`,
   },
   fieldDate: {
-    description: "Поле выбора даты и времени (datepicker)",
+    description: 'Поле выбора даты и времени (datepicker)',
     example: `new fieldDate('date_pub', [
     'title'   => LANG_DATE_PUB,
     'default' => date('Y-m-d H:i:s')
-])`
+])`,
   },
   fieldUrl: {
-    description: "Поле для URL с валидацией",
+    description: 'Поле для URL с валидацией',
     example: `new fieldUrl('website', [
     'title' => LANG_WEBSITE,
     'rules' => [['url']]
-])`
+])`,
   },
   fieldHidden: {
-    description: "Скрытое поле (не отображается пользователю)",
+    description: 'Скрытое поле (не отображается пользователю)',
     example: `new fieldHidden('user_id', [
     'default' => $this->cms_user->id
-])`
+])`,
   },
   fieldCategory: {
-    description: "Выбор категории типа контента",
+    description: 'Выбор категории типа контента',
     example: `new fieldCategory('category_id', [
     'title'      => LANG_CATEGORY,
     'ctype_name' => 'articles'
-])`
+])`,
   },
   fieldFieldsgroup: {
-    description: "Повторяющаяся группа полей (динамический список вложенных полей). Используется для сложных структур данных.",
+    description:
+      'Повторяющаяся группа полей (динамический список вложенных полей). Используется для сложных структур данных.',
     example: `new fieldFieldsgroup('prices', [
     'add_title'  => LANG_PRICES_ADD,
     'is_sortable' => true,
@@ -1419,6 +1429,6 @@ export const fieldTypes: Record<string, { description: string; example: string }
             'items' => ['DAY' => LANG_DAY1, 'MONTH' => LANG_MONTH1]
         ])
     ]
-])`
-  }
+])`,
+  },
 };

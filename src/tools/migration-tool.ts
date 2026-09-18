@@ -101,31 +101,19 @@ export function generateMigration(
  ${allLines.join(',\n')}
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8${options?.comment ? ` COMMENT='${options.comment}'` : ''};`;
 
-  const installCode = `class installer${className} extends cmsInstaller {
+  // ICMS2 импортирует install.sql автоматически; install.php — только
+  // необязательный хук. Установщик вызывает функцию install_package().
+  const installCode = `<?php
 
-    public function install() {
-
-        $this->createTable('${name}', [
-${fields
-  .map(f => {
-    const opts = [];
-    if (f.nullable) opts.push("'null' => true");
-    if (f.default !== undefined) opts.push(`'default' => '${f.default}'"`);
-    if (f.extra === 'AUTO_INCREMENT') opts.push("'auto_increment' => true");
-    if (f.comment) opts.push(`'comment' => '${f.comment}'"`);
-
-    return `            '${f.name}' => ['${f.type}'${opts.length > 0 ? ', ' + opts.join(', ') : ''}]`;
-  })
-  .join(',\n')}
-        ]${options?.comment ? `, '${options.comment}'` : ''});
-
-        return true;
-    }
-
-    public function uninstall() {
-        $this->dropTable('${name}');
-        return true;
-    }
+/**
+ * Необязательная логика установки пакета.
+ * Таблицы создаются автоматически из install.sql в корне пакета.
+ *
+ * @param array $install_options
+ * @return bool|string true при успехе либо текст ошибки
+ */
+function install_package(array $install_options = []) {
+    return true;
 }`;
 
   return {
@@ -164,149 +152,70 @@ export function scaffoldMigration(params: {
   const { addon_name, table_name, fields, options = {} } = params;
 
   const tableName = `cms_${table_name}`;
-  const className = addon_name
-    .split('_')
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('');
-  const installerClass = `installer${className}`;
 
-  // install.php
-  const installContent = `<?php
-/**
- * Установка дополнения ${addon_name}
- */
-
-class ${installerClass} extends cmsInstaller {
-
-    public function install() {
-
-        $this->addModule('${addon_name}', [
-            'title'       => '${addon_name.toUpperCase()}',
-            'description' => '',
-            'version'     => '1.0.0',
-            'author'      => '',
-            'url'         => ''
-        ]);
-
-        // Создание таблицы
-        $this->createTable('${table_name}', [
-${fields
-  .map(f => {
-    const opts = [];
-    if (f.nullable) opts.push("'null' => true");
+  // ICMS2 импортирует install.sql из корня пакета автоматически.
+  const columnLines = fields.map(f => {
+    let line = `    \`${f.name}\` ${f.type}`;
+    line += f.nullable ? ' NULL' : ' NOT NULL';
     if (f.default !== undefined && f.default !== 'NULL') {
-      const isNumber = typeof f.default === 'number' || /^\d+$/.test(String(f.default));
-      opts.push(`'default' => ${isNumber ? f.default : `'${f.default}'`}`);
-    } else if (f.default === 'NULL') {
-      opts.push("'null' => true");
+      const isNumber = typeof f.default === 'number' || /^\d+(\.\d+)?$/.test(String(f.default));
+      line += ` DEFAULT ${isNumber ? f.default : `'${String(f.default).replace(/'/g, "''")}'`}`;
     }
-    if (f.extra === 'AUTO_INCREMENT') opts.push("'auto_increment' => true");
-    if (f.comment) opts.push(`'comment' => '${f.comment}'"`);
+    if (f.extra === 'AUTO_INCREMENT') line += ' AUTO_INCREMENT';
+    if (f.comment) line += ` COMMENT '${f.comment.replace(/'/g, "''")}'`;
+    return line;
+  });
 
-    return `            '${f.name}' => ['${f.type}'${opts.length > 0 ? ', ' + opts.join(', ') : ''}]`;
-  })
-  .join(',\n')}
-        ]${options.comment ? `, '${options.comment}'` : ''});${
-          options.indexes?.length
-            ? `
-        // Индексы
-${options.indexes
-  .map(idx => {
-    let sqlType = 'INDEX';
-    if (idx.type === 'UNIQUE') {
-      sqlType = 'UNIQUE INDEX';
-    } else if (idx.type === 'FULLTEXT') {
-      sqlType = 'FULLTEXT INDEX';
-    }
-    const sql = `CREATE ${sqlType} ${idx.name} ON {${table_name}} (${idx.fields.join(', ')})`;
-    return `        \\$this->db->query("${sql}");`;
-  })
-  .join('\n')}`
-            : ''
-        }${
-          options.content_type
-            ? `
+  const indexLines = (options.indexes ?? []).map(idx => {
+    const kind =
+      idx.type === 'UNIQUE' ? 'UNIQUE KEY' : idx.type === 'FULLTEXT' ? 'FULLTEXT KEY' : 'KEY';
+    return `    ${kind} \`${idx.name}\` (${idx.fields.map(f => `\`${f}\``).join(', ')})`;
+  });
 
-        // Регистрация типа контента
-        $this->registerContentType('${addon_name}', [
-            'title'          => '${className}',
-            'description'    => '',
-            'options'       => ['flags' => ['is_fixed_url']],
-            'item_url_mask' => '/${addon_name}/view/{id}',
-            'templates'      => [
-                'list'   => '${addon_name}_list',
-                'item'   => '${addon_name}_item',
-                'profile'=> ''
-            ]
-        ]);`
-            : ''
-        }${
-          options.has_seo
-            ? `
+  const primaryKey = fields.some(f => f.name === 'id' || f.extra === 'AUTO_INCREMENT')
+    ? ['    PRIMARY KEY (`id`)']
+    : [];
 
-        // SEO настройки
-        $this->addSeoOptions('${addon_name}', [
-            'slug_default' => '${addon_name}',
-            'meta'         => [
-                'title'       => '{title}',
-                'description' => '{description}',
-                'keywords'    => ''
-            ]
-        ]);`
-            : ''
-        }
+  const installSql = `-- Замените cms_ на реальный префикс БД из system/config/config.php
+CREATE TABLE IF NOT EXISTS \`${table_name}\` (
+${[...columnLines, ...primaryKey, ...indexLines].join(',\n')}
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
 
-        return true;
-    }
+  const installPhp = `<?php
 
-    public function uninstall($hard = false) {
-
-        if ($hard) {
-            $this->dropTable('${table_name}');${
-              options.content_type
-                ? `
-            $this->deleteContentType('${addon_name}');`
-                : ''
-            }
-        }
-
-        $this->removeModule('${addon_name}');
-
-        return true;
-    }
-}`;
-
-  // uninstall.php
-  const uninstallContent = `<?php
 /**
- * Удаление дополнения ${addon_name}
+ * Необязательная логика установки дополнения ${addon_name}.
+ * Таблицы создаются автоматически из install.sql.
+ *
+ * @param array $install_options
+ * @return bool|string true при успехе либо текст ошибки
  */
-
-class ${installerClass.replace('installer', 'uninstall_') + installerClass.includes('installer') ? '' : 'uninstall_'} extends ${installerClass} {
-
-    public function uninstall() {
-        parent::uninstall(false);
-    }
+function install_package(array $install_options = []) {
+    return true;
 }`;
-
-  // manifest.xml entries для install
-  const manifestEntry = `<files>
-    <file>system/controllers/${addon_name}/install.php</file>
-</files>`;
 
   return {
     addon_name,
     table_name: tableName,
     files: {
-      'install.php': installContent,
-      'uninstall.php': uninstallContent,
+      '[pkg] install.sql': installSql,
+      '[pkg] install.php': installPhp,
     },
-    manifest_xml: manifestEntry,
+    manifest_xml: `<files>
+    <file>install.sql</file>
+    <file>install.php</file>
+</files>`,
     notes: {
-      'install.php': `Файл должен быть в: system/controllers/${addon_name}/install.php`,
-      'uninstall.php': `Файл должен быть в: system/controllers/${addon_name}/uninstall.php`,
-      hard_uninstall:
-        'parent::uninstall(true) удалит таблицы, parent::uninstall(false) только отключит модуль',
+      'install.sql': 'Кладётся в корень пакета; ICMS2 импортирует его автоматически при установке.',
+      'install.php': 'Кладётся в корень пакета; ядро вызывает функцию install_package().',
+      uninstall:
+        'Ядро ICMS2 не вызывает скрипт удаления: таблицы удаляются вручную или отдельным скриптом администратора.',
+      content_type: options.content_type
+        ? 'Регистрация типа контента не автоматизирована: выполните её в install_package() средствами API ядра.'
+        : 'Тип контента не запрошен.',
+      seo: options.has_seo
+        ? 'SEO-настройки задаются средствами контент-типа; автогенерация не поддерживается.'
+        : 'SEO-настройки не запрошены.',
     },
   };
 }

@@ -107,7 +107,7 @@ function generateGrid(
     ]`;
 
   const columnsCode = generateColumns(columns, name, showId);
-  const actionsCode = generateActions(actions || getDefaultActions(name));
+  const actionsCode = generateActions(actions || getDefaultActions(gridName));
 
   return `<?php
 
@@ -137,7 +137,17 @@ function grid_${gridName}($controller) {
 `;
 }
 
-function generateColumns(columns: GridColumn[], name: string, showId: boolean): string {
+import { quotePhp } from '../utils/serialization.js';
+
+/**
+ * Значение из входных данных: PHP-выражение (href_to(...), LANG_*) выводится
+ * как есть, обычный текст — как экранированная строка.
+ */
+function phpValueOrExpression(value: string): string {
+  return /[($]|^LANG_/.test(value) ? value : quotePhp(value);
+}
+
+function generateColumns(columns: GridColumn[], _name: string, showId: boolean): string {
   let code = `    $columns = [
 `;
 
@@ -148,7 +158,7 @@ function generateColumns(columns: GridColumn[], name: string, showId: boolean): 
 
     code += `        '${column.name}' => [
 `;
-    code += `            'title'   => LANG_${name.toUpperCase()}_${column.name.toUpperCase().replace(/_/g, '_')},
+    code += `            'title'   => ${phpValueOrExpression(column.title)},
 `;
 
     if (column.width) {
@@ -167,7 +177,7 @@ function generateColumns(columns: GridColumn[], name: string, showId: boolean): 
     }
 
     if (column.href) {
-      code += `            'href'    => '${column.href}',
+      code += `            'href'    => ${phpValueOrExpression(column.href)},
 `;
     }
 
@@ -177,7 +187,7 @@ function generateColumns(columns: GridColumn[], name: string, showId: boolean): 
     }
 
     if (column.flag_toggle) {
-      code += `            'flag_toggle' => '${column.flag_toggle}',
+      code += `            'flag_toggle' => ${phpValueOrExpression(column.flag_toggle)},
 `;
     }
 
@@ -208,7 +218,7 @@ function generateActions(actions: GridAction[]): string {
 
   for (const action of actions) {
     code += `        [
-            'title' => LANG_${action.title.toUpperCase().replace(/[^A-Z]/g, '_')},
+            'title' => ${phpValueOrExpression(action.title)},
 `;
 
     if (action.icon) {
@@ -222,11 +232,11 @@ function generateActions(actions: GridAction[]): string {
     }
 
     if (action.confirm) {
-      code += `            'confirm' => LANG_${action.confirm.toUpperCase().replace(/[^A-Z]/g, '_')},
+      code += `            'confirm' => ${phpValueOrExpression(action.confirm)},
 `;
     }
 
-    code += `            'href'  => '${action.href}',
+    code += `            'href'  => ${phpValueOrExpression(action.href)},
 `;
     code += `        ],
 `;
@@ -237,19 +247,19 @@ function generateActions(actions: GridAction[]): string {
   return code;
 }
 
-function getDefaultActions(_name: string): GridAction[] {
+function getDefaultActions(gridName: string): GridAction[] {
   return [
     {
-      title: 'EDIT',
-      href: `href_to($controller->root_url, 'items', ['edit', '{id}'])`,
+      title: 'LANG_EDIT',
+      href: `href_to($controller->root_url, '${gridName}_edit', ['{id}'])`,
       icon: 'pen',
     },
     {
-      title: 'DELETE',
-      href: `href_to($controller->root_url, 'items', ['delete', '{id}'])`,
+      title: 'LANG_DELETE',
+      href: `href_to($controller->root_url, '${gridName}_delete', ['{id}'])`,
       icon: 'times-circle',
       class: 'text-danger',
-      confirm: 'DELETE_CONFIRM',
+      confirm: 'LANG_DELETE_SELECTED_CONFIRM',
     },
   ];
 }

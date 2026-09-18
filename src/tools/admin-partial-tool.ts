@@ -121,6 +121,7 @@ $header_vars = [
     'addon_name' => '${name}',
     'items' => ${JSON.stringify(items)},
 ];
+?>
 `;
 
   if (useBootstrap) {
@@ -128,7 +129,7 @@ $header_vars = [
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <a class="navbar-brand" href="<?php echo href_to_home(); ?>">
         <i class="${iconSet}home"></i>
-        <?php echo \\$cms_config->sitename; ?>
+        <?php echo $cms_config->sitename; ?>
     </a>
 
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#${name}Navbar">
@@ -153,7 +154,7 @@ $header_vars = [
         <ul class="navbar-nav">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                    <i class="${iconSet}user"></i> <?php echo html(\\$this->cms_user->nickname); ?>
+                    <i class="${iconSet}user"></i> <?php echo html($this->cms_user->nickname); ?>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a class="dropdown-item" href="<?php echo href_to('auth', 'profile'); ?>">
@@ -173,7 +174,7 @@ $header_vars = [
     code += `
 <div class="${name}-header">
     <div class="${name}-logo">
-        <a href="<?php echo href_to_home(); ?>"><?php echo \\$cms_config->sitename; ?></a>
+        <a href="<?php echo href_to_home(); ?>"><?php echo $cms_config->sitename; ?></a>
     </div>
     <div class="${name}-menu">
 `;
@@ -209,6 +210,7 @@ $sidebar_vars = [
     'addon_name' => '${name}',
     'items' => ${JSON.stringify(items)},
 ];
+?>
 `;
 
   if (useBootstrap) {
@@ -254,6 +256,7 @@ function generateFooterPartial(
 /**
  * Footer partial: ${partial.name}
  */
+?>
 `;
 
   if (useBootstrap) {
@@ -263,7 +266,7 @@ function generateFooterPartial(
         <div class="row">
             <div class="col-md-6">
                 <p class="text-muted mb-0">
-                    &copy; <?php echo date('Y'); ?> <?php echo \\$cms_config->sitename; ?>
+                    &copy; <?php echo date('Y'); ?> <?php echo $cms_config->sitename; ?>
                 </p>
             </div>
             <div class="col-md-6 text-md-right">
@@ -280,7 +283,7 @@ function generateFooterPartial(
   } else {
     code += `
 <div class="${name}-footer">
-    <p>&copy; <?php echo date('Y'); ?> <?php echo \\$cms_config->sitename; ?></p>
+    <p>&copy; <?php echo date('Y'); ?> <?php echo $cms_config->sitename; ?></p>
 </div>
 `;
   }
@@ -307,6 +310,7 @@ $toolbar_vars = [
     'addon_name' => '${name}',
     'items' => ${JSON.stringify(items)},
 ];
+?>
 `;
 
   if (useBootstrap) {
@@ -352,6 +356,7 @@ function generateBreadcrumbPartial(
 /**
  * Breadcrumb partial: ${partial.name}
  */
+?>
 `;
 
   if (useBootstrap) {
@@ -362,13 +367,13 @@ function generateBreadcrumbPartial(
             <i class="${iconSet}home"></i>
         </a>
     </li>
-    <?php if (!empty(\\$crumbs)) { ?>
-        <?php foreach (\\$crumbs as \\$crumb) { ?>
-            <li class="breadcrumb-item <?php echo \\$crumb['is_last'] ? 'active' : ''; ?>">
-                <?php if (!\\$crumb['is_last']) { ?>
-                    <a href="<?php echo \\$crumb['href']; ?>"><?php echo \\$crumb['title']; ?></a>
+    <?php if (!empty($crumbs)) { ?>
+        <?php foreach ($crumbs as $crumb) { ?>
+            <li class="breadcrumb-item <?php echo $crumb['is_last'] ? 'active' : ''; ?>">
+                <?php if (!$crumb['is_last']) { ?>
+                    <a href="<?php echo $crumb['href']; ?>"><?php echo $crumb['title']; ?></a>
                 <?php } else { ?>
-                    <?php echo \\$crumb['title']; ?>
+                    <?php echo $crumb['title']; ?>
                 <?php } ?>
             </li>
         <?php } ?>
@@ -379,9 +384,9 @@ function generateBreadcrumbPartial(
     code += `
 <div class="${name}-breadcrumb">
     <a href="<?php echo href_to('admin'); ?>">Главная</a>
-    <?php if (!empty(\\$crumbs)) { ?>
-        <?php foreach (\\$crumbs as \\$crumb) { ?>
-            &raquo; <a href="<?php echo \\$crumb['href']; ?>"><?php echo \\$crumb['title']; ?></a>
+    <?php if (!empty($crumbs)) { ?>
+        <?php foreach ($crumbs as $crumb) { ?>
+            &raquo; <a href="<?php echo $crumb['href']; ?>"><?php echo $crumb['title']; ?></a>
         <?php } ?>
     <?php } ?>
 </div>
@@ -403,6 +408,7 @@ function generatePanelPartial(
 /**
  * Panel partial: ${partial.name}
  */
+?>
 `;
 
   if (useBootstrap) {
@@ -411,15 +417,15 @@ function generatePanelPartial(
     <div class="card-header">
         <h5 class="mb-0">
             <i class="${iconSet}file"></i>
-            <?php echo \\$panel_title ?? 'Panel Title'; ?>
+            <?php echo $panel_title ?? 'Panel Title'; ?>
         </h5>
     </div>
     <div class="card-body">
-        <?php echo \\$panel_content ?? ''; ?>
+        <?php echo $panel_content ?? ''; ?>
     </div>
-    <?php if (!empty(\\$panel_footer)) { ?>
+    <?php if (!empty($panel_footer)) { ?>
         <div class="card-footer">
-            <?php echo \\$panel_footer; ?>
+            <?php echo $panel_footer; ?>
         </div>
     <?php } ?>
 </div>
@@ -428,10 +434,10 @@ function generatePanelPartial(
     code += `
 <div class="${name}-panel">
     <div class="${name}-panel-header">
-        <h3><?php echo \\$panel_title ?? 'Panel Title'; ?></h3>
+        <h3><?php echo $panel_title ?? 'Panel Title'; ?></h3>
     </div>
     <div class="${name}-panel-body">
-        <?php echo \\$panel_content ?? ''; ?>
+        <?php echo $panel_content ?? ''; ?>
     </div>
 </div>
 `;
@@ -452,6 +458,7 @@ function generateModalPartial(
 /**
  * Modal partial: ${partial.name}
  */
+?>
 `;
 
   if (useBootstrap) {
@@ -463,18 +470,18 @@ function generateModalPartial(
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="${iconSet}modal"></i>
-                    <?php echo \\$modal_title ?? 'Modal Title'; ?>
+                    <?php echo $modal_title ?? 'Modal Title'; ?>
                 </h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <?php echo \\$modal_content ?? ''; ?>
+                <?php echo $modal_content ?? ''; ?>
             </div>
-            <?php if (!empty(\\$modal_footer)) { ?>
+            <?php if (!empty($modal_footer)) { ?>
                 <div class="modal-footer">
-                    <?php echo \\$modal_footer; ?>
+                    <?php echo $modal_footer; ?>
                 </div>
             <?php } ?>
         </div>
@@ -487,11 +494,11 @@ function generateModalPartial(
     <div class="${name}-modal-dialog">
         <div class="${name}-modal-content">
             <div class="${name}-modal-header">
-                <h3><?php echo \\$modal_title ?? 'Modal Title'; ?></h3>
+                <h3><?php echo $modal_title ?? 'Modal Title'; ?></h3>
                 <button type="button" class="${name}-close" data-dismiss="modal">&times;</button>
             </div>
             <div class="${name}-modal-body">
-                <?php echo \\$modal_content ?? ''; ?>
+                <?php echo $modal_content ?? ''; ?>
             </div>
         </div>
     </div>
@@ -514,23 +521,24 @@ function generateNotificationPartial(
 /**
  * Notification partial: ${partial.name}
  */
+?>
 `;
 
   if (useBootstrap) {
     code += `
 <?php
-\\$notices = cmsCore::getSessionFlash('notice');
-if (\\$notices) {
-    foreach (\\$notices as \\$notice) { ?>
-        <div class="alert alert-<?php echo \\$notice['type'] ?? 'info'; ?> alert-dismissible fade show" role="alert">
-            <?php if (\\$notice['type'] === 'success') { ?>
+$notices = cmsCore::getSessionFlash('notice');
+if ($notices) {
+    foreach ($notices as $notice) { ?>
+        <div class="alert alert-<?php echo $notice['type'] ?? 'info'; ?> alert-dismissible fade show" role="alert">
+            <?php if ($notice['type'] === 'success') { ?>
                 <i class="${iconSet}check-circle"></i>
-            <?php } elseif (\\$notice['type'] === 'error') { ?>
+            <?php } elseif ($notice['type'] === 'error') { ?>
                 <i class="${iconSet}exclamation-circle"></i>
             <?php } else { ?>
                 <i class="${iconSet}info-circle"></i>
             <?php } ?>
-            <?php echo \\$notice['text']; ?>
+            <?php echo $notice['text']; ?>
             <button type="button" class="close" data-dismiss="alert">
                 <span>&times;</span>
             </button>
@@ -542,11 +550,11 @@ if (\\$notices) {
   } else {
     code += `
 <?php
-\\$notices = cmsCore::getSessionFlash('notice');
-if (\\$notices) {
-    foreach (\\$notices as \\$notice) { ?>
-        <div class="${name}-notice ${name}-notice-<?php echo \\$notice['type'] ?? 'info'; ?>">
-            <?php echo \\$notice['text']; ?>
+$notices = cmsCore::getSessionFlash('notice');
+if ($notices) {
+    foreach ($notices as $notice) { ?>
+        <div class="${name}-notice ${name}-notice-<?php echo $notice['type'] ?? 'info'; ?>">
+            <?php echo $notice['text']; ?>
         </div>
     <?php }
 }
@@ -584,10 +592,10 @@ $vars = [
         <div class="card-body">
             <h5 class="card-title">
                 <i class="${iconSet}file"></i>
-                <?php echo \\$partial_title ?? '${capitalize(partial.name.replace(/_/g, ' '))}'; ?>
+                <?php echo $partial_title ?? '${capitalize(partial.name.replace(/_/g, ' '))}'; ?>
             </h5>
             <div class="card-text">
-                <?php echo \\$partial_content ?? ''; ?>
+                <?php echo $partial_content ?? ''; ?>
             </div>
         </div>
     </div>
@@ -596,9 +604,9 @@ $vars = [
   } else {
     code += `
 <div class="${name}-partial ${name}-${partial.type}">
-    <h4><?php echo \\$partial_title ?? '${capitalize(partial.name.replace(/_/g, ' '))}'; ?></h4>
+    <h4><?php echo $partial_title ?? '${capitalize(partial.name.replace(/_/g, ' '))}'; ?></h4>
     <div class="${name}-content">
-        <?php echo \\$partial_content ?? ''; ?>
+        <?php echo $partial_content ?? ''; ?>
     </div>
 </div>
 `;
