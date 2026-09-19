@@ -95,7 +95,7 @@
     "@stryker-mutator/jest-runner": "^10.0.0",
     "@types/ini": "^4.1.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.3.3",
+    "@types/node": "^26.6.1",
     "eslint": "^9.39.5",
     "fast-check": "^3.23.2",
     "husky": "^9.1.7",
