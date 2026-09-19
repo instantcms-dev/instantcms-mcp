@@ -54,6 +54,41 @@ jobs:
         if: matrix.node == '20'
         run: npm run test:coverage
 
+  test-with-source:
+    name: Test against pinned InstantCMS source
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure PHP linter is available
+        run: |
+          if ! command -v php >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y php-cli
+          fi
+          php -v
+
+      - name: Prepare pinned InstantCMS source
+        run: npm run knowledge:source:update
+
+      - name: Link ./source for Core Parser tests
+        run: ln -s .cache/icms2 source
+
+      # ICMS_REQUIRE_SOURCE=1 запрещает пропуск: если источник не найден,
+      # сьюты падают, а не молча пропускаются. Так CI видит все 621 тест.
+      - name: Run full test suite (skips forbidden)
+        run: ICMS_SOURCE=.cache/icms2 ICMS_REQUIRE_SOURCE=1 npm test -- --runInBand
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -174,6 +209,8 @@ jobs:
           php -v
       - name: Generate knowledge from latest stable InstantCMS
         run: npm run knowledge:update -- --ref latest
+      - name: Link ./source for Core Parser tests
+        run: ln -s .cache/icms2 source
       - name: Verify version API evidence against pinned tags
         run: |
           git -C .cache/icms2 fetch --refetch --no-filter origin 2.16.3 2.17.3 2.18.1 2.18.2
