@@ -5,15 +5,17 @@ import { hookCategories, hooks } from '../data/hooks.js';
 import { addonStructures } from '../data/schemas.js';
 import { knowledgeSummary } from '../generated/knowledge-meta.js';
 import { compareVersionProfiles, instantCmsVersionProfiles } from '../data/version-profiles.js';
-import {
-  buildAddonArchive,
-  inspectAddonArchive,
-  validateGeneratedArtifacts,
-} from '../tools/artifact-tool.js';
 import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
 import { findToolCategories } from '../utils/find-tool.js';
 import { getServerVersion } from '../version.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// artifact-tool тянет fast-xml-parser, yaml, ini и fflate (~23 мс) — нужны
+// только трём инструментам артефактов, поэтому загружаем модуль лениво.
+const loadArtifactTool = lazyModule<typeof import('../tools/artifact-tool.js')>(
+  '../tools/artifact-tool.js'
+);
 
 const workflows = {
   addon: [
@@ -211,7 +213,10 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     'validate_generated_artifacts',
     'Проверяет XML, INI, YAML и форму PHP-файлов настоящими parser-ами',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
-    args => validateGeneratedArtifacts((args as { files: Record<string, string> }).files)
+    args =>
+      loadArtifactTool().validateGeneratedArtifacts(
+        (args as { files: Record<string, string> }).files
+      )
   );
 
   defineTool(
@@ -219,7 +224,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     'build_addon_archive',
     'Создаёт ZIP дополнения в памяти и возвращает base64',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
-    args => buildAddonArchive((args as { files: Record<string, string> }).files)
+    args => loadArtifactTool().buildAddonArchive((args as { files: Record<string, string> }).files)
   );
 
   defineTool(
@@ -227,6 +232,6 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     'inspect_addon_archive',
     'Проверяет пути и синтаксис файлов ZIP-архива base64',
     { archive: z.string().max(20_000_000) },
-    args => inspectAddonArchive((args as { archive: string }).archive)
+    args => loadArtifactTool().inspectAddonArchive((args as { archive: string }).archive)
   );
 }

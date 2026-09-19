@@ -1,22 +1,16 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import {
-  analyzeInstantCmsTemplate,
-  checkTemplateOverrideCompatibility,
-  scaffoldCompleteTemplate,
-  scaffoldTemplateOverride,
-  validateLayoutScheme,
-} from '../tools/template-development-tool.js';
 import { defineTool } from '../utils/define-tool.js';
-import {
-  auditTemplateFrontend,
-  auditTemplateWidgetPositions,
-  extractTemplateDesignTokens,
-  mergeTemplateOverrides,
-  scaffoldTemplateE2eEnvironment,
-  indexUpstreamTemplateSources,
-  scaffoldTemplatePhpQuality,
-} from '../tools/template-productivity-tool.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// Оба template-модуля тянут yaml (~17 мс) и нужны только своим инструментам —
+// загружаем их лениво при первом вызове.
+const loadTemplateDevelopmentTool = lazyModule<
+  typeof import('../tools/template-development-tool.js')
+>('../tools/template-development-tool.js');
+const loadTemplateProductivityTool = lazyModule<
+  typeof import('../tools/template-productivity-tool.js')
+>('../tools/template-productivity-tool.js');
 
 const templateFilesSchema = z
   .record(z.string(), z.string())
@@ -33,7 +27,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       upstream_after: templateFilesSchema,
     },
     async ({ theme_files, upstream_before, upstream_after }) =>
-      mergeTemplateOverrides(
+      loadTemplateProductivityTool().mergeTemplateOverrides(
         theme_files as Record<string, string>,
         upstream_before as Record<string, string>,
         upstream_after as Record<string, string>
@@ -44,21 +38,24 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
     'audit_template_frontend',
     'Проверяет HTML, accessibility, escaping и качество CSS файлов шаблона',
     { files: templateFilesSchema },
-    async ({ files }) => auditTemplateFrontend(files as Record<string, string>)
+    async ({ files }) =>
+      loadTemplateProductivityTool().auditTemplateFrontend(files as Record<string, string>)
   );
   defineTool(
     server,
     'extract_template_design_tokens',
     'Извлекает CSS custom properties, цвета и spacing и предлагает design tokens',
     { files: templateFilesSchema },
-    async ({ files }) => extractTemplateDesignTokens(files as Record<string, string>)
+    async ({ files }) =>
+      loadTemplateProductivityTool().extractTemplateDesignTokens(files as Record<string, string>)
   );
   defineTool(
     server,
     'audit_template_widget_positions',
     'Сопоставляет позиции виджетов в PHP-шаблонах и YAML layout-схемах',
     { files: templateFilesSchema },
-    async ({ files }) => auditTemplateWidgetPositions(files as Record<string, string>)
+    async ({ files }) =>
+      loadTemplateProductivityTool().auditTemplateWidgetPositions(files as Record<string, string>)
   );
   defineTool(
     server,
@@ -68,7 +65,10 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       theme: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       base_url: z.string().url().optional(),
     },
-    async options => scaffoldTemplateE2eEnvironment(options as { theme: string; base_url?: string })
+    async options =>
+      loadTemplateProductivityTool().scaffoldTemplateE2eEnvironment(
+        options as { theme: string; base_url?: string }
+      )
   );
   defineTool(
     server,
@@ -80,7 +80,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       ref: z.string().regex(/^[a-zA-Z0-9._/-]+$/),
     },
     async ({ files, repository, ref }) =>
-      indexUpstreamTemplateSources(files as Record<string, string>, {
+      loadTemplateProductivityTool().indexUpstreamTemplateSources(files as Record<string, string>, {
         repository: String(repository),
         ref: String(ref),
       })
@@ -97,7 +97,10 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .optional()
         .default('7.2'),
     },
-    async options => scaffoldTemplatePhpQuality(options as { theme: string; php_min?: string })
+    async options =>
+      loadTemplateProductivityTool().scaffoldTemplatePhpQuality(
+        options as { theme: string; php_min?: string }
+      )
   );
   defineTool(
     server,
@@ -114,7 +117,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       with_layout_scheme: z.boolean().optional().default(true),
     },
     async options =>
-      scaffoldCompleteTemplate(
+      loadTemplateDevelopmentTool().scaffoldCompleteTemplate(
         options as {
           name: string;
           title: string;
@@ -136,7 +139,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .optional(),
     },
     async ({ files, theme }) =>
-      analyzeInstantCmsTemplate(
+      loadTemplateDevelopmentTool().analyzeInstantCmsTemplate(
         files as Record<string, string>,
         theme === undefined ? undefined : String(theme)
       )
@@ -160,7 +163,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       backend: z.boolean().optional(),
     },
     async options =>
-      scaffoldTemplateOverride(
+      loadTemplateDevelopmentTool().scaffoldTemplateOverride(
         options as {
           theme: string;
           source_path: string;
@@ -181,7 +184,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .min(1)
         .max(2 * 1024 * 1024),
     },
-    async ({ yaml }) => validateLayoutScheme(String(yaml))
+    async ({ yaml }) => loadTemplateDevelopmentTool().validateLayoutScheme(String(yaml))
   );
   defineTool(
     server,
@@ -193,7 +196,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       upstream_after: templateFilesSchema,
     },
     async ({ theme_files, upstream_before, upstream_after }) =>
-      checkTemplateOverrideCompatibility(
+      loadTemplateDevelopmentTool().checkTemplateOverrideCompatibility(
         theme_files as Record<string, string>,
         upstream_before as Record<string, string>,
         upstream_after as Record<string, string>
