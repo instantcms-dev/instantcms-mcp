@@ -41,6 +41,8 @@ _Создано 2026-09-19 после ревизии проекта. Закры�
 
 **Усилие:** 1 час.
 
+**Статус:** [x] **(закрыто 2026-09-19, коммит в этой сессии)** — `SECURITY.md` расширен с 7 строк до 71: supported versions с источниками, 3 reporting-канала с таймлайном, in-scope/out-of-scope threat-model-таблица с привязкой к коду, 6 operating requirements, 4 known limitations.
+
 ### T2. Удалить TODO в `scaffold-tool.ts`
 
 **Где:** `src/tools/scaffold-tool.ts:305` — единственный TODO во всём `src/`.
