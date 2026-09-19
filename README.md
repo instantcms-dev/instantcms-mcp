@@ -93,6 +93,19 @@ MCP_HTTP_HOST=0.0.0.0 node dist/index.js --http   # слушать внешни�
 
 Режим stateless (без сессий, только POST), по умолчанию привязка к 127.0.0.1 — сервер не доступен извне без явного `MCP_HTTP_HOST`. / HTTP mode is stateless (POST only) and binds to 127.0.0.1 by default. / HTTP 模式为无状态（仅 POST），默认绑定 127.0.0.1。
 
+### Docker / Docker / Docker
+
+Публикуемый в GHCR образ (`docker.yml` собирает `linux/amd64` + `linux/arm64` при теге `v*`):
+
+```bash
+docker run --rm -p 3001:3001 ghcr.io/instantcms-dev/instantcms-mcp
+MCP_HTTP_TOKEN=secret docker run --rm -p 3001:3001 -e MCP_HTTP_TOKEN ghcr.io/instantcms-dev/instantcms-mcp
+```
+
+- Режим по умолчанию — HTTP на порту 3001 (`EXPOSE 3001`); stdio: `docker run ... image node dist/index.js`.
+- `GET /health` — liveness-эндпоинт для оркестраторов, отвечает 200 без токена; остальные маршруты требуют `Authorization: Bearer` при заданном `MCP_HTTP_TOKEN`. / `GET /health` is a tokenless liveness probe; other routes require the bearer token when `MCP_HTTP_TOKEN` is set. / `GET /health` 为无需令牌的存活探针；设置 `MCP_HTTP_TOKEN` 后其余路由需要 Bearer 令牌。
+- Локальная сборка: `docker build -t instantcms-mcp .`
+
 ## Проверка генераторов на реальном InstantCMS
 
 `npm run verify:generated` разворачивает сгенерированный артефакт в тестовом экземпляре InstantCMS, прогоняет HTTP-сценарии и удаляет всё созданное.

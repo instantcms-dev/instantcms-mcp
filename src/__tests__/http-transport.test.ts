@@ -107,6 +107,21 @@ describe('HTTP transport (--http)', () => {
     await expect(handle.close()).rejects.toThrow();
   });
 
+  test('GET /health отвечает 200 без токена и авторизации', async () => {
+    const handle = await startHttpServer({ port: 0, token: 'test-secret' });
+    try {
+      const response = await fetch(`http://${handle.host}:${handle.port}/health`);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ status: 'ok', transport: 'http' });
+
+      // Другие GET-пути остаются под защитой токена.
+      const other = await fetch(`http://${handle.host}:${handle.port}/mcp`);
+      expect(other.status).toBe(401);
+    } finally {
+      await handle.close();
+    }
+  });
+
   test('занятый порт → startHttpServer отклоняется, а не валит процесс', async () => {
     const first = await startHttpServer({ port: 0 });
     try {

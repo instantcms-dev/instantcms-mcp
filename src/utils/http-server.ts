@@ -32,6 +32,13 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
 
   const httpServer = createNodeServer(async (req, res) => {
     try {
+      // Liveness-эндпоинт для оркестраторов: до авторизации, им токен недоступен.
+      if (req.method === 'GET' && req.url?.split('?')[0] === '/health') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', transport: 'http' }));
+        return;
+      }
+
       if (token && !isAuthorized(req, token)) {
         res.writeHead(401, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: 'unauthorized' }));
