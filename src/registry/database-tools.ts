@@ -23,7 +23,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_execute_query',
-    'Выполняет произвольный SQL запрос к базе данных MariaDB. Значения колонок-секретов (password, token, secret) маскируются, пока не передан include_sensitive.',
+    'Выполняет произвольный SQL запрос к базе данных MariaDB. Значения колонок-секретов (password, token, secret) маскируются, пока не передан include_sensitive. / Executes an arbitrary SQL query against the MariaDB database. Secret columns (password, token, secret) are masked unless include_sensitive is passed.',
     {
       sql: z
         .string()
@@ -55,7 +55,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_list_tables',
-    'Возвращает список всех таблиц в текущей базе данных MariaDB.',
+    'Возвращает список всех таблиц в текущей базе данных MariaDB. / Returns the list of all tables in the current MariaDB database.',
     {},
     async () => mariaListTables()
   );
@@ -63,7 +63,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_describe_table',
-    'Подробное описание структуры таблицы: колонки, типы, индексы, количество строк.',
+    'Подробное описание структуры таблицы: колонки, типы, индексы, количество строк. / Detailed table structure: columns, types, indexes, row count.',
     {
       table_name: z.string().describe('Имя таблицы. Пример: cms_users, cms_content'),
     },
@@ -73,7 +73,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_get_database_info',
-    'Статистика базы данных: имя, количество таблиц, строк, размер.',
+    'Статистика базы данных: имя, количество таблиц, строк, размер. / Database statistics: name, table count, row count, size.',
     {},
     async () => mariaGetDatabaseInfo()
   );
@@ -81,7 +81,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_search_tables',
-    'Поиск таблиц по имени. Полезно когда не помните точное имя таблицы.',
+    'Поиск таблиц по имени. Полезно когда не помните точное имя таблицы. / Search tables by name. Useful when you do not remember the exact table name.',
     {
       pattern: z.string().describe('Строка для поиска. Пример: users, content, widget'),
     },
@@ -91,7 +91,7 @@ export function registerDatabaseTools(server: McpServer): void {
   defineTool(
     server,
     'maria_get_table_data',
-    'Получить данные из таблицы с поддержкой пагинации, сортировки и фильтрации. Значения колонок-секретов маскируются, пока не передан include_sensitive.',
+    'Получить данные из таблицы с поддержкой пагинации, сортировки и фильтрации. Значения колонок-секретов маскируются, пока не передан include_sensitive. / Fetch table data with pagination, sorting and filtering. Secret columns are masked unless include_sensitive is passed.',
     {
       table_name: z.string().describe('Имя таблицы. Пример: cms_users'),
       limit: z.number().optional().default(20).describe('Количество строк (по умолчанию 20)'),

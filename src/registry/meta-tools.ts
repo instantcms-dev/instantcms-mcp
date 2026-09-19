@@ -103,7 +103,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'get_server_capabilities',
-    'Версии, профили и объём базы знаний MCP-сервера',
+    'Версии, профили и объём базы знаний MCP-сервера. / Versions, profiles, and knowledge base size of the MCP server.',
     {},
     () => ({
       server_version: getServerVersion(),
@@ -124,7 +124,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'find_tool',
-    'Подбирает MCP-инструменты по описанию задачи',
+    'Подбирает MCP-инструменты по описанию задачи. / Selects MCP tools by task description.',
     { query: z.string().trim().min(2).max(500) },
     args => {
       const query = (args as { query: string }).query;
@@ -140,7 +140,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'get_workflow',
-    'Возвращает рекомендуемую последовательность инструментов',
+    'Возвращает рекомендуемую последовательность инструментов. / Returns the recommended sequence of tools.',
     { workflow: z.enum(['addon', 'widget', 'template', 'audit', 'repair', 'upgrade']) },
     args => {
       const workflow = (args as { workflow: keyof typeof workflows }).workflow;
@@ -151,7 +151,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'diagnose_request',
-    'Определяет тип InstantCMS-задачи и рекомендуемый workflow',
+    'Определяет тип InstantCMS-задачи и рекомендуемый workflow. / Determines the InstantCMS task type and recommended workflow.',
     { request: z.string().trim().min(3).max(2000) },
     args => {
       const request = (args as { request: string }).request;
@@ -175,7 +175,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineToolWithManualResult(
     server,
     'explain_validation_error',
-    'Объясняет стабильный код диагностики',
+    'Объясняет стабильный код диагностики. / Explains a stable diagnostic code.',
     { code: z.string().trim().min(2).max(100) },
     args => {
       const code = (args as { code: string }).code;
@@ -194,7 +194,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'compare_instantcms_versions',
-    'Сравнивает документированные профили InstantCMS',
+    'Сравнивает документированные профили InstantCMS. / Compares documented InstantCMS profiles.',
     { from: z.string(), to: z.string() },
     args =>
       loadVersionProfiles().compareVersionProfiles(
@@ -206,7 +206,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'get_project_health',
-    'Возвращает состояние встроенной базы и рекомендуемые проверки',
+    'Возвращает состояние встроенной базы и рекомендуемые проверки. / Returns the state of the built-in knowledge base and recommended checks.',
     {},
     () => ({
       status: 'ready',
@@ -219,7 +219,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'validate_generated_artifacts',
-    'Проверяет XML, INI, YAML и форму PHP-файлов настоящими parser-ами',
+    'Проверяет XML, INI, YAML и форму PHP-файлов настоящими parser-ами. / Validates XML, INI, YAML, and the shape of PHP files with real parsers.',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
     args =>
       loadArtifactTool().validateGeneratedArtifacts(
@@ -230,7 +230,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'build_addon_archive',
-    'Создаёт ZIP дополнения в памяти и возвращает base64',
+    'Создаёт ZIP дополнения в памяти и возвращает base64. / Creates an addon ZIP in memory and returns base64.',
     { files: z.record(z.string(), z.string()).refine(files => Object.keys(files).length <= 500) },
     args => loadArtifactTool().buildAddonArchive((args as { files: Record<string, string> }).files)
   );
@@ -238,7 +238,7 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
   defineTool(
     server,
     'inspect_addon_archive',
-    'Проверяет пути и синтаксис файлов ZIP-архива base64',
+    'Проверяет пути и синтаксис файлов ZIP-архива base64. / Checks paths and syntax of files inside a base64 ZIP archive.',
     { archive: z.string().max(20_000_000) },
     args => loadArtifactTool().inspectAddonArchive((args as { archive: string }).archive)
   );

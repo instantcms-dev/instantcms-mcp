@@ -20,7 +20,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'merge_template_overrides',
-    'Безопасно переносит upstream-изменения в неизменённые overrides и возвращает Git patch',
+    'Безопасно переносит upstream-изменения в неизменённые overrides и возвращает Git patch. / Safely carries upstream changes into unmodified overrides and returns a Git patch.',
     {
       theme_files: templateFilesSchema,
       upstream_before: templateFilesSchema,
@@ -36,7 +36,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'audit_template_frontend',
-    'Проверяет HTML, accessibility, escaping и качество CSS файлов шаблона',
+    'Проверяет HTML, accessibility, escaping и качество CSS файлов шаблона. / Checks HTML, accessibility, escaping and CSS quality of template files.',
     { files: templateFilesSchema },
     async ({ files }) =>
       loadTemplateProductivityTool().auditTemplateFrontend(files as Record<string, string>)
@@ -44,7 +44,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'extract_template_design_tokens',
-    'Извлекает CSS custom properties, цвета и spacing и предлагает design tokens',
+    'Извлекает CSS custom properties, цвета и spacing и предлагает design tokens. / Extracts CSS custom properties, colors and spacing, and suggests design tokens.',
     { files: templateFilesSchema },
     async ({ files }) =>
       loadTemplateProductivityTool().extractTemplateDesignTokens(files as Record<string, string>)
@@ -52,7 +52,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'audit_template_widget_positions',
-    'Сопоставляет позиции виджетов в PHP-шаблонах и YAML layout-схемах',
+    'Сопоставляет позиции виджетов в PHP-шаблонах и YAML layout-схемах. / Cross-checks widget positions between PHP templates and YAML layout schemes.',
     { files: templateFilesSchema },
     async ({ files }) =>
       loadTemplateProductivityTool().auditTemplateWidgetPositions(files as Record<string, string>)
@@ -60,7 +60,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_template_e2e_environment',
-    'Генерирует Docker Compose и Playwright visual regression окружение для темы',
+    'Генерирует Docker Compose и Playwright visual regression окружение для темы. / Generates a Docker Compose and Playwright visual regression environment for a theme.',
     {
       theme: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       base_url: z.string().url().optional(),
@@ -73,7 +73,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'index_upstream_template_sources',
-    'Индексирует upstream template-файлы с SHA-256 и ссылками на исходный commit',
+    'Индексирует upstream template-файлы с SHA-256 и ссылками на исходный commit. / Indexes upstream template files with SHA-256 and source commit references.',
     {
       files: templateFilesSchema,
       repository: z.string().regex(/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/),
@@ -88,7 +88,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_template_php_quality',
-    'Генерирует PHPStan, PHPCS и PHPCompatibility конфигурацию для шаблона',
+    'Генерирует PHPStan, PHPCS и PHPCompatibility конфигурацию для шаблона. / Generates PHPStan, PHPCS and PHPCompatibility configuration for a template.',
     {
       theme: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       php_min: z
@@ -105,7 +105,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_complete_template',
-    'Создаёт полный каркас frontend-шаблона InstantCMS и импортируемую layout-схему',
+    'Создаёт полный каркас frontend-шаблона InstantCMS и импортируемую layout-схему. / Creates a complete InstantCMS frontend theme skeleton and an importable layout scheme.',
     {
       name: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       title: z.string().trim().min(1).max(200),
@@ -130,7 +130,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'analyze_instantcms_template',
-    'Анализирует структуру, overrides, widget positions, layout-файлы и риски шаблона',
+    'Анализирует структуру, overrides, widget positions, layout-файлы и риски шаблона. / Analyzes theme structure, overrides, widget positions, layout files and risks.',
     {
       files: templateFilesSchema,
       theme: z
@@ -147,7 +147,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_template_override',
-    'Создаёт точную копию upstream template-файла в правильном каталоге override темы',
+    'Создаёт точную копию upstream template-файла в правильном каталоге override темы. / Creates an exact copy of an upstream template file in the correct theme override directory.',
     {
       theme: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       source_path: z.string().min(1).max(500),
@@ -177,7 +177,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'validate_layout_scheme',
-    'Проверяет YAML-синтаксис, layout root и widget positions схемы InstantCMS',
+    'Проверяет YAML-синтаксис, layout root и widget positions схемы InstantCMS. / Validates YAML syntax, layout root and widget positions of an InstantCMS scheme.',
     {
       yaml: z
         .string()
@@ -189,7 +189,7 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
   defineTool(
     server,
     'check_template_override_compatibility',
-    'Сравнивает overrides темы с upstream template-файлами до и после обновления InstantCMS',
+    'Сравнивает overrides темы с upstream template-файлами до и после обновления InstantCMS. / Compares theme overrides with upstream template files before and after an InstantCMS update.',
     {
       theme_files: templateFilesSchema,
       upstream_before: templateFilesSchema,

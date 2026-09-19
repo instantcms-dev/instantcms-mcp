@@ -23,7 +23,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'get_addon_structure',
-    'Возвращает полную структуру файлов и папок для дополнения InstantCMS с описанием каждого файла и шаблонами кода',
+    'Возвращает полную структуру файлов и папок для дополнения InstantCMS с описанием каждого файла и шаблонами кода. / Returns the complete file and folder structure for an InstantCMS addon, with per-file descriptions and code templates.',
     {
       addon_type: z
         .enum(['basic', 'with_admin', 'with_hooks', 'with_routes', 'with_widget'])
@@ -41,7 +41,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_addon',
-    'Генерирует готовый код всех файлов дополнения InstantCMS на основе параметров. Возвращает map {имя_файла: содержимое}',
+    'Генерирует готовый код всех файлов дополнения InstantCMS на основе параметров. Возвращает map {имя_файла: содержимое}. / Generates ready-to-use code for all InstantCMS addon files based on the given parameters. Returns a map of {file_name: content}.',
     {
       name: z
         .string()
@@ -78,7 +78,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_crud',
-    'Генерирует полный CRUD для контент-типа InstantCMS: модель, контроллеры фронтенда и бэкенда, гриды, формы',
+    'Генерирует полный CRUD для контент-типа InstantCMS: модель, контроллеры фронтенда и бэкенда, гриды, формы. / Generates full CRUD for an InstantCMS content type: model, frontend and backend controllers, grids, forms.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_crud'),
       fields: z
@@ -147,7 +147,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_form',
-    'Генерирует PHP класс формы для бэкенда InstantCMS с указанными полями и правилами валидации',
+    'Генерирует PHP класс формы для бэкенда InstantCMS с указанными полями и правилами валидации. / Generates a PHP form class for the InstantCMS backend with the specified fields and validation rules.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_addon'),
       form_name: z
@@ -199,7 +199,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_grid',
-    'Генерирует PHP функцию грида для бэкенда InstantCMS с колонками, фильтрами и экшенами',
+    'Генерирует PHP функцию грида для бэкенда InstantCMS с колонками, фильтрами и экшенами. / Generates a PHP grid function for the InstantCMS backend with columns, filters, and actions.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_addon'),
       grid_name: z
@@ -276,7 +276,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_api',
-    'Генерирует REST API контроллер для InstantCMS с эндпоинтами, аутентификацией и опционально OpenAPI спецификацией',
+    'Генерирует REST API контроллер для InstantCMS с эндпоинтами, аутентификацией и опционально OpenAPI спецификацией. / Generates a REST API controller for InstantCMS with endpoints, authentication, and optionally an OpenAPI specification.',
     {
       addon_name: z.string().describe('Техническое имя API. Пример: my_api'),
       version: z.string().optional().default('v1').describe('Версия API. Пример: v1, v2'),
@@ -323,7 +323,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_test',
-    'Генерирует PHPUnit или Codeception тесты для дополнения InstantCMS',
+    'Генерирует PHPUnit или Codeception тесты для дополнения InstantCMS. / Generates PHPUnit or Codeception tests for an InstantCMS addon.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_addon'),
       class_name: z.string().describe('Имя тестируемого класса. Пример: modelMyaddon'),
@@ -351,7 +351,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_email',
-    'Генерирует письма InstantCMS в формате system/languages/<lang>/letters/*.txt ([subject:...] и {плейсхолдеры})',
+    'Генерирует письма InstantCMS в формате system/languages/<lang>/letters/*.txt ([subject:...] и {плейсхолдеры}). / Generates InstantCMS email templates in the system/languages/<lang>/letters/*.txt format ([subject:...] and {placeholders}).',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_addon'),
       templates: z
@@ -398,7 +398,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_layout_override',
-    'Генерирует шаблоны для переопределения стандартных шаблонов контроллеров InstantCMS в пользовательских темах',
+    'Генерирует шаблоны для переопределения стандартных шаблонов контроллеров InstantCMS в пользовательских темах. / Generates templates for overriding standard InstantCMS controller templates in custom themes.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_overrides'),
       overrides: z
@@ -433,7 +433,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_admin_partial',
-    'Генерирует переиспользуемые части интерфейса админки: header, sidebar, toolbar, breadcrumbs, panels, modals',
+    'Генерирует переиспользуемые части интерфейса админки: header, sidebar, toolbar, breadcrumbs, panels, modals. / Generates reusable admin UI parts: header, sidebar, toolbar, breadcrumbs, panels, modals.',
     {
       addon_name: z.string().describe('Техническое имя набора. Пример: my_partials'),
       partials: z
@@ -480,7 +480,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'list_template_overrides',
-    'Возвращает список всех доступных переопределений шаблонов контроллеров InstantCMS',
+    'Возвращает список всех доступных переопределений шаблонов контроллеров InstantCMS. / Returns the list of all available InstantCMS controller template overrides.',
     {
       controller: z
         .string()
@@ -496,7 +496,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'get_template_override_info',
-    'Возвращает подробную информацию о конкретном переопределении шаблона',
+    'Возвращает подробную информацию о конкретном переопределении шаблона. / Returns detailed information about a specific template override.',
     {
       controller: z.string().describe('Имя контроллера. Пример: content, users'),
       action: z
@@ -515,7 +515,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_cron',
-    'Генерирует PHP cron контроллер для периодических задач с настройкой расписания, блокировками и логированием',
+    'Генерирует PHP cron контроллер для периодических задач с настройкой расписания, блокировками и логированием. / Generates a PHP cron controller for periodic tasks with schedule configuration, locking, and logging.',
     {
       addon_name: z.string().describe('Техническое имя дополнения. Пример: my_cron'),
       tasks: z

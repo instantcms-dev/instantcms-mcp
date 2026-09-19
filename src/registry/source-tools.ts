@@ -23,7 +23,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'list_widgets',
-    'Список всех доступных виджетов InstantCMS. Можно фильтровать по контроллеру.',
+    'Список всех доступных виджетов InstantCMS. Можно фильтровать по контроллеру. / Lists all available InstantCMS widgets, filterable by controller.',
     {
       controller: z.string().optional().describe('Фильтр по контроллеру. Пример: content, users'),
     },
@@ -34,7 +34,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'get_widget_info',
-    'Подробная информация о виджете: класс, файл, настройки.',
+    'Подробная информация о виджете: класс, файл, настройки. / Returns detailed widget info: class, file, settings.',
     {
       name: z.string().describe('Имя виджета. Пример: text, menu, html'),
     },
@@ -45,7 +45,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'list_traits',
-    'Список всех системных трейтов. Можно фильтровать по namespace.',
+    'Список всех системных трейтов. Можно фильтровать по namespace. / Lists all system traits. Filterable by namespace.',
     {
       namespace: z
         .string()
@@ -59,7 +59,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'get_trait_info',
-    'Подробная информация о трейте: методы, параметры, описание.',
+    'Подробная информация о трейте: методы, параметры, описание. / Detailed trait info: methods, parameters, description.',
     {
       name: z.string().describe('Имя трейта. Пример: fieldsParseable, listgrid'),
     },
@@ -70,7 +70,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'list_field_types',
-    'Список всех типов полей для форм InstantCMS: string, text, image, list и др.',
+    'Список всех типов полей для форм InstantCMS: string, text, image, list и др. / Lists all InstantCMS form field types: string, text, image, list and more.',
     {},
     async () => listFields() as Record<string, unknown>
   );
@@ -79,7 +79,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'get_field_type_info',
-    'Подробная информация о типе поля: класс, опции, описание.',
+    'Подробная информация о типе поля: класс, опции, описание. / Detailed field type info: class, options, description.',
     {
       name: z.string().describe('Имя типа поля. Пример: string, list, image, date'),
     },
@@ -90,7 +90,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'list_routes',
-    'Список всех маршрутов (routes) системы. Маршруты определяют URL-паттерны и действия контроллеров.',
+    'Список всех маршрутов (routes) системы. Маршруты определяют URL-паттерны и действия контроллеров. / Lists all system routes. Routes define URL patterns and controller actions.',
     {
       controller: z
         .string()
@@ -104,7 +104,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'generate_migration',
-    'Генерация SQL и PHP кода для создания таблицы. Генерирует install.php, SQL CREATE TABLE и соглашения по именованию.',
+    'Генерация SQL и PHP кода для создания таблицы. Генерирует install.php, SQL CREATE TABLE и соглашения по именованию. / Generates SQL and PHP code for creating a table: install.php, SQL CREATE TABLE and naming conventions.',
     {
       name: z
         .string()
@@ -130,7 +130,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'get_field_suggestions',
-    'Подсказки по типичным полям для генерации миграций: string, text, number, datetime, user, bool.',
+    'Подсказки по типичным полям для генерации миграций: string, text, number, datetime, user, bool. / Hints for typical migration fields: string, text, number, datetime, user, bool.',
     {
       field_type: z
         .enum(['string', 'text', 'number', 'datetime', 'user', 'bool'])
@@ -144,7 +144,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'analyze_requirement',
-    'AI анализ запроса пользователя и предложение структуры дополнения. Определяет тип дополнения, необходимые хуки, таблицы, контроллеры.',
+    'AI анализ запроса пользователя и предложение структуры дополнения. Определяет тип дополнения, необходимые хуки, таблицы, контроллеры. / AI analysis of a user request suggesting an addon structure. Detects the addon type, required hooks, tables, controllers.',
     {
       requirement: z
         .string()
@@ -160,7 +160,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'suggest_addon_structure',
-    'Предложить структуру файлов для типа дополнения (basic, with_admin, with_hooks, with_routes, with_widget).',
+    'Предложить структуру файлов для типа дополнения (basic, with_admin, with_hooks, with_routes, with_widget). / Suggests the file structure for an addon type (basic, with_admin, with_hooks, with_routes, with_widget).',
     {
       type: z
         .enum(['basic', 'with_admin', 'with_hooks', 'with_routes', 'with_widget'])
@@ -173,7 +173,7 @@ export function registerSourceTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_hook',
-    'Генерирует PHP файл хука с полным кодом класса. Автоматически определяет параметры, тип (action/filter), формирует className.',
+    'Генерирует PHP файл хука с полным кодом класса. Автоматически определяет параметры, тип (action/filter), формирует className. / Generates a PHP hook file with full class code. Auto-detects parameters, type (action/filter) and builds the className.',
     {
       addon_name: z.string().describe('Имя дополнения (техническое). Пример: myaddon'),
       hook_name: z

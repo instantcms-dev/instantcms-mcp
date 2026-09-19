@@ -35,7 +35,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_hooks',
-    'Список всех доступных хуков InstantCMS с краткими описаниями. Поддерживает фильтрацию по категории и типу',
+    'Список всех доступных хуков InstantCMS с краткими описаниями. Поддерживает фильтрацию по категории и типу. / Lists all available InstantCMS hooks with short descriptions. Supports filtering by category and type.',
     {
       category: z
         .string()
@@ -58,7 +58,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_hook_details',
-    'Подробная информация о конкретном хуке: параметры, возвращаемый тип, пример реализации, как зарегистрировать в manifest.xml',
+    'Подробная информация о конкретном хуке: параметры, возвращаемый тип, пример реализации, как зарегистрировать в manifest.xml. / Detailed information about a specific hook: parameters, return type, implementation example, and how to register it in manifest.xml.',
     {
       hook_name: z
         .string()
@@ -74,7 +74,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'search_hooks',
-    'Полнотекстовый поиск хуков по имени, описанию, категории или параметрам',
+    'Полнотекстовый поиск хуков по имени, описанию, категории или параметрам. / Full-text search of hooks by name, description, category, or parameters.',
     {
       query: z
         .string()
@@ -89,7 +89,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_component_api',
-    'API конкретного класса/компонента InstantCMS: методы, сигнатуры, описания, примеры вызовов',
+    'API конкретного класса/компонента InstantCMS: методы, сигнатуры, описания, примеры вызовов. / API of a specific InstantCMS class/component: methods, signatures, descriptions, call examples.',
     {
       component_name: z
         .string()
@@ -106,7 +106,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_components',
-    'Список всех документированных компонентов и классов InstantCMS с кратким описанием и способом доступа',
+    'Список всех документированных компонентов и классов InstantCMS с кратким описанием и способом доступа. / Lists all documented InstantCMS components and classes with a short description and access method.',
     { limit: z.number().int().min(1).max(200).optional(), cursor: z.string().optional() },
     async ({ limit, cursor }) => {
       const result = listComponents({
@@ -121,7 +121,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'validate_addon',
-    'Валидация структуры дополнения InstantCMS. Проверяет наличие обязательных файлов, правильность классов, соглашения об именовании',
+    'Валидация структуры дополнения InstantCMS. Проверяет наличие обязательных файлов, правильность классов, соглашения об именовании. / Validates the structure of an InstantCMS addon. Checks for required files, correct classes, and naming conventions.',
     {
       files: z
         .record(z.string().min(1).max(500), z.string().max(2_000_000))
@@ -139,7 +139,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_field_types',
-    'Информация о типах полей для форм InstantCMS (fieldString, fieldList, fieldImage и др.) с примерами использования',
+    'Информация о типах полей для форм InstantCMS (fieldString, fieldList, fieldImage и др.) с примерами использования. / Information about InstantCMS form field types (fieldString, fieldList, fieldImage, etc.) with usage examples.',
     {
       field_type: z
         .string()
@@ -157,7 +157,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_code_example',
-    'Получить готовый пример кода для типовой задачи в InstantCMS',
+    'Получить готовый пример кода для типовой задачи в InstantCMS. / Get a ready-made code example for a typical InstantCMS task.',
     {
       task: z
         .string()
@@ -174,7 +174,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_template',
-    'Генерирует скаффолд шаблона (темы) для InstantCMS: manifest.php, main.tpl.php, базовые CSS/JS',
+    'Генерирует скаффолд шаблона (темы) для InstantCMS: manifest.php, main.tpl.php, базовые CSS/JS. / Generates a scaffold of an InstantCMS template (theme): manifest.php, main.tpl.php, base CSS/JS.',
     {
       name: z.string().describe('Техническое имя шаблона (латинские буквы). Пример: mytheme'),
       title: z.string().describe('Отображаемое название. Пример: My Beautiful Theme'),
@@ -192,7 +192,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_template_structure',
-    'Полная структура шаблона InstantCMS: обязательные и опциональные файлы, переменные доступные в .tpl.php, переопределение шаблонов контроллеров',
+    'Полная структура шаблона InstantCMS: обязательные и опциональные файлы, переменные доступные в .tpl.php, переопределение шаблонов контроллеров. / Full InstantCMS template structure: required and optional files, variables available in .tpl.php, controller template overrides.',
     {},
     async () => {
       return {
@@ -222,7 +222,10 @@ export function registerKnowledgeTools(server: McpServer): void {
     `Генерирует YAML-схему расположения виджетов для импорта в шаблон modern InstantCMS.
 Схема описывает ряды (rows) и колонки (cols) Bootstrap 4 сетки с позициями для виджетов.
 Результат импортируется через: Панель управления → Оформление → Шаблоны → Modern → Схема → Импорт.
-Можно задать произвольную схему через параметр rows, или использовать готовый пресет через preset.`,
+Можно задать произвольную схему через параметр rows, или использовать готовый пресет через preset. / Generates a YAML widget layout scheme for import into the InstantCMS modern template.
+The scheme describes rows and columns of the Bootstrap 4 grid with widget positions.
+The result is imported via: Control Panel → Design → Templates → Modern → Scheme → Import.
+You can define a custom scheme via the rows parameter, or use a ready-made preset via preset.`,
     {
       template: z
         .string()
@@ -377,7 +380,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_layout_presets',
-    'Список готовых пресетов схем расположения виджетов для шаблона modern InstantCMS. Используйте preset в scaffold_layout_scheme для быстрой генерации.',
+    'Список готовых пресетов схем расположения виджетов для шаблона modern InstantCMS. Используйте preset в scaffold_layout_scheme для быстрой генерации. / Lists ready-made widget layout scheme presets for the InstantCMS modern template. Use preset in scaffold_layout_scheme for quick generation.',
     {},
     async () => {
       return listLayoutPresets() as Record<string, unknown>;
@@ -388,7 +391,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'introspect_database',
-    'Анализ структуры базы данных InstantCMS. Без параметров — список всех таблиц. С параметром table_name — детали конкретной таблицы.',
+    'Анализ структуры базы данных InstantCMS. Без параметров — список всех таблиц. С параметром table_name — детали конкретной таблицы. / Analyzes the InstantCMS database structure. Without parameters — lists all tables. With the table_name parameter — details of a specific table.',
     {
       table_name: z
         .string()
@@ -404,7 +407,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'describe_table',
-    'Подробное описание таблицы: поля, индексы, связи, типы данных. Генерирует примеры SQL-запросов.',
+    'Подробное описание таблицы: поля, индексы, связи, типы данных. Генерирует примеры SQL-запросов. / Detailed table description: fields, indexes, relations, data types. Generates example SQL queries.',
     {
       table_name: z
         .string()
@@ -419,7 +422,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_content_types',
-    'Информация о типах контента: cms_content_types, cms_con_pages, cms_users. Поля, ключи, связи.',
+    'Информация о типах контента: cms_content_types, cms_con_pages, cms_users. Поля, ключи, связи. / Information about content types: cms_content_types, cms_con_pages, cms_users. Fields, keys, relations.',
     {},
     async () => {
       return listContentTypes() as Record<string, unknown>;
@@ -430,7 +433,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_database_events',
-    'Все зарегистрированные события (хуки) из таблицы cms_events. Показывает какой контроллер на какое событие подписан.',
+    'Все зарегистрированные события (хуки) из таблицы cms_events. Показывает какой контроллер на какое событие подписан. / All registered events (hooks) from the cms_events table. Shows which controller is subscribed to which event.',
     {},
     async () => {
       return listDatabaseEvents() as Record<string, unknown>;
@@ -441,7 +444,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'analyze_controller',
-    'Подробная информация о контроллере: класс, наследование, экшены, трейты, файлы.',
+    'Подробная информация о контроллере: класс, наследование, экшены, трейты, файлы. / Detailed controller information: class, inheritance, actions, traits, files.',
     {
       name: z.string().describe('Имя контроллера. Пример: content, users, messages'),
       type: z.enum(['frontend', 'backend']).optional().describe('Тип контроллера'),
@@ -455,7 +458,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_controllers',
-    'Список всех контроллеров: frontend и backend. Можно фильтровать по типу.',
+    'Список всех контроллеров: frontend и backend. Можно фильтровать по типу. / Lists all controllers: frontend and backend. Can be filtered by type.',
     {
       filter: z.enum(['frontend', 'backend']).optional().describe('Фильтр по типу контроллера'),
     },
@@ -468,7 +471,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'get_controller_actions',
-    'Список всех экшенов контроллера с параметрами, видимостью и трейтами.',
+    'Список всех экшенов контроллера с параметрами, видимостью и трейтами. / Lists all controller actions with parameters, visibility, and traits.',
     {
       name: z.string().describe('Имя контроллера. Пример: content, users'),
       type: z.enum(['frontend', 'backend']).optional().describe('Тип контроллера'),
@@ -482,7 +485,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineTool(
     server,
     'list_system_traits',
-    'Список всех системных трейтов icms используемых в контроллерах. Трейты предоставляют готовую функциональность.',
+    'Список всех системных трейтов icms используемых в контроллерах. Трейты предоставляют готовую функциональность. / Lists all icms system traits used in controllers. Traits provide ready-made functionality.',
     {},
     async () => {
       return listSystemTraits() as Record<string, unknown>;

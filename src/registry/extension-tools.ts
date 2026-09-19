@@ -30,7 +30,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'list_wysiwyg_editors',
-    'Список всех доступных WYSIWYG редакторов: ace (редактор кода), markitup (разметка), redactor (Imperavi), tinymce.',
+    'Список всех доступных WYSIWYG редакторов: ace (редактор кода), markitup (разметка), redactor (Imperavi), tinymce. / Lists all available WYSIWYG editors: ace (code editor), markitup (markup), redactor (Imperavi), tinymce.',
     {},
     async () => listWysiwygEditors() as Record<string, unknown>
   );
@@ -39,7 +39,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'get_wysiwyg_editor',
-    'Подробная информация о WYSIWYG редакторе: класс, файл, опции, плагины, кнопки, пример использования.',
+    'Подробная информация о WYSIWYG редакторе: класс, файл, опции, плагины, кнопки, пример использования. / Detailed info about a WYSIWYG editor: class, file, options, plugins, buttons, usage example.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
@@ -50,7 +50,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'get_wysiwyg_options',
-    'Список всех настроек WYSIWYG редактора с типами, описаниями и значениями по умолчанию.',
+    'Список всех настроек WYSIWYG редактора с типами, описаниями и значениями по умолчанию. / Lists all WYSIWYG editor settings with types, descriptions and default values.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
@@ -61,7 +61,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'get_wysiwyg_plugins',
-    'Список плагинов WYSIWYG редактора. Redactor и TinyMCE поддерживают плагины.',
+    'Список плагинов WYSIWYG редактора. Redactor и TinyMCE поддерживают плагины. / Lists WYSIWYG editor plugins. Redactor and TinyMCE support plugins.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
@@ -72,7 +72,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'search_wysiwyg_editors',
-    'Поиск WYSIWYG редакторов по описанию, функциям или плагинам.',
+    'Поиск WYSIWYG редакторов по описанию, функциям или плагинам. / Search WYSIWYG editors by description, features or plugins.',
     {
       query: z.string().describe("Поисковый запрос. Пример: 'код', 'видео', 'смайлы'"),
     },
@@ -83,7 +83,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'get_wysiwyg_buttons',
-    'Список кнопок тулбара WYSIWYG редактора. Для markitup возвращает объекты с настройками (openWith, closeWith).',
+    'Список кнопок тулбара WYSIWYG редактора. Для markitup возвращает объекты с настройками (openWith, closeWith). / Lists WYSIWYG editor toolbar buttons. For markitup returns objects with settings (openWith, closeWith).',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
@@ -94,7 +94,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_permission',
-    'Генерация системы прав доступа для дополнения InstantCMS с настройкой ролей и проверкой владельца',
+    'Генерация системы прав доступа для дополнения InstantCMS с настройкой ролей и проверкой владельца. / Generates a permission system for an InstantCMS addon with role setup and ownership checks.',
     {
       name: z
         .string()
@@ -124,7 +124,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_filter',
-    'Генерация системы фильтрации контента с поддержкой различных типов фильтров',
+    'Генерация системы фильтрации контента с поддержкой различных типов фильтров. / Generates a content filtering system with support for various filter types.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       fields: z
@@ -163,7 +163,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_seo',
-    'Генерация SEO мета-тегов, Open Graph разметки и sitemap для InstantCMS',
+    'Генерация SEO мета-тегов, Open Graph разметки и sitemap для InstantCMS. / Generates SEO meta tags, Open Graph markup and sitemap for InstantCMS.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       fields: z
@@ -199,7 +199,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_import_export',
-    'Генерация системы импорта/экспорта данных с поддержкой CSV, Excel, JSON, XML',
+    'Генерация системы импорта/экспорта данных с поддержкой CSV, Excel, JSON, XML. / Generates a data import/export system with CSV, Excel, JSON, XML support.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       fields: z
@@ -246,7 +246,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_cache',
-    'Генерация системы кэширования InstantCMS: класс кэша, тег-инвалидация и реальные хуки контроллера',
+    'Генерация системы кэширования InstantCMS: класс кэша, тег-инвалидация и реальные хуки контроллера. / Generates an InstantCMS caching system: cache class, tag invalidation and real controller hooks.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       options: z
@@ -272,7 +272,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_webhook',
-    'Генерация системы веб-хуков для InstantCMS с поддержкой подписи и повторных попыток',
+    'Генерация системы веб-хуков для InstantCMS с поддержкой подписи и повторных попыток. / Generates a webhook system for InstantCMS with signature support and retries.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       events: z.array(z.string()).describe('События для обработки'),
@@ -293,7 +293,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_external_api',
-    'Генерация клиента для внешнего API с поддержкой авторизации, rate limiting и кэширования',
+    'Генерация клиента для внешнего API с поддержкой авторизации, rate limiting и кэширования. / Generates an external API client with auth, rate limiting and caching support.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       base_url: z.string().describe('Базовый URL API'),
@@ -328,7 +328,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_oauth',
-    'Генерация OAuth авторизации для InstantCMS с поддержкой различных провайдеров',
+    'Генерация OAuth авторизации для InstantCMS с поддержкой различных провайдеров. / Generates OAuth authorization for InstantCMS with support for various providers.',
     {
       addon_name: z.string().describe('Имя дополнения'),
       providers: z
@@ -359,7 +359,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_component',
-    'Генерация полного компонента InstantCMS с backend, frontend, model',
+    'Генерация полного компонента InstantCMS с backend, frontend, model. / Generates a complete InstantCMS component with backend, frontend, model.',
     {
       addon_name: z.string().describe('Имя компонента'),
       controllers: z
@@ -390,7 +390,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_widget',
-    'Генерация виджета InstantCMS с настройками и шаблонами',
+    'Генерация виджета InstantCMS с настройками и шаблонами. / Generates an InstantCMS widget with settings and templates.',
     {
       addon_name: z.string().describe('Имя компонента'),
       widget_name: z.string().describe('Имя виджета'),
@@ -430,7 +430,7 @@ export function registerExtensionTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_template_theme',
-    'Генерация темы шаблона InstantCMS с layout, стилями и поддержкой dark mode',
+    'Генерация темы шаблона InstantCMS с layout, стилями и поддержкой dark mode. / Generates an InstantCMS template theme with layout, styles and dark mode support.',
     {
       template_name: z.string().describe('Имя шаблона'),
       options: z

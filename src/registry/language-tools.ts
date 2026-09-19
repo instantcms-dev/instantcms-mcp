@@ -13,7 +13,7 @@ export function registerLanguageTools(server: McpServer): void {
   defineTool(
     server,
     'list_lang_keys',
-    'Возвращает типовые языковые константы для дополнения. Генерирует LANG_* ключи с значениями по умолчанию.',
+    'Возвращает типовые языковые константы для дополнения. Генерирует LANG_* ключи с значениями по умолчанию. / Returns typical language constants for an addon. Generates LANG_* keys with default values.',
     {
       addon_name: z.string().describe('Имя дополнения. Пример: myaddon'),
       category: z
@@ -34,7 +34,7 @@ export function registerLanguageTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_lang',
-    'Генерирует готовый PHP файл с языковыми константами для дополнения.',
+    'Генерирует готовый PHP файл с языковыми константами для дополнения. / Generates a ready-to-use PHP language constants file for an addon.',
     {
       addon_name: z.string().describe('Имя дополнения. Пример: myaddon'),
       keys: z
@@ -66,7 +66,7 @@ export function registerLanguageTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_migration',
-    'Генерирует install.php и uninstall.php файлы для дополнения. Включает создание таблиц, опционально тип контента и SEO настройки.',
+    'Генерирует install.php и uninstall.php файлы для дополнения. Включает создание таблиц, опционально тип контента и SEO настройки. / Generates install.php and uninstall.php files for an addon. Includes table creation, optionally a content type and SEO settings.',
     {
       addon_name: z.string().describe('Имя дополнения. Пример: myaddon'),
       table_name: z.string().describe('Имя таблицы без префикса. Пример: items'),
