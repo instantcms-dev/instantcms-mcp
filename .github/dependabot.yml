@@ -1,10 +1,45 @@
 version: 2
+
 updates:
+  # Runtime-зависимости: только patch PR автоматически. minor/major для
+  # поставляемого кода (mysql2, zod, MCP SDK) ревьюим руками — они меняют
+  # то, что получают пользователи npm-пакета.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+      day: monday
+    commit-message:
+      prefix: 'chore(deps)'
     groups:
-      development-dependencies:
-        dependency-type: development
+      runtime-patches:
+        patterns:
+          - '@modelcontextprotocol/*'
+          - 'fast-xml-parser'
+          - 'fflate'
+          - 'ini'
+          - 'mysql2'
+          - 'yaml'
+          - 'zod'
+        update-types: ['patch']
+      dev-tooling:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@modelcontextprotocol/*'
+          - 'fast-xml-parser'
+          - 'fflate'
+          - 'ini'
+          - 'mysql2'
+          - 'yaml'
+          - 'zod'
+        update-types: ['minor', 'patch']
+
+  # actions/checkout, setup-node и прочие — еженедельно, minor/patch.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: 'chore(ci)'

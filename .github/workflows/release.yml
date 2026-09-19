@@ -66,11 +66,27 @@ jobs:
           cp LICENSE release/ || true
           cd release && zip -r "../instantcms-mcp-${RELEASE_TAG}.zip" .
 
+      # SBOM только production-зависимостей: описывает то, что реально
+      # поставляется пользователям, без dev-инструментария.
+      - name: Generate SBOM (CycloneDX)
+        run: npm sbom --sbom-format cyclonedx --sbom-type application --omit=dev > sbom.cyclonedx.json
+
+      - name: Verify SBOM is non-trivial
+        run: |
+          node -e "
+          const sbom = require('./sbom.cyclonedx.json');
+          const deps = (sbom.components || []).length;
+          if (deps < 7) throw new Error('SBOM подозрительно мал: ' + deps + ' компонентов');
+          console.log('SBOM: ' + deps + ' компонентов, формат ' + sbom.specVersion);
+          "
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          files: instantcms-mcp-${{ env.RELEASE_TAG }}.zip
+          files: |
+            instantcms-mcp-${{ env.RELEASE_TAG }}.zip
+            sbom.cyclonedx.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
