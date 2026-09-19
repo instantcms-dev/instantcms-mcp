@@ -111,6 +111,12 @@ jobs:
       - name: Verify build output
         run: test -f dist/index.js
 
+      # Полный путь пользователя: npm pack → install в чистую папку →
+      # spawn → initialize/tools/list. Ловит ошибки packaging, которые
+      # не видны тестам исходников.
+      - name: E2E npm package smoke test
+        run: npm run test:package
+
   integration:
     name: Generated artifacts on a live InstantCMS
     runs-on: ubuntu-latest

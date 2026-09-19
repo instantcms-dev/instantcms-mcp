@@ -23,6 +23,7 @@
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "test": "jest",
     "test:integration": "jest src/__tests__/mcp-integration.test.ts --runInBand",
+    "test:package": "node scripts/e2e-package.mjs",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/ --ext .ts --max-warnings=0",
     "lint:fix": "eslint src/ --ext .ts --fix",
