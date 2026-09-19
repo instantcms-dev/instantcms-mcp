@@ -78,14 +78,20 @@ jobs:
           fi
           php -v
 
-      - name: Prepare pinned InstantCMS source
-        run: npm run knowledge:source:update
+      - name: Checkout pinned InstantCMS source
+        run: |
+          set -euo pipefail
+          COMMIT=$(node -e "process.stdout.write(require('./knowledge/upstream.json').commit)")
+          echo "Pinned InstantCMS commit: $COMMIT"
+          git clone --filter=blob:none --no-checkout https://github.com/instantsoft/icms2.git .cache/icms2
+          git -C .cache/icms2 fetch --depth 1 origin "$COMMIT"
+          git -C .cache/icms2 checkout --detach --force FETCH_HEAD
 
       - name: Link ./source for Core Parser tests
         run: ln -s .cache/icms2 source
 
       # ICMS_REQUIRE_SOURCE=1 запрещает пропуск: если источник не найден,
-      # сьюты падают, а не молча пропускаются. Так CI видит все 621 тест.
+      # сьюты падают, а не молча пропускаются. Так CI видит все тесты.
       - name: Run full test suite (skips forbidden)
         run: ICMS_SOURCE=.cache/icms2 ICMS_REQUIRE_SOURCE=1 npm test -- --runInBand
 

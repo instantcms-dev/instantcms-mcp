@@ -43,5 +43,6 @@ yarn-error.log*
 .npm
 
 source/
+/source
 .cache/
 .logs/

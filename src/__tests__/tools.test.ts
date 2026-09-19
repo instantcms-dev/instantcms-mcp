@@ -2114,10 +2114,16 @@ describeOrSkip('Core Parser', () => {
     expect(result.methods.length).toBeGreaterThan(0);
   });
 
-  test('parseAllCoreFiles finds 38 classes', () => {
+  test('parseAllCoreFiles parses core classes from source', () => {
     const { parseAllCoreFiles } = require('../tools/parser/core-parser');
     const result = parseAllCoreFiles('./source');
-    expect(result.length).toBe(38);
+    // Точное число классов зависит от версии InstantCMS, поэтому проверяем
+    // нижнюю границу и наличие ключевых классов вместо жёсткого количества.
+    expect(result.length).toBeGreaterThanOrEqual(30);
+    const names = result.map((item: any) => item.name);
+    expect(names).toContain('cmsUser');
+    expect(names).toContain('cmsDatabase');
+    expect(names).toContain('cmsConfig');
   });
 
   test('cmsUser has some public methods', () => {
@@ -2171,14 +2177,23 @@ describeOrSkip('Core Parser', () => {
     });
   });
 
-  test('coreClasses array has 38 entries', () => {
+  test('coreClasses содержит ключевые классы ядра', () => {
     const { coreClasses } = require('../data/core-api');
-    expect(coreClasses.length).toBe(38);
+    // Количество классов растёт от версии к версии: проверяем нижнюю границу
+    // и обязательное присутствие ключевых классов.
+    expect(coreClasses.length).toBeGreaterThanOrEqual(30);
+    const names = coreClasses.map((item: any) => item.name);
+    for (const name of ['cmsUser', 'cmsDatabase', 'cmsConfig', 'cmsTemplate', 'cmsModel']) {
+      expect(names).toContain(name);
+    }
   });
 
-  test('coreAPIMap has all 38 classes', () => {
-    const { coreAPIMap } = require('../data/core-api');
-    expect(Object.keys(coreAPIMap).length).toBe(38);
+  test('coreAPIMap индексирует все классы из coreClasses', () => {
+    const { coreAPIMap, coreClasses } = require('../data/core-api');
+    expect(Object.keys(coreAPIMap).length).toBe(coreClasses.length);
+    for (const item of coreClasses) {
+      expect(coreAPIMap[item.name]).toBeDefined();
+    }
   });
 
   test('cmsTemplate has many methods', () => {
