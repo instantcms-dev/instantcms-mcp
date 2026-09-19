@@ -78,7 +78,20 @@ npm run inspector
 npm run check
 ```
 
-`npm run check` выполняет проверку provenance/generated metadata, TypeScript, unit-тестов и конфигураций AI-клиентов. Интеграционный MCP smoke-test запускается отдельно командой `npm run test:integration`.
+`npm run check` выполняет проверку provenance/generated metadata, TypeScript, unit-тестов, порогов покрытия и конфигураций AI-клиентов. Интеграционный MCP smoke-test запускается отдельно командой `npm run test:integration`.
+
+### HTTP-транспорт (опционально)
+
+По умолчанию сервер работает через stdio. Для удалённых клиентов доступен Streamable HTTP:
+
+```bash
+node dist/index.js --http                # http://127.0.0.1:3001/mcp
+node dist/index.js --http --port 8080    # порт флагом или MCP_HTTP_PORT
+MCP_HTTP_TOKEN=secret node dist/index.js --http   # требовать Authorization: Bearer secret
+MCP_HTTP_HOST=0.0.0.0 node dist/index.js --http   # слушать внешний интерфейр
+```
+
+Режим stateless (без сессий, только POST), по умолчанию привязка к 127.0.0.1 — сервер не доступен извне без явного `MCP_HTTP_HOST`. / HTTP mode is stateless (POST only) and binds to 127.0.0.1 by default. / HTTP 模式为无状态（仅 POST），默认绑定 127.0.0.1。
 
 ## Проверка генераторов на реальном InstantCMS
 
