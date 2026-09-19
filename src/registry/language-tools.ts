@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { scaffoldMigration } from '../tools/migration-tool.js';
 import { listLangKeys, scaffoldLang } from '../tools/lang-tool.js';
+import { defineTool } from '../utils/define-tool.js';
 
 export function registerLanguageTools(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -9,7 +10,8 @@ export function registerLanguageTools(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ── 40. Список языковых ключей ────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_lang_keys',
     'Возвращает типовые языковые константы для дополнения. Генерирует LANG_* ключи с значениями по умолчанию.',
     {
@@ -21,21 +23,16 @@ export function registerLanguageTools(server: McpServer): void {
           'Фильтр по категории: system, actions, pages, buttons, status, fields, errors, permissions, dates, messages, pagination, sort'
         ),
     },
-    async ({ addon_name, category }) => {
-      const result = listLangKeys({ addon_name, category });
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async args =>
+      listLangKeys(args as { addon_name: string; category?: string }) as unknown as Record<
+        string,
+        unknown
+      >
   );
 
   // ── 41. Генерация языкового файла ───────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_lang',
     'Генерирует готовый PHP файл с языковыми константами для дополнения.',
     {
@@ -55,21 +52,19 @@ export function registerLanguageTools(server: McpServer): void {
         .optional()
         .describe('Дополнительные кастомные ключи'),
     },
-    async ({ addon_name, keys, custom_keys }) => {
-      const result = scaffoldLang({ addon_name, keys, custom_keys });
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async args =>
+      scaffoldLang(
+        args as {
+          addon_name: string;
+          keys?: string[];
+          custom_keys?: { key: string; value: string; category?: string }[];
+        }
+      ) as Record<string, unknown>
   );
 
   // ── 42. Генерация миграции с файлами ────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_migration',
     'Генерирует install.php и uninstall.php файлы для дополнения. Включает создание таблиц, опционально тип контента и SEO настройки.',
     {
@@ -109,16 +104,7 @@ export function registerLanguageTools(server: McpServer): void {
         })
         .optional(),
     },
-    async ({ addon_name, table_name, fields, options }) => {
-      const result = scaffoldMigration({ addon_name, table_name, fields, options });
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async args =>
+      scaffoldMigration(args as Parameters<typeof scaffoldMigration>[0]) as Record<string, unknown>
   );
 }

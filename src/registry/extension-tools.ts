@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { defineTool } from '../utils/define-tool.js';
 import {
   listWysiwygEditors,
   getWysiwygEditor,
@@ -26,125 +27,72 @@ export function registerExtensionTools(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ── 43. Список WYSIWYG редакторов ─────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_wysiwyg_editors',
     'Список всех доступных WYSIWYG редакторов: ace (редактор кода), markitup (разметка), redactor (Imperavi), tinymce.',
     {},
-    async () => {
-      const result = listWysiwygEditors();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async () => listWysiwygEditors() as Record<string, unknown>
   );
 
   // ── 40. Информация о WYSIWYG редакторе ───────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_wysiwyg_editor',
     'Подробная информация о WYSIWYG редакторе: класс, файл, опции, плагины, кнопки, пример использования.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
-    async ({ name }) => {
-      const result = getWysiwygEditor(name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async ({ name }: any) => getWysiwygEditor(name) as Record<string, unknown>
   );
 
   // ── 41. Опции WYSIWYG редактора ──────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_wysiwyg_options',
     'Список всех настроек WYSIWYG редактора с типами, описаниями и значениями по умолчанию.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
-    async ({ name }) => {
-      const result = getWysiwygOptions(name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async ({ name }: any) => getWysiwygOptions(name) as Record<string, unknown>
   );
 
   // ── 42. Плагины WYSIWYG редактора ────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_wysiwyg_plugins',
     'Список плагинов WYSIWYG редактора. Redactor и TinyMCE поддерживают плагины.',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
-    async ({ name }) => {
-      const result = getWysiwygPlugins(name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async ({ name }: any) => getWysiwygPlugins(name) as Record<string, unknown>
   );
 
   // ── 43. Поиск WYSIWYG редакторов ─────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'search_wysiwyg_editors',
     'Поиск WYSIWYG редакторов по описанию, функциям или плагинам.',
     {
       query: z.string().describe("Поисковый запрос. Пример: 'код', 'видео', 'смайлы'"),
     },
-    async ({ query }) => {
-      const result = searchWysiwygEditors(query);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async ({ query }: any) => searchWysiwygEditors(query) as Record<string, unknown>
   );
 
   // ── 44. Кнопки WYSIWYG редактора ─────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_wysiwyg_buttons',
     'Список кнопок тулбара WYSIWYG редактора. Для markitup возвращает объекты с настройками (openWith, closeWith).',
     {
       name: z.string().describe('Имя редактора: ace, markitup, redactor, tinymce'),
     },
-    async ({ name }) => {
-      const result = getWysiwygButtons(name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async ({ name }: any) => getWysiwygButtons(name) as Record<string, unknown>
   );
 
   // ── 45. Система прав доступа ────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_permission',
     'Генерация системы прав доступа для дополнения InstantCMS с настройкой ролей и проверкой владельца',
     {
@@ -169,21 +117,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Дополнительные опции'),
     },
-    async opts => {
-      const result = scaffoldPermission(opts as Parameters<typeof scaffoldPermission>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldPermission(opts as Parameters<typeof scaffoldPermission>[0])
   );
 
   // ── 46. Система фильтрации контента ─────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_filter',
     'Генерация системы фильтрации контента с поддержкой различных типов фильтров',
     {
@@ -217,21 +156,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldFilter(opts as Parameters<typeof scaffoldFilter>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldFilter(opts as Parameters<typeof scaffoldFilter>[0])
   );
 
   // ── 47. SEO мета-теги и sitemap ─────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_seo',
     'Генерация SEO мета-тегов, Open Graph разметки и sitemap для InstantCMS',
     {
@@ -262,21 +192,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldSeo(opts as Parameters<typeof scaffoldSeo>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldSeo(opts as Parameters<typeof scaffoldSeo>[0])
   );
 
   // ── 48. Импорт/экспорт данных ─────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_import_export',
     'Генерация системы импорта/экспорта данных с поддержкой CSV, Excel, JSON, XML',
     {
@@ -318,21 +239,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldImportExport(opts as Parameters<typeof scaffoldImportExport>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldImportExport(opts as Parameters<typeof scaffoldImportExport>[0])
   );
 
   // ── 49. Система кэширования ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_cache',
     'Генерация системы кэширования InstantCMS: класс кэша, тег-инвалидация и реальные хуки контроллера',
     {
@@ -353,21 +265,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldCache(opts as Parameters<typeof scaffoldCache>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldCache(opts as Parameters<typeof scaffoldCache>[0])
   );
 
   // ── 50. Система веб-хуков ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_webhook',
     'Генерация системы веб-хуков для InstantCMS с поддержкой подписи и повторных попыток',
     {
@@ -383,21 +286,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldWebhook(opts as Parameters<typeof scaffoldWebhook>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldWebhook(opts as Parameters<typeof scaffoldWebhook>[0])
   );
 
   // ── 51. Клиент внешнего API ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_external_api',
     'Генерация клиента для внешнего API с поддержкой авторизации, rate limiting и кэширования',
     {
@@ -427,21 +321,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldExternalApi(opts as Parameters<typeof scaffoldExternalApi>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldExternalApi(opts as Parameters<typeof scaffoldExternalApi>[0])
   );
 
   // ── 52. OAuth авторизация ────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_oauth',
     'Генерация OAuth авторизации для InstantCMS с поддержкой различных провайдеров',
     {
@@ -467,21 +352,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldOAuth(opts as Parameters<typeof scaffoldOAuth>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldOAuth(opts as Parameters<typeof scaffoldOAuth>[0])
   );
 
   // ── 53. Генерация компонента ───────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_component',
     'Генерация полного компонента InstantCMS с backend, frontend, model',
     {
@@ -507,21 +383,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Опции'),
     },
-    async opts => {
-      const result = scaffoldComponent(opts as Parameters<typeof scaffoldComponent>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldComponent(opts as Parameters<typeof scaffoldComponent>[0])
   );
 
   // ── 54. Генерация виджета ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_widget',
     'Генерация виджета InstantCMS с настройками и шаблонами',
     {
@@ -556,21 +423,12 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Конфигурация'),
     },
-    async opts => {
-      const result = scaffoldWidget(opts as Parameters<typeof scaffoldWidget>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldWidget(opts as Parameters<typeof scaffoldWidget>[0])
   );
 
   // ── 55. Генерация темы шаблона ─────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_template_theme',
     'Генерация темы шаблона InstantCMS с layout, стилями и поддержкой dark mode',
     {
@@ -595,17 +453,7 @@ export function registerExtensionTools(server: McpServer): void {
         .optional()
         .describe('Блоки layout'),
     },
-    async opts => {
-      const result = scaffoldTheme(opts as Parameters<typeof scaffoldTheme>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    }
+    async (opts: any) => scaffoldTheme(opts as Parameters<typeof scaffoldTheme>[0])
   );
 
   // RESOURCES (статичные данные для контекста)

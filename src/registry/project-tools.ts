@@ -7,9 +7,17 @@ import {
   planProjectChanges,
   repairInstantCmsProject,
 } from '../tools/project-workflow-tool.js';
-import { successResult } from '../utils/mcp-result.js';
+import { defineTool } from '../utils/define-tool.js';
 import { createProjectPatch } from '../tools/project-patch-tool.js';
-import { loadGithubProject, loadLocalProject } from '../tools/project-source-tool.js';
+import {
+  loadGithubProject,
+  loadLocalProject,
+  type ProjectLoadOptions,
+} from '../tools/project-source-tool.js';
+
+type LoadSource =
+  | ({ type: 'local'; path: string } & ProjectLoadOptions)
+  | ({ type: 'github'; repository: string; ref: string; subpath: string } & ProjectLoadOptions);
 
 const filesSchema = z
   .record(z.string(), z.string())
@@ -32,7 +40,8 @@ const loadLimitsSchema = {
 };
 
 export function registerProjectTools(server: McpServer): void {
-  server.tool(
+  defineTool(
+    server,
     'load_instantcms_project',
     'Загружает текстовые файлы проекта из локальной директории или публичного GitHub-репозитория',
     {
@@ -47,47 +56,84 @@ export function registerProjectTools(server: McpServer): void {
         }),
       ]),
     },
-    async ({ source }) =>
-      successResult(
+    async args => {
+      const source = (args as { source: LoadSource }).source;
+      return (
         source.type === 'local'
           ? await loadLocalProject(source.path, source)
           : await loadGithubProject(source.repository, source.ref, source.subpath, source)
-      )
+      ) as Record<string, unknown>;
+    }
   );
-  server.tool(
+  defineTool(
+    server,
     'create_project_patch',
     'Создаёт стандартный unified Git patch между двумя project file map',
     { before: filesSchema, after: filesSchema },
-    async ({ before, after }) => successResult(createProjectPatch(before, after))
+    async args => {
+      const { before, after } = args as {
+        before: Record<string, string>;
+        after: Record<string, string>;
+      };
+      return createProjectPatch(before, after) as Record<string, unknown>;
+    }
   );
-  server.tool(
+  defineTool(
+    server,
     'audit_instantcms_project',
     'Аудит существующего InstantCMS project file map',
     { files: filesSchema },
-    async ({ files }) => successResult(auditInstantCmsProject(files))
+    async args =>
+      auditInstantCmsProject((args as { files: Record<string, string> }).files) as Record<
+        string,
+        unknown
+      >
   );
-  server.tool(
+  defineTool(
+    server,
     'plan_project_changes',
     'Строит план исправлений после аудита без изменения файлов',
     { files: filesSchema },
-    async ({ files }) => successResult(planProjectChanges(files))
+    async args =>
+      planProjectChanges((args as { files: Record<string, string> }).files) as Record<
+        string,
+        unknown
+      >
   );
-  server.tool(
+  defineTool(
+    server,
     'repair_instantcms_project',
     'Применяет только безопасные структурные исправления и возвращает новый file map',
     { files: filesSchema },
-    async ({ files }) => successResult(repairInstantCmsProject(files))
+    async args =>
+      repairInstantCmsProject((args as { files: Record<string, string> }).files) as Record<
+        string,
+        unknown
+      >
   );
-  server.tool(
+  defineTool(
+    server,
     'explain_instantcms_project',
     'Кратко объясняет структуру существующего InstantCMS проекта',
     { files: filesSchema },
-    async ({ files }) => successResult(explainInstantCmsProject(files))
+    async args =>
+      explainInstantCmsProject((args as { files: Record<string, string> }).files) as Record<
+        string,
+        unknown
+      >
   );
-  server.tool(
+  defineTool(
+    server,
     'plan_instantcms_upgrade',
     'Планирует обновление проекта между версиями InstantCMS',
     { files: filesSchema, from: z.string().min(2).max(30), to: z.string().min(2).max(30) },
-    async ({ files, from, to }) => successResult(planInstantCmsUpgrade(files, from, to))
+    async args => {
+      const { files, from, to } = args as {
+        files: Record<string, string>;
+        from: string;
+        to: string;
+      };
+      return planInstantCmsUpgrade(files, from, to) as Record<string, unknown>;
+    }
   );
 }

@@ -7,7 +7,7 @@ import {
   scaffoldTemplateOverride,
   validateLayoutScheme,
 } from '../tools/template-development-tool.js';
-import { successResult } from '../utils/mcp-result.js';
+import { defineTool } from '../utils/define-tool.js';
 import {
   auditTemplateFrontend,
   auditTemplateWidgetPositions,
@@ -23,7 +23,8 @@ const templateFilesSchema = z
   .refine(files => Object.keys(files).length <= 3000);
 
 export function registerTemplateDevelopmentTools(server: McpServer): void {
-  server.tool(
+  defineTool(
+    server,
     'merge_template_overrides',
     'Безопасно переносит upstream-изменения в неизменённые overrides и возвращает Git patch',
     {
@@ -32,36 +33,45 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       upstream_after: templateFilesSchema,
     },
     async ({ theme_files, upstream_before, upstream_after }) =>
-      successResult(mergeTemplateOverrides(theme_files, upstream_before, upstream_after))
+      mergeTemplateOverrides(
+        theme_files as Record<string, string>,
+        upstream_before as Record<string, string>,
+        upstream_after as Record<string, string>
+      )
   );
-  server.tool(
+  defineTool(
+    server,
     'audit_template_frontend',
     'Проверяет HTML, accessibility, escaping и качество CSS файлов шаблона',
     { files: templateFilesSchema },
-    async ({ files }) => successResult(auditTemplateFrontend(files))
+    async ({ files }) => auditTemplateFrontend(files as Record<string, string>)
   );
-  server.tool(
+  defineTool(
+    server,
     'extract_template_design_tokens',
     'Извлекает CSS custom properties, цвета и spacing и предлагает design tokens',
     { files: templateFilesSchema },
-    async ({ files }) => successResult(extractTemplateDesignTokens(files))
+    async ({ files }) => extractTemplateDesignTokens(files as Record<string, string>)
   );
-  server.tool(
+  defineTool(
+    server,
     'audit_template_widget_positions',
     'Сопоставляет позиции виджетов в PHP-шаблонах и YAML layout-схемах',
     { files: templateFilesSchema },
-    async ({ files }) => successResult(auditTemplateWidgetPositions(files))
+    async ({ files }) => auditTemplateWidgetPositions(files as Record<string, string>)
   );
-  server.tool(
+  defineTool(
+    server,
     'scaffold_template_e2e_environment',
     'Генерирует Docker Compose и Playwright visual regression окружение для темы',
     {
       theme: z.string().regex(/^[a-z][a-z0-9_]{1,63}$/),
       base_url: z.string().url().optional(),
     },
-    async options => successResult(scaffoldTemplateE2eEnvironment(options))
+    async options => scaffoldTemplateE2eEnvironment(options as { theme: string; base_url?: string })
   );
-  server.tool(
+  defineTool(
+    server,
     'index_upstream_template_sources',
     'Индексирует upstream template-файлы с SHA-256 и ссылками на исходный commit',
     {
@@ -70,9 +80,13 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       ref: z.string().regex(/^[a-zA-Z0-9._/-]+$/),
     },
     async ({ files, repository, ref }) =>
-      successResult(indexUpstreamTemplateSources(files, { repository, ref }))
+      indexUpstreamTemplateSources(files as Record<string, string>, {
+        repository: String(repository),
+        ref: String(ref),
+      })
   );
-  server.tool(
+  defineTool(
+    server,
     'scaffold_template_php_quality',
     'Генерирует PHPStan, PHPCS и PHPCompatibility конфигурацию для шаблона',
     {
@@ -83,9 +97,10 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .optional()
         .default('7.2'),
     },
-    async options => successResult(scaffoldTemplatePhpQuality(options))
+    async options => scaffoldTemplatePhpQuality(options as { theme: string; php_min?: string })
   );
-  server.tool(
+  defineTool(
+    server,
     'scaffold_complete_template',
     'Создаёт полный каркас frontend-шаблона InstantCMS и импортируемую layout-схему',
     {
@@ -98,9 +113,19 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .optional(),
       with_layout_scheme: z.boolean().optional().default(true),
     },
-    async options => successResult(scaffoldCompleteTemplate(options))
+    async options =>
+      scaffoldCompleteTemplate(
+        options as {
+          name: string;
+          title: string;
+          author?: string;
+          inherit?: string[];
+          with_layout_scheme?: boolean;
+        }
+      )
   );
-  server.tool(
+  defineTool(
+    server,
     'analyze_instantcms_template',
     'Анализирует структуру, overrides, widget positions, layout-файлы и риски шаблона',
     {
@@ -110,9 +135,14 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .regex(/^[a-z][a-z0-9_]{1,63}$/)
         .optional(),
     },
-    async ({ files, theme }) => successResult(analyzeInstantCmsTemplate(files, theme))
+    async ({ files, theme }) =>
+      analyzeInstantCmsTemplate(
+        files as Record<string, string>,
+        theme === undefined ? undefined : String(theme)
+      )
   );
-  server.tool(
+  defineTool(
+    server,
     'scaffold_template_override',
     'Создаёт точную копию upstream template-файла в правильном каталоге override темы',
     {
@@ -129,9 +159,20 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .optional(),
       backend: z.boolean().optional(),
     },
-    async options => successResult(scaffoldTemplateOverride(options))
+    async options =>
+      scaffoldTemplateOverride(
+        options as {
+          theme: string;
+          source_path: string;
+          source_content: string;
+          controller?: string;
+          action?: string;
+          backend?: boolean;
+        }
+      )
   );
-  server.tool(
+  defineTool(
+    server,
     'validate_layout_scheme',
     'Проверяет YAML-синтаксис, layout root и widget positions схемы InstantCMS',
     {
@@ -140,9 +181,10 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
         .min(1)
         .max(2 * 1024 * 1024),
     },
-    async ({ yaml }) => successResult(validateLayoutScheme(yaml))
+    async ({ yaml }) => validateLayoutScheme(String(yaml))
   );
-  server.tool(
+  defineTool(
+    server,
     'check_template_override_compatibility',
     'Сравнивает overrides темы с upstream template-файлами до и после обновления InstantCMS',
     {
@@ -151,8 +193,10 @@ export function registerTemplateDevelopmentTools(server: McpServer): void {
       upstream_after: templateFilesSchema,
     },
     async ({ theme_files, upstream_before, upstream_after }) =>
-      successResult(
-        checkTemplateOverrideCompatibility(theme_files, upstream_before, upstream_after)
+      checkTemplateOverrideCompatibility(
+        theme_files as Record<string, string>,
+        upstream_before as Record<string, string>,
+        upstream_after as Record<string, string>
       )
   );
 }

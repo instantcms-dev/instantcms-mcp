@@ -24,11 +24,13 @@ import {
 } from '../tools/controllers-tool.js';
 import { hookCategories } from '../data/hooks.js';
 import { templateStructure } from '../data/schemas.js';
-import { successResult } from '../utils/mcp-result.js';
+import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
+import { errorResult, successResult } from '../utils/mcp-result.js';
 
 export function registerKnowledgeTools(server: McpServer): void {
   // ── 3. Список хуков ──────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_hooks',
     'Список всех доступных хуков InstantCMS с краткими описаниями. Поддерживает фильтрацию по категории и типу',
     {
@@ -43,14 +45,15 @@ export function registerKnowledgeTools(server: McpServer): void {
       limit: z.number().int().min(1).max(200).optional(),
       cursor: z.string().optional(),
     },
-    async ({ category, type, limit, cursor }) => {
+    async ({ category, type, limit, cursor }: any) => {
       const result = listHooks(category, type, { limit, cursor }) as Record<string, unknown>;
-      return successResult(result);
+      return result;
     }
   );
 
   // ── 4. Детали хука ───────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_hook_details',
     'Подробная информация о конкретном хуке: параметры, возвращаемый тип, пример реализации, как зарегистрировать в manifest.xml',
     {
@@ -58,21 +61,15 @@ export function registerKnowledgeTools(server: McpServer): void {
         .string()
         .describe('Имя хука. Пример: content_after_add_approve, user_registered, html_filter'),
     },
-    async ({ hook_name }) => {
-      const result = getHookDetails(hook_name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ hook_name }: any) => {
+      const result = getHookDetails(hook_name) ?? { error: 'Hook not found', hook_name };
+      return result as Record<string, unknown>;
     }
   );
 
   // ── 5. Поиск хуков ───────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'search_hooks',
     'Полнотекстовый поиск хуков по имени, описанию, категории или параметрам',
     {
@@ -81,20 +78,13 @@ export function registerKnowledgeTools(server: McpServer): void {
         .describe("Поисковый запрос. Пример: 'после добавления материала', 'profile', 'email'"),
     },
     async ({ query }) => {
-      const result = searchHooks(query);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return searchHooks(query as string) as Record<string, unknown>;
     }
   );
 
   // ── 6. API компонента ────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_component_api',
     'API конкретного класса/компонента InstantCMS: методы, сигнатуры, описания, примеры вызовов',
     {
@@ -105,31 +95,28 @@ export function registerKnowledgeTools(server: McpServer): void {
         ),
     },
     async ({ component_name }) => {
-      const result = getComponentApi(component_name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return getComponentApi(component_name as string) as Record<string, unknown>;
     }
   );
 
   // ── 7. Список компонентов ────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_components',
     'Список всех документированных компонентов и классов InstantCMS с кратким описанием и способом доступа',
     { limit: z.number().int().min(1).max(200).optional(), cursor: z.string().optional() },
     async ({ limit, cursor }) => {
-      const result = listComponents({ limit, cursor }) as Record<string, unknown>;
-      return successResult(result);
+      const result = listComponents({
+        limit: limit as number | undefined,
+        cursor: cursor as string | undefined,
+      }) as Record<string, unknown>;
+      return result;
     }
   );
 
   // ── 8. Валидация дополнения ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'validate_addon',
     'Валидация структуры дополнения InstantCMS. Проверяет наличие обязательных файлов, правильность классов, соглашения об именовании',
     {
@@ -141,20 +128,13 @@ export function registerKnowledgeTools(server: McpServer): void {
         ),
     },
     async ({ files }) => {
-      const result = validateAddon(files);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return validateAddon(files as Record<string, string>) as Record<string, unknown>;
     }
   );
 
   // ── 9. Типы полей форм ───────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_field_types',
     'Информация о типах полей для форм InstantCMS (fieldString, fieldList, fieldImage и др.) с примерами использования',
     {
@@ -166,20 +146,13 @@ export function registerKnowledgeTools(server: McpServer): void {
         ),
     },
     async ({ field_type }) => {
-      const result = getFieldTypes(field_type);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return getFieldTypes(field_type as string | undefined) as Record<string, unknown>;
     }
   );
 
   // ── 10. Примеры кода ─────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_code_example',
     'Получить готовый пример кода для типовой задачи в InstantCMS',
     {
@@ -190,20 +163,13 @@ export function registerKnowledgeTools(server: McpServer): void {
         ),
     },
     async ({ task }) => {
-      const result = getCodeExample(task);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return getCodeExample(task as string) as Record<string, unknown>;
     }
   );
 
   // ── 11. Генерация шаблона ────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_template',
     'Генерирует скаффолд шаблона (темы) для InstantCMS: manifest.php, main.tpl.php, базовые CSS/JS',
     {
@@ -212,57 +178,43 @@ export function registerKnowledgeTools(server: McpServer): void {
       author: z.string().optional().describe('Имя автора'),
     },
     async opts => {
-      const result = scaffoldTemplate(opts);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return scaffoldTemplate(opts as unknown as Parameters<typeof scaffoldTemplate>[0]) as Record<
+        string,
+        unknown
+      >;
     }
   );
 
   // ── 12. Структура шаблона ────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_template_structure',
     'Полная структура шаблона InstantCMS: обязательные и опциональные файлы, переменные доступные в .tpl.php, переопределение шаблонов контроллеров',
     {},
     async () => {
       return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                ...templateStructure,
-                available_tpl_variables: {
-                  $cms_template: 'Экземпляр cmsTemplate — управление выводом',
-                  $cms_user: 'Текущий пользователь (id, login, is_logged, group_id, ...)',
-                  $cms_config: 'Конфигурация сайта',
-                  'Все ключи из render()':
-                    "Переменные, переданные из контроллера через render('tpl', ['var' => val])",
-                },
-                tpl_helpers: {
-                  "href_to('ctrl', 'action', $params)": 'Генерация URL',
-                  "href_to_admin('ctrl', 'action')": 'URL в админку',
-                  'htmlspecialchars($str)': 'Экранирование HTML',
-                  LANG_CONST: 'Языковые константы',
-                  'date_format($date)': 'Форматирование даты',
-                },
-              },
-              null,
-              2
-            ),
-          },
-        ],
+        ...templateStructure,
+        available_tpl_variables: {
+          $cms_template: 'Экземпляр cmsTemplate — управление выводом',
+          $cms_user: 'Текущий пользователь (id, login, is_logged, group_id, ...)',
+          $cms_config: 'Конфигурация сайта',
+          'Все ключи из render()':
+            "Переменные, переданные из контроллера через render('tpl', ['var' => val])",
+        },
+        tpl_helpers: {
+          "href_to('ctrl', 'action', $params)": 'Генерация URL',
+          "href_to_admin('ctrl', 'action')": 'URL в админку',
+          'htmlspecialchars($str)': 'Экранирование HTML',
+          LANG_CONST: 'Языковые константы',
+          'date_format($date)': 'Форматирование даты',
+        },
       };
     }
   );
 
   // ── 13. Генерация схемы виджетов (layout scheme) ─────────────────────────
-  server.tool(
+  defineToolWithManualResult(
+    server,
     'scaffold_layout_scheme',
     `Генерирует YAML-схему расположения виджетов для импорта в шаблон modern InstantCMS.
 Схема описывает ряды (rows) и колонки (cols) Bootstrap 4 сетки с позициями для виджетов.
@@ -397,66 +349,41 @@ export function registerKnowledgeTools(server: McpServer): void {
         .optional()
         .describe('Массив рядов схемы. Используйте вместо preset для кастомной схемы'),
     },
-    async ({ template, preset, rows }) => {
+    async ({ template, preset, rows }: any) => {
       let input;
 
       if (preset && !rows) {
         // Use preset
-        const p = layoutPresets[preset];
+        const p = layoutPresets[preset as keyof typeof layoutPresets];
         input = { ...p.scheme, template: template || p.scheme.template };
       } else if (rows) {
         input = { template: template || 'modern', rows };
       } else {
         // Default: list presets
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  error: 'Укажите preset или rows',
-                  available_presets: listLayoutPresets(),
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
+        return errorResult('Укажите preset или rows', 'Укажите preset или rows', {
+          available_presets: listLayoutPresets(),
+        });
       }
 
       const result = scaffoldLayoutScheme(input as Parameters<typeof scaffoldLayoutScheme>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return successResult(result as unknown as Record<string, unknown>);
     }
   );
 
   // ── 14. Список пресетов схем виджетов ────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_layout_presets',
     'Список готовых пресетов схем расположения виджетов для шаблона modern InstantCMS. Используйте preset в scaffold_layout_scheme для быстрой генерации.',
     {},
     async () => {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(listLayoutPresets(), null, 2),
-          },
-        ],
-      };
+      return listLayoutPresets() as Record<string, unknown>;
     }
   );
 
   // ── 15. Анализ структуры базы данных ──────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'introspect_database',
     'Анализ структуры базы данных InstantCMS. Без параметров — список всех таблиц. С параметром table_name — детали конкретной таблицы.',
     {
@@ -465,21 +392,14 @@ export function registerKnowledgeTools(server: McpServer): void {
         .optional()
         .describe('Имя таблицы (без префикса cms_). Пример: users, content_types, widgets'),
     },
-    async ({ table_name }) => {
-      const result = introspectDatabase(table_name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ table_name }: any) => {
+      return introspectDatabase(table_name) as Record<string, unknown>;
     }
   );
 
   // ── 16. Описание конкретной таблицы ──────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'describe_table',
     'Подробное описание таблицы: поля, индексы, связи, типы данных. Генерирует примеры SQL-запросов.',
     {
@@ -487,132 +407,82 @@ export function registerKnowledgeTools(server: McpServer): void {
         .string()
         .describe('Имя таблицы (можно с префиксом cms_ или без). Пример: cms_users, content_types'),
     },
-    async ({ table_name }) => {
-      const result = describeTable(table_name);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ table_name }: any) => {
+      return describeTable(table_name) as Record<string, unknown>;
     }
   );
 
   // ── 17. Типы контента ────────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_content_types',
     'Информация о типах контента: cms_content_types, cms_con_pages, cms_users. Поля, ключи, связи.',
     {},
     async () => {
-      const result = listContentTypes();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return listContentTypes() as Record<string, unknown>;
     }
   );
 
   // ── 18. Карта событий (events) ────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_database_events',
     'Все зарегистрированные события (хуки) из таблицы cms_events. Показывает какой контроллер на какое событие подписан.',
     {},
     async () => {
-      const result = listDatabaseEvents();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return listDatabaseEvents() as Record<string, unknown>;
     }
   );
 
   // ── 19. Анализ контроллера ───────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'analyze_controller',
     'Подробная информация о контроллере: класс, наследование, экшены, трейты, файлы.',
     {
       name: z.string().describe('Имя контроллера. Пример: content, users, messages'),
       type: z.enum(['frontend', 'backend']).optional().describe('Тип контроллера'),
     },
-    async ({ name, type }) => {
-      const result = analyzeController(name, type);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ name, type }: any) => {
+      return analyzeController(name, type) as Record<string, unknown>;
     }
   );
 
   // ── 20. Список контроллеров ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_controllers',
     'Список всех контроллеров: frontend и backend. Можно фильтровать по типу.',
     {
       filter: z.enum(['frontend', 'backend']).optional().describe('Фильтр по типу контроллера'),
     },
-    async ({ filter }) => {
-      const result = listControllers(filter);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ filter }: any) => {
+      return listControllers(filter) as Record<string, unknown>;
     }
   );
 
   // ── 21. Экшены контроллера ───────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_controller_actions',
     'Список всех экшенов контроллера с параметрами, видимостью и трейтами.',
     {
       name: z.string().describe('Имя контроллера. Пример: content, users'),
       type: z.enum(['frontend', 'backend']).optional().describe('Тип контроллера'),
     },
-    async ({ name, type }) => {
-      const result = getControllerActionsList(name, type);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ name, type }: any) => {
+      return getControllerActionsList(name, type) as Record<string, unknown>;
     }
   );
 
   // ── 22. Системные трейты ─────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_system_traits',
     'Список всех системных трейтов icms используемых в контроллерах. Трейты предоставляют готовую функциональность.',
     {},
     async () => {
-      const result = listSystemTraits();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+      return listSystemTraits() as Record<string, unknown>;
     }
   );
 }

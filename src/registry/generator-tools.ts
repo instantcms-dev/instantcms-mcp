@@ -16,10 +16,12 @@ import {
 } from '../tools/template-overrides-tool.js';
 import { scaffoldCron } from '../tools/cron-tool.js';
 import { hooks } from '../data/hooks.js';
+import { defineTool } from '../utils/define-tool.js';
 
 export function registerGeneratorTools(server: McpServer): void {
   // ── 1. Структура дополнения ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_addon_structure',
     'Возвращает полную структуру файлов и папок для дополнения InstantCMS с описанием каждого файла и шаблонами кода',
     {
@@ -30,21 +32,14 @@ export function registerGeneratorTools(server: McpServer): void {
           'Тип дополнения: basic (только фронтенд), with_admin (с CRUD панелью), with_hooks (с хуками), with_routes (кастомные URL), with_widget (с виджетом)'
         ),
     },
-    async ({ addon_type }) => {
-      const result = getAddonStructure(addon_type);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ addon_type }: any) => {
+      return getAddonStructure(addon_type) as Record<string, unknown>;
     }
   );
 
   // ── 2. Генерация скаффолда дополнения ────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_addon',
     'Генерирует готовый код всех файлов дополнения InstantCMS на основе параметров. Возвращает map {имя_файла: содержимое}',
     {
@@ -74,21 +69,14 @@ export function registerGeneratorTools(server: McpServer): void {
           "Список хуков для интеграции. Пример: ['content_after_add_approve', 'user_registered']"
         ),
     },
-    async opts => {
-      const result = scaffoldAddon(opts as Parameters<typeof scaffoldAddon>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldAddon(opts as Parameters<typeof scaffoldAddon>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.1. Генерация CRUD для контент-типа ─────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_crud',
     'Генерирует полный CRUD для контент-типа InstantCMS: модель, контроллеры фронтенда и бэкенда, гриды, формы',
     {
@@ -150,21 +138,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Дополнительные опции'),
     },
-    async opts => {
-      const result = scaffoldCrud(opts as Parameters<typeof scaffoldCrud>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldCrud(opts as Parameters<typeof scaffoldCrud>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.2. Генерация формы ──────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_form',
     'Генерирует PHP класс формы для бэкенда InstantCMS с указанными полями и правилами валидации',
     {
@@ -209,21 +190,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции формы'),
     },
-    async opts => {
-      const result = scaffoldForm(opts as Parameters<typeof scaffoldForm>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldForm(opts as Parameters<typeof scaffoldForm>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.3. Генерация грида ──────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_grid',
     'Генерирует PHP функцию грида для бэкенда InstantCMS с колонками, фильтрами и экшенами',
     {
@@ -293,21 +267,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Кнопки действий'),
     },
-    async opts => {
-      const result = scaffoldGrid(opts as Parameters<typeof scaffoldGrid>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldGrid(opts as Parameters<typeof scaffoldGrid>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.4. Генерация REST API ──────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_api',
     'Генерирует REST API контроллер для InstantCMS с эндпоинтами, аутентификацией и опционально OpenAPI спецификацией',
     {
@@ -347,21 +314,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции API'),
     },
-    async opts => {
-      const result = scaffoldApi(opts as Parameters<typeof scaffoldApi>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldApi(opts as Parameters<typeof scaffoldApi>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.5. Генерация тестов ─────────────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_test',
     'Генерирует PHPUnit или Codeception тесты для дополнения InstantCMS',
     {
@@ -382,21 +342,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции генерации тестов'),
     },
-    async opts => {
-      const result = scaffoldTest(opts as Parameters<typeof scaffoldTest>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldTest(opts as Parameters<typeof scaffoldTest>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.6. Генерация email шаблонов ───────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_email',
     'Генерирует письма InstantCMS в формате system/languages/<lang>/letters/*.txt ([subject:...] и {плейсхолдеры})',
     {
@@ -436,21 +389,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции email'),
     },
-    async opts => {
-      const result = scaffoldEmail(opts as Parameters<typeof scaffoldEmail>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldEmail(opts as Parameters<typeof scaffoldEmail>[0]) as Record<string, unknown>;
     }
   );
 
   // ── 2.7. Генерация переопределений шаблонов ──────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_layout_override',
     'Генерирует шаблоны для переопределения стандартных шаблонов контроллеров InstantCMS в пользовательских темах',
     {
@@ -475,21 +421,17 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции генерации'),
     },
-    async opts => {
-      const result = scaffoldLayoutOverride(opts as Parameters<typeof scaffoldLayoutOverride>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldLayoutOverride(opts as Parameters<typeof scaffoldLayoutOverride>[0]) as Record<
+        string,
+        unknown
+      >;
     }
   );
 
   // ── 2.8. Генерация частей админки ─────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_admin_partial',
     'Генерирует переиспользуемые части интерфейса админки: header, sidebar, toolbar, breadcrumbs, panels, modals',
     {
@@ -526,21 +468,17 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции генерации'),
     },
-    async opts => {
-      const result = scaffoldAdminPartial(opts as Parameters<typeof scaffoldAdminPartial>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldAdminPartial(opts as Parameters<typeof scaffoldAdminPartial>[0]) as Record<
+        string,
+        unknown
+      >;
     }
   );
 
   // ── 2.9. Список переопределений шаблонов ──────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'list_template_overrides',
     'Возвращает список всех доступных переопределений шаблонов контроллеров InstantCMS',
     {
@@ -549,21 +487,14 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Фильтр по имени контроллера. Пример: content, users, photos'),
     },
-    async ({ controller }) => {
-      const result = listTemplateOverrides(controller);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ controller }: any) => {
+      return listTemplateOverrides(controller) as Record<string, unknown>;
     }
   );
 
   // ── 2.10. Информация о переопределении ──────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'get_template_override_info',
     'Возвращает подробную информацию о конкретном переопределении шаблона',
     {
@@ -575,21 +506,14 @@ export function registerGeneratorTools(server: McpServer): void {
           'Имя экшена. Пример: view, index. Если не указано - возвращает информацию о index'
         ),
     },
-    async ({ controller, action }) => {
-      const result = getTemplateOverrideInfo(controller, action);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async ({ controller, action }: any) => {
+      return getTemplateOverrideInfo(controller, action) as Record<string, unknown>;
     }
   );
 
   // ── 2.11. Генерация cron задач ───────────────────────────────────────────
-  server.tool(
+  defineTool(
+    server,
     'scaffold_cron',
     'Генерирует PHP cron контроллер для периодических задач с настройкой расписания, блокировками и логированием',
     {
@@ -633,16 +557,8 @@ export function registerGeneratorTools(server: McpServer): void {
         .optional()
         .describe('Опции cron'),
     },
-    async opts => {
-      const result = scaffoldCron(opts as Parameters<typeof scaffoldCron>[0]);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+    async (opts: any) => {
+      return scaffoldCron(opts as Parameters<typeof scaffoldCron>[0]) as Record<string, unknown>;
     }
   );
 }
