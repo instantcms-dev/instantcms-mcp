@@ -49,3 +49,5 @@ source/
 /source
 .cache/
 .logs/
+
+reports/

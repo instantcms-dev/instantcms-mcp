@@ -248,3 +248,34 @@ jobs:
       # блокировать выпуск, но уязвимости в поставляемом коде — должны.
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  mutation:
+    name: Mutation testing (sql-safety, serialization)
+    runs-on: ubuntu-latest
+    # Stryker 10 требует Node 20+. Этот job информирует о регрессии
+    # mutation score, но не блокирует merge — best-effort, ~6 минут.
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run mutation tests
+        run: npm run mutation:test
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 30
+          if-no-files-found: ignore
