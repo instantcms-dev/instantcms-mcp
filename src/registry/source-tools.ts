@@ -136,8 +136,11 @@ export function registerSourceTools(server: McpServer): void {
         .enum(['string', 'text', 'number', 'datetime', 'user', 'bool'])
         .describe('Тип категории полей'),
     },
-    async ({ field_type }: any) =>
-      generateFieldSuggestions(field_type) as unknown as Record<string, unknown>
+    async ({ field_type }: any) => {
+      // structuredContent должен быть объектом: оборачиваем список полей.
+      const fields = generateFieldSuggestions(field_type) as unknown as Record<string, unknown>[];
+      return { total: fields.length, fields } as Record<string, unknown>;
+    }
   );
 
   // ── 37. Анализ требований ──────────────────────────────────────────

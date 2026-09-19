@@ -383,7 +383,10 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
     'Список готовых пресетов схем расположения виджетов для шаблона modern InstantCMS. Используйте preset в scaffold_layout_scheme для быстрой генерации. / Lists ready-made widget layout scheme presets for the InstantCMS modern template. Use preset in scaffold_layout_scheme for quick generation.',
     {},
     async () => {
-      return listLayoutPresets() as Record<string, unknown>;
+      // MCP требует, чтобы structuredContent был объектом (record), а не
+      // массивом: оборачиваем список, иначе строгий клиент отклонит вызов.
+      const presets = listLayoutPresets() as unknown as Record<string, unknown>[];
+      return { total: presets.length, presets } as Record<string, unknown>;
     }
   );
 

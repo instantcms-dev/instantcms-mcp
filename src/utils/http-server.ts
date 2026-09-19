@@ -1,4 +1,4 @@
-import { createServer as createNodeServer, IncomingMessage, ServerResponse } from 'node:http';
+import { createServer as createNodeServer, IncomingMessage } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from '../server.js';
 import { logger } from './logger.js';
@@ -50,8 +50,8 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
         sessionIdGenerator: undefined,
       });
       res.on('close', () => {
-        transport.close().catch(() => undefined);
-        server.close().catch(() => undefined);
+        void closeQuietly(transport);
+        void closeQuietly(server);
       });
       await server.connect(transport);
       await transport.handleRequest(req, res, body);
@@ -64,13 +64,24 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
     }
   });
 
-  await new Promise<void>(resolve => httpServer.listen(options.port ?? 3001, host, resolve));
+  await new Promise<void>((resolve, reject) => {
+    const listenPort = options.port ?? 3001;
+    // Без обработчика 'error' занятый порт валил бы процесс необработанным
+    // событием; превращаем это в ожидаемый reject промиса.
+    httpServer.once('error', reject);
+    httpServer.listen(listenPort, host, () => {
+      httpServer.removeListener('error', reject);
+      resolve();
+    });
+  });
+
   const address = httpServer.address();
-  const port =
-    typeof address === 'object' && address !== null ? address.port : (options.port ?? 3001);
+  if (address === null || typeof address === 'string') {
+    throw new Error('HTTP server bound without a TCP port');
+  }
 
   return {
-    port,
+    port: address.port,
     host,
     close: () =>
       new Promise<void>((resolve, reject) =>
@@ -79,12 +90,26 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
   };
 }
 
-function isAuthorized(req: IncomingMessage, token: string): boolean {
+/**
+ * Best-effort закрытие транспорта/сервера при разрыве соединения.
+ * Ошибки закрытия не должны влиять на уже завершённый запрос.
+ */
+export async function closeQuietly(target: { close(): Promise<void> }): Promise<void> {
+  try {
+    await target.close();
+  } catch {
+    // намеренно игнорируем: закрытие идёт после ответа
+  }
+}
+
+/** Проверка bearer-токена: схема Bearer и точное совпадение значения. */
+export function isAuthorized(req: IncomingMessage, token: string): boolean {
   const [scheme, value] = (req.headers.authorization ?? '').split(' ');
   return scheme?.toLowerCase() === 'bearer' && value === token;
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
+/** Читает тело запроса целиком; ошибка потока превращается в reject. */
+export function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     req.on('data', (chunk: Buffer) => chunks.push(chunk));
