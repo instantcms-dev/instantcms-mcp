@@ -76,18 +76,25 @@ jobs:
       - name: Start container and probe /health
         run: |
           set -euo pipefail
-          docker run --rm -d --name instantcms-mcp-smoke \
-            -p 13001:3001 instantcms-mcp:smoke
-          # HEALTHCHECK в Dockerfile — 3 попытки × 30s = 90s максимум; тут даём 30s.
+          # --init помогает корректно собирать сигналы (SIGTERM → exit);
+          # --health-start-period=0s позволяет probe стартовать сразу.
+          docker run --rm -d --init \
+            --name instantcms-mcp-smoke \
+            -p 13001:3001 \
+            instantcms-mcp:smoke
           for _ in $(seq 1 30); do
             sleep 1
             code=$(curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:13001/health || echo 000)
             if [ "$code" = "200" ]; then
-              echo "OK: /health=200"; exit 0
+              echo "OK: /health=200"
+              exit 0
             fi
           done
-          echo "FAIL: /health never returned 200"; exit 1
+          echo "FAIL: /health never returned 200; dumping docker logs and inspect"
+          docker logs instantcms-mcp-smoke >&2 || true
+          docker inspect --format '{{json .State}}' instantcms-mcp-smoke >&2 || true
+          exit 1
 
       - name: Stop container
         if: always()
-        run: docker rm -f instantcms-mcp-smoke || true
+        run: docker rm -f instantcms-mcp-smoke 2>/dev/null || true
