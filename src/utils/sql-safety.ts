@@ -38,6 +38,35 @@ const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
 ];
 
 /**
+ * Исполняемый MySQL versioned comment (открывается слешем-звёздочкой-восклицанием
+ * и номером версии). В отличие от обычного комментария его содержимое ВЫПОЛНЯЕТСЯ
+ * сервером, когда версия подходит. `stripLiterals` снимает его как обычный
+ * комментарий, поэтому опасный код внутри мог бы обойти DANGEROUS_PATTERNS.
+ */
+const VERSIONED_COMMENT_PATTERN = /\/\*!\d*([\s\S]*?)\*\//g;
+
+/** Извлекает исполняемое содержимое всех versioned comments. */
+export function extractVersionedCommentBodies(sql: string): string[] {
+  const bodies: string[] = [];
+  for (const match of sql.matchAll(VERSIONED_COMMENT_PATTERN)) {
+    bodies.push(match[1]);
+  }
+  return bodies;
+}
+
+/**
+ * Проверяет исполняемые versioned comments на опасные конструкции.
+ * Возвращает причину запрета или null.
+ */
+function findDangerousVersionedComment(sql: string): string | null {
+  for (const body of extractVersionedCommentBodies(sql)) {
+    const dangerous = DANGEROUS_PATTERNS.find(({ pattern }) => pattern.test(body));
+    if (dangerous) return `versioned comment: ${dangerous.reason}`;
+  }
+  return null;
+}
+
+/**
  * Убирает из текста строковые литералы и комментарии, чтобы искать разделители
  * и ключевые слова только в самом запросе.
  */
@@ -126,6 +155,11 @@ export function assertSqlAllowed(sql: string, options: SqlGuardOptions = {}): Sq
   const dangerous = DANGEROUS_PATTERNS.find(({ pattern }) => pattern.test(stripLiterals(sql)));
   if (kind === 'dangerous' && dangerous) {
     throw new Error(`Запрос запрещён: ${dangerous.reason}`);
+  }
+
+  const dangerousVersioned = findDangerousVersionedComment(sql);
+  if (dangerousVersioned) {
+    throw new Error(`Запрос запрещён: ${dangerousVersioned}`);
   }
 
   if (kind === 'write') {

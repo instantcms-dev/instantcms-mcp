@@ -3,6 +3,7 @@ import * as mysql from 'mysql2/promise';
 import {
   assertSqlAllowed,
   classifySql,
+  extractVersionedCommentBodies,
   hasMultipleStatements,
   isSensitiveColumn,
   redactSecrets,
@@ -205,5 +206,27 @@ describe('sql safety', () => {
       if (previous === undefined) delete process.env.DB_READONLY;
       else process.env.DB_READONLY = previous;
     }
+  });
+
+  test('versioned comment с опасным кодом запрещён', () => {
+    // Содержимое /*! ... */ исполняется MySQL — нельзя пропускать опасные конструкции.
+    expect(() => assertSqlAllowed("SELECT 1 INTO OUTFILE '/tmp/x' /*!40101 WHERE 1=1 */")).toThrow(
+      /Запрос запрещён/
+    );
+    expect(() => assertSqlAllowed("SELECT /*!50000 LOAD_FILE('/etc/passwd') */")).toThrow(
+      /versioned comment: чтение файлов сервера/
+    );
+    expect(() => assertSqlAllowed("/*!40101 GRANT ALL ON *.* TO 'x' */")).toThrow(
+      /versioned comment: управление правами/
+    );
+  });
+
+  test('versioned comment без опасного кода допустим для чтения', () => {
+    expect(assertSqlAllowed('SELECT * FROM u WHERE id=1 /*!40101 AND 1=1 */')).toBe('read');
+  });
+
+  test('extractVersionedCommentBodies извлекает исполняемое содержимое', () => {
+    expect(extractVersionedCommentBodies('SELECT 1 /*!40101 AND 1=1 */')).toEqual([' AND 1=1 ']);
+    expect(extractVersionedCommentBodies('SELECT /* plain */ 1')).toEqual([]);
   });
 });
