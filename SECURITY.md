@@ -4,7 +4,7 @@
 
 | Компонент / Component / 组件 | Версия / Version / 版本 | Источник / Source / 来源 |
 |---|---|---|
-| Node.js | `>=18` (`package.json:engines`, проверено CI matrix 18/20/22/24) | `package.json` |
+| Node.js | `>=22` (`package.json:engines`, проверено CI matrix 22/24). Node 18 и 20 больше не поддерживаются: Stryker 10 требует ≥22. | `package.json` |
 | InstantCMS | `2.16.x`, `2.17.x`, `2.18.x` (закреплённый upstream commit в `knowledge/upstream.json`) | `knowledge/upstream.json` |
 | MCP SDK | `^1.30.0` | `package.json` |
 | MariaDB / MySQL | `>=10.4` (минимальная версия InstantCMS) | upstream |

@@ -41,11 +41,11 @@ node dist/index.js
 - 100 MCP-инструментов и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
-- CI на Node.js 18, 20, 22 и 24 с отдельной проверкой официальных исходников InstantCMS.
+- CI на Node.js 22 и 24 (Stryker 10 требует ≥22).
 
 ## Требования и установка
 
-- Node.js 18 или новее;
+- Node.js 22 или новее (см. `package.json:engines`); Node.js 18 и 20 больше не поддерживаются — Stryker 10 требует ≥22.
 - npm.
 
 ```bash
@@ -454,7 +454,7 @@ npm run build
 
 ## Релизы и защита main
 
-Изменения в `main` принимаются через Pull Request. GitHub требует успешные `Build`, Node.js 18/20/22/24 и `InstantCMS upstream compatibility`, один approving review, разрешение обсуждений и линейную историю. Force-push и удаление `main` запрещены классической branch protection и repository ruleset `Protect main`.
+Изменения в `main` принимаются через Pull Request. GitHub требует успешные `Build`, Node.js 22/24 и `InstantCMS upstream compatibility`, один approving review, разрешение обсуждений и линейную историю. Force-push и удаление `main` запрещены классической branch protection и repository ruleset `Protect main`.
 
 Push тега `v*` или публикация GitHub Release запускает `.github/workflows/release.yml`: проверки, сборку, lint, создание ZIP и публикацию `@maxisoft/instantcms-mcp` в npm. Тег должен совпадать с версией в `package.json` и `package-lock.json`. Уже опубликованная версия пропускается; предварительные релизы публикуются с dist-tag `next`, стабильные — `latest`.
 
