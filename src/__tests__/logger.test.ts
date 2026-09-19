@@ -24,4 +24,11 @@ describe('logger', () => {
     circular.self = circular;
     expect(() => logger.info(circular)).not.toThrow();
   });
+
+  test('warn пишет в stderr с маскировкой', () => {
+    logger.warn('slow query', 'token=abc123&x=1');
+    const out = stderrSpy.mock.calls.flat().join(' ');
+    expect(out).not.toContain('abc123');
+    expect(out).toContain('[instantcms-mcp]');
+  });
 });

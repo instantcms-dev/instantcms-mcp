@@ -191,7 +191,11 @@ const SECRET_PATTERNS: Array<{ pattern: RegExp; replace: string }> = [
       /((?:password|passwd|pwd|secret|api[_-]?key|api[_-]?token|auth[_-]?key|access[_-]?token|token)\s*[:=]\s*)(["'])([^"']*)\2/gi,
     replace: '$1$2***$2',
   },
-  { pattern: /(password|passwd|pwd)\s*[=:]\s*[^\s;,'")]+/gi, replace: '$1=***' },
+  {
+    pattern:
+      /\b(password|passwd|pwd|secret|api_?key|api_?token|auth_?key|access_?token|token)\s*[=:]\s*[^\s;,'")&]+/gi,
+    replace: '$1=***',
+  },
   { pattern: /(DB_PASSWORD|DB_PASS)\s*=\s*[^\s;]+/gi, replace: '$1=***' },
   // Учётные данные в URL: mysql://user:secret@host/db
   { pattern: /(\b[a-z][a-z0-9+.-]*:\/\/[^:/\s@]+:)[^@/\s]+@/gi, replace: '$1***@' },

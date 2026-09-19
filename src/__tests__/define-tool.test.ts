@@ -93,6 +93,17 @@ describe('defineTool', () => {
     expect(received).toEqual({});
   });
 
+  test('null args нормализуются в пустой объект', async () => {
+    let received: Record<string, unknown> | undefined;
+    const server = new FakeMcpServer();
+    defineTool(asMcpServer(server), 'null_args', 'desc', {}, async args => {
+      received = args;
+      return {};
+    });
+    await callHandler(server, null);
+    expect(received).toEqual({});
+  });
+
   test('defineToolWithManualResult возвращает переданный result как есть', async () => {
     const server = new FakeMcpServer();
     defineToolWithManualResult(asMcpServer(server), 'manual', 'desc', {}, args => {
