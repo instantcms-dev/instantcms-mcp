@@ -3,7 +3,13 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { PassThrough } from 'node:stream';
 import type { IncomingMessage } from 'node:http';
 
-import { closeQuietly, isAuthorized, readBody, startHttpServer } from '../utils/http-server.js';
+import {
+  checkRateLimit,
+  closeQuietly,
+  isAuthorized,
+  readBody,
+  startHttpServer,
+} from '../utils/http-server.js';
 
 /**
  * Опциональный `--http`-режим: stateless Streamable HTTP.
@@ -170,5 +176,102 @@ describe('HTTP transport (--http)', () => {
     const rejected = readBody(failing as unknown as IncomingMessage);
     failing.emit('error', new Error('socket reset'));
     await expect(rejected).rejects.toThrow('socket reset');
+  });
+
+  test('checkRateLimit: окно фиксированное, сброс по времени', () => {
+    const store = new Map<string, { count: number; resetAt: number }>();
+    const t0 = 1_000_000;
+
+    expect(checkRateLimit(store, 'ip', 2, t0)).toEqual({ allowed: true, retryAfterSeconds: 60 });
+    expect(checkRateLimit(store, 'ip', 2, t0)).toEqual({ allowed: true, retryAfterSeconds: 60 });
+    expect(checkRateLimit(store, 'ip', 2, t0)).toEqual({ allowed: false, retryAfterSeconds: 60 });
+
+    // Ключи изолированы друг от друга.
+    expect(checkRateLimit(store, 'other', 2, t0).allowed).toBe(true);
+    // После истечения окна счётчик обнуляется.
+    expect(checkRateLimit(store, 'ip', 2, t0 + 60_001).allowed).toBe(true);
+  });
+
+  test('rate limit: превышение лимита отвечает 429 с Retry-After', async () => {
+    const handle = await startHttpServer({ port: 0, rateLimitPerMinute: 2 });
+    try {
+      const call = () =>
+        fetch(`http://${handle.host}:${handle.port}/mcp`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}',
+        });
+
+      expect((await call()).status).not.toBe(429);
+      expect((await call()).status).not.toBe(429);
+      const limited = await call();
+      expect(limited.status).toBe(429);
+      expect(Number(limited.headers.get('retry-after'))).toBeGreaterThan(0);
+    } finally {
+      await handle.close();
+    }
+  });
+
+  test('stateful: initialize создаёт сессию, unknown session отклоняется', async () => {
+    const handle = await startHttpServer({ port: 0, session: true });
+    const url = `http://${handle.host}:${handle.port}/mcp`;
+    const accept = {
+      'content-type': 'application/json',
+      accept: 'application/json, text/event-stream',
+    };
+    try {
+      // Сначала initialize, потом запросы уже с Mcp-Session-Id — путь SDK-клиента.
+      const clientTransport = new StreamableHTTPClientTransport(new URL(url));
+      const client = new Client({ name: 'stateful-test', version: '0' });
+      await client.connect(clientTransport);
+      try {
+        expect((await client.listTools()).tools.length).toBe(100);
+      } finally {
+        await client.close();
+      }
+
+      // Сырой initialize без клиента: сервер обязан выдать Mcp-Session-Id.
+      const init = await fetch(url, {
+        method: 'POST',
+        headers: accept,
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-03-26',
+            capabilities: {},
+            clientInfo: { name: 'raw', version: '0' },
+          },
+        }),
+      });
+      expect(init.status).toBe(200);
+      const sessionId = init.headers.get('mcp-session-id');
+      expect(sessionId).toBeTruthy();
+
+      // Не-initialize POST без session-id → 400.
+      const noSession = await fetch(url, {
+        method: 'POST',
+        headers: accept,
+        body: '{"jsonrpc":"2.0","id":2,"method":"tools/list"}',
+      });
+      expect(noSession.status).toBe(400);
+
+      // GET с неизвестной сессией → 404.
+      const unknown = await fetch(url, { headers: { 'mcp-session-id': 'bogus' } });
+      expect(unknown.status).toBe(404);
+
+      // DELETE закрывает сессию; после неё тот же id больше не жив.
+      const del = await fetch(url, { method: 'DELETE', headers: { 'mcp-session-id': sessionId! } });
+      expect(del.status).toBeLessThan(500);
+      const afterDelete = await fetch(url, {
+        method: 'POST',
+        headers: { ...accept, 'mcp-session-id': sessionId! },
+        body: '{"jsonrpc":"2.0","id":3,"method":"tools/list"}',
+      });
+      expect(afterDelete.status).toBe(400);
+    } finally {
+      await handle.close();
+    }
   });
 });
