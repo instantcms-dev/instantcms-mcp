@@ -1,9 +1,11 @@
-# Root markdown: tracked are только README.md, AGENTS.md и CLAUDE.md.
-# Остальные корневые доки остаются на диске, но не коммитятся.
+# Корневой Markdown: отслеживаются только явно перечисленные документы.
+# Root Markdown: only explicitly listed documents are tracked.
+# 根目录 Markdown：仅跟踪明确列出的文档。
 /*.md
 !/README.md
 !/AGENTS.md
 !/CLAUDE.md
+!/IMPROVEMENT_PLAN.md
 
 # Dependencies
 node_modules/

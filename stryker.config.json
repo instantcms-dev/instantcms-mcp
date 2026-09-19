@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/api/schema/stryker-schema.json",
+  "_comment": "Мутационное тестирование критичных к безопасности утилит. Запуск: npm run mutation:test. Медленно по определению — не входит в npm run check и CI по умолчанию.",
+  "packageManager": "npm",
+  "testRunner": "jest",
+  "reporters": ["clear-text", "progress", "html"],
+  "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "mutate": [
+    "src/utils/sql-safety.ts",
+    "src/utils/serialization.ts"
+  ],
+  "jest": {
+    "configFile": "jest.config.js"
+  },
+  "concurrency": 4,
+  "timeoutMS": 20000,
+  "ignorePatterns": ["dist", "coverage", "node_modules", ".cache", "source", ".stryker-tmp"]
+}

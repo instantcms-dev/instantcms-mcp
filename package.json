@@ -48,7 +48,8 @@
     "prepare": "husky",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
-    "release:major": "npm version major"
+    "release:major": "npm version major",
+    "mutation:test": "stryker run"
   },
   "keywords": [
     "mcp",
@@ -89,6 +90,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/jest-runner": "^10.0.0",
     "@types/ini": "^4.1.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.3.3",

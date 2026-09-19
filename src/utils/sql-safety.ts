@@ -146,21 +146,37 @@ export function assertSqlAllowed(sql: string, options: SqlGuardOptions = {}): Sq
     throw new Error('Пустой SQL-запрос');
   }
 
-  if (hasMultipleStatements(sql)) {
-    throw new Error('Несколько инструкций в одном запросе запрещены: отправьте их по одной');
-  }
+  // 1. Разбиваем на инструкции ДО всех проверок. ; внутри литералов и
+  //    комментариев снимается через stripLiterals.
+  const stripped = stripLiterals(sql);
+  const statements = stripped
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 
-  const kind = classifySql(sql);
-
-  const dangerous = DANGEROUS_PATTERNS.find(({ pattern }) => pattern.test(stripLiterals(sql)));
-  if (kind === 'dangerous' && dangerous) {
-    throw new Error(`Запрос запрещён: ${dangerous.reason}`);
+  // 2. Каждая инструкция проверяется на dangerous/versioned comments.
+  for (const statement of statements) {
+    const dangerousInStatement = DANGEROUS_PATTERNS.find(({ pattern }) => pattern.test(statement));
+    if (dangerousInStatement) {
+      throw new Error(`Запрос запрещён: ${dangerousInStatement.reason}`);
+    }
   }
 
   const dangerousVersioned = findDangerousVersionedComment(sql);
   if (dangerousVersioned) {
     throw new Error(`Запрос запрещён: ${dangerousVersioned}`);
   }
+
+  // 3. Многоинструкционный запрос уже отброшен выше по причине dangerous;
+  //    если добрались сюда с >1 инструкциями без dangerous — это write
+  //    с write-операцией и должен пройти как multi-statement.
+  if (statements.length > 1) {
+    throw new Error('Несколько инструкций в одном запросе запрещены: отправьте их по одной');
+    // 4. Проверяем kind по первой инструкции; остальные уже отсеяны выше.
+  }
+
+  // 3. Проверяем kind по первой инструкции; остальные уже отсеяны выше.
+  const kind = classifySql(sql);
 
   if (kind === 'write') {
     if (options.readOnly) {
