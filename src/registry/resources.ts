@@ -1,8 +1,11 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { hooks, hookCategories } from '../data/hooks.js';
-import { components } from '../data/components.js';
-import { addonStructures } from '../data/schemas.js';
 import { paginate } from '../utils/pagination.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// components и schemas читаются только в resource-callback'ах — лениво.
+const loadComponents = lazyModule<typeof import('../data/components.js')>('../data/components.js');
+const loadSchemas = lazyModule<typeof import('../data/schemas.js')>('../data/schemas.js');
 
 export function registerResources(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -55,7 +58,7 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: 'application/json',
           text: JSON.stringify(
-            paginate(components, {
+            paginate(loadComponents().components, {
               cursor: variables.cursor === 'first' ? undefined : String(variables.cursor),
               limit: 10,
             })
@@ -74,7 +77,11 @@ export function registerResources(server: McpServer): void {
         {
           uri: 'instantcms://components/all',
           mimeType: 'application/json',
-          text: JSON.stringify({ total: components.length, components }, null, 2),
+          text: JSON.stringify(
+            { total: loadComponents().components.length, components: loadComponents().components },
+            null,
+            2
+          ),
         },
       ],
     })
@@ -89,7 +96,7 @@ export function registerResources(server: McpServer): void {
         {
           uri: 'instantcms://addon/types',
           mimeType: 'application/json',
-          text: JSON.stringify(addonStructures, null, 2),
+          text: JSON.stringify(loadSchemas().addonStructures, null, 2),
         },
       ],
     })

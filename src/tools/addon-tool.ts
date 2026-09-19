@@ -1,21 +1,21 @@
-import {
-  addonStructures,
-  fieldTypes,
-  controllerDirectoryLayout,
-  classNamingConventions,
-} from '../data/schemas.js';
-import { components } from '../data/components.js';
 import { hooks } from '../data/hooks.js';
 import { hookClassName } from '../utils/hook-class.js';
 import { paginate, type PageOptions } from '../utils/pagination.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// schemas.ts и components.ts (включая generated/components-source ~15k строк)
+// нужны только при вызове инструментов — загружаем лениво. Пути указаны
+// относительно src/utils, где живёт lazyModule.
+const loadSchemas = lazyModule<typeof import('../data/schemas.js')>('../data/schemas.js');
+const loadComponents = lazyModule<typeof import('../data/components.js')>('../data/components.js');
 
 export function getAddonStructure(addonType: string = 'basic'): object {
-  const structure = addonStructures[addonType];
+  const structure = loadSchemas().addonStructures[addonType];
 
   if (!structure) {
     return {
       error: `Тип дополнения "${addonType}" не найден`,
-      available_types: Object.keys(addonStructures),
+      available_types: Object.keys(loadSchemas().addonStructures),
     };
   }
 
@@ -23,9 +23,9 @@ export function getAddonStructure(addonType: string = 'basic'): object {
     type: structure.type,
     description: structure.description,
     notes: structure.notes || [],
-    available_types: Object.keys(addonStructures).map(t => ({
+    available_types: Object.keys(loadSchemas().addonStructures).map(t => ({
       key: t,
-      description: addonStructures[t].description,
+      description: loadSchemas().addonStructures[t].description,
     })),
     files: structure.files.map(f => ({
       path: f.path,
@@ -33,8 +33,8 @@ export function getAddonStructure(addonType: string = 'basic'): object {
       description: f.description,
       template: f.template,
     })),
-    directory_layout: controllerDirectoryLayout,
-    naming_conventions: classNamingConventions,
+    directory_layout: loadSchemas().controllerDirectoryLayout,
+    naming_conventions: loadSchemas().classNamingConventions,
     db_conventions: {
       table_naming: 'Таблицы: {addon_name}_{entity}. Пример: catalog_items, catalog_categories',
       prefix:
@@ -78,10 +78,10 @@ export function getAddonStructure(addonType: string = 'basic'): object {
 
 export function getComponentApi(componentName: string): object {
   const lower = componentName.toLowerCase();
-  const exact = components.filter(
+  const exact = loadComponents().components.filter(
     c => c.name.toLowerCase() === lower || c.class.toLowerCase() === lower
   );
-  const partial = components.filter(
+  const partial = loadComponents().components.filter(
     c => c.name.toLowerCase().includes(lower) || c.class.toLowerCase().includes(lower)
   );
   const rawMatches = exact.length > 0 ? exact : partial;
@@ -95,7 +95,7 @@ export function getComponentApi(componentName: string): object {
     return {
       code: 'COMPONENT_NOT_FOUND',
       error: `Компонент "${componentName}" не найден`,
-      available: components.map(c => ({
+      available: loadComponents().components.map(c => ({
         name: c.name,
         class: c.class,
         description: c.description.slice(0, 80),
@@ -124,9 +124,9 @@ export function getComponentApi(componentName: string): object {
 }
 
 export function listComponents(pageOptions: PageOptions = {}): object {
-  const page = paginate(components, pageOptions);
+  const page = paginate(loadComponents().components, pageOptions);
   return {
-    total: components.length,
+    total: loadComponents().components.length,
     page: page.page,
     components: page.items.map(c => ({
       name: c.name,
@@ -440,19 +440,19 @@ function compareVersions(a: string, b: string): number {
 
 export function getFieldTypes(fieldType?: string): object {
   if (fieldType) {
-    const ft = fieldTypes[fieldType] || fieldTypes[`field${fieldType}`];
+    const ft = loadSchemas().fieldTypes[fieldType] || loadSchemas().fieldTypes[`field${fieldType}`];
     if (!ft) {
       return {
         error: `Тип поля "${fieldType}" не найден`,
-        available: Object.keys(fieldTypes),
+        available: Object.keys(loadSchemas().fieldTypes),
       };
     }
     return { name: fieldType, ...ft };
   }
 
   return {
-    total: Object.keys(fieldTypes).length,
-    field_types: Object.entries(fieldTypes).map(([name, info]) => ({
+    total: Object.keys(loadSchemas().fieldTypes).length,
+    field_types: Object.entries(loadSchemas().fieldTypes).map(([name, info]) => ({
       name,
       description: info.description,
       example: info.example,

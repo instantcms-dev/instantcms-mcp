@@ -1,20 +1,24 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { components } from '../data/components.js';
 import { hookCategories, hooks } from '../data/hooks.js';
-import { addonStructures } from '../data/schemas.js';
 import { knowledgeSummary } from '../generated/knowledge-meta.js';
-import { compareVersionProfiles, instantCmsVersionProfiles } from '../data/version-profiles.js';
 import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
 import { findToolCategories } from '../utils/find-tool.js';
 import { getServerVersion } from '../version.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
 import { lazyModule } from '../utils/lazy-module.js';
 
-// artifact-tool тянет fast-xml-parser, yaml, ini и fflate (~23 мс) — нужны
-// только трём инструментам артефактов, поэтому загружаем модуль лениво.
+// Тяжёлые справочники (components с generated-источником, schemas,
+// version-profiles с 7.7k строк снапшотов) нужны только при вызове
+// инструментов — загружаем лениво. hooks остаётся eager: он нужен
+// knowledge-tools при регистрации describe().
 const loadArtifactTool = lazyModule<typeof import('../tools/artifact-tool.js')>(
   '../tools/artifact-tool.js'
+);
+const loadComponents = lazyModule<typeof import('../data/components.js')>('../data/components.js');
+const loadSchemas = lazyModule<typeof import('../data/schemas.js')>('../data/schemas.js');
+const loadVersionProfiles = lazyModule<typeof import('../data/version-profiles.js')>(
+  '../data/version-profiles.js'
 );
 
 const workflows = {
@@ -104,12 +108,12 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     () => ({
       server_version: getServerVersion(),
       tools_count: getToolsCount(),
-      instantcms_profiles: instantCmsVersionProfiles,
+      instantcms_profiles: loadVersionProfiles().instantCmsVersionProfiles,
       knowledge: {
         hooks: hooks.length,
         hook_categories: hookCategories.length,
-        components: components.length,
-        addon_types: Object.keys(addonStructures),
+        components: loadComponents().components.length,
+        addon_types: Object.keys(loadSchemas().addonStructures),
         // Какие домены подтверждены парсером закреплённого исходника,
         // а какие написаны вручную — см. knowledge/catalog.yaml.
         sources: knowledgeSummary,
@@ -192,7 +196,11 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     'compare_instantcms_versions',
     'Сравнивает документированные профили InstantCMS',
     { from: z.string(), to: z.string() },
-    args => compareVersionProfiles((args as { from: string }).from, (args as { to: string }).to)
+    args =>
+      loadVersionProfiles().compareVersionProfiles(
+        (args as { from: string }).from,
+        (args as { to: string }).to
+      )
   );
 
   defineTool(

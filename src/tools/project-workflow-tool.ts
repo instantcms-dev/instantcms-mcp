@@ -1,10 +1,21 @@
 import { validateAddon } from './addon-tool.js';
-import { validateGeneratedArtifacts, type ArtifactDiagnostic } from './artifact-tool.js';
-import { compareVersionProfiles } from '../data/version-profiles.js';
-import { components } from '../data/components.js';
+import type { ArtifactDiagnostic } from './artifact-tool.js';
 import { hooks } from '../data/hooks.js';
 import { createProjectPatch } from './project-patch-tool.js';
-import { compareVersionApi } from '../utils/version-api.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// artifact-tool (fast-xml-parser, yaml, fflate), version-api (7.7k строк
+// снапшотов), components и version-profiles нужны только конкретным
+// операциям — загружаем их лениво.
+const loadArtifactTool = lazyModule<typeof import('./artifact-tool.js')>(
+  '../tools/artifact-tool.js'
+);
+const loadVersionApi =
+  lazyModule<typeof import('../utils/version-api.js')>('../utils/version-api.js');
+const loadComponents = lazyModule<typeof import('../data/components.js')>('../data/components.js');
+const loadVersionProfiles = lazyModule<typeof import('../data/version-profiles.js')>(
+  '../data/version-profiles.js'
+);
 
 export interface ProjectDiagnostic extends ArtifactDiagnostic {
   suggestion?: string;
@@ -90,7 +101,7 @@ function pathDiagnostics(files: Record<string, string>): ProjectDiagnostic[] {
 export function auditInstantCmsProject(filesInput: Record<string, string>) {
   const files = normalizeFiles(filesInput);
   const kind = projectKind(files);
-  const artifact = validateGeneratedArtifacts(files);
+  const artifact = loadArtifactTool().validateGeneratedArtifacts(files);
   const addon = kind === 'addon' ? validateAddon(files) : null;
   const addonDiagnostics: ProjectDiagnostic[] = addon
     ? (
@@ -183,8 +194,8 @@ export function explainInstantCmsProject(files: Record<string, string>) {
 }
 
 export function planInstantCmsUpgrade(files: Record<string, string>, from: string, to: string) {
-  const comparison = compareVersionProfiles(from, to);
-  const versionApi = compareVersionApi(from, to);
+  const comparison = loadVersionProfiles().compareVersionProfiles(from, to);
+  const versionApi = loadVersionApi().compareVersionApi(from, to);
   const audit = auditInstantCmsProject(files);
   const code = Object.values(files).join('\n');
   const referencedHooks = [
@@ -200,7 +211,7 @@ export function planInstantCmsUpgrade(files: Record<string, string>, from: strin
     ...new Set([...code.matchAll(/->([a-zA-Z_]\w*)\s*\(/g)].map(m => m[1])),
   ];
   const knownMethods = new Set(
-    components.flatMap(component => component.methods.map(method => method.name))
+    loadComponents().components.flatMap(component => component.methods.map(method => method.name))
   );
   const unknownMethods = referencedMethods.filter(method =>
     versionApi ? !versionApi.target_method_names.has(method) : !knownMethods.has(method)

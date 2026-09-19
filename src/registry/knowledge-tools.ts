@@ -23,9 +23,12 @@ import {
   listSystemTraits,
 } from '../tools/controllers-tool.js';
 import { hookCategories } from '../data/hooks.js';
-import { templateStructure } from '../data/schemas.js';
 import { defineTool, defineToolWithManualResult } from '../utils/define-tool.js';
 import { errorResult, successResult } from '../utils/mcp-result.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// templateStructure читается только в handler — загружаем лениво.
+const loadSchemas = lazyModule<typeof import('../data/schemas.js')>('../data/schemas.js');
 
 export function registerKnowledgeTools(server: McpServer): void {
   // ── 3. Список хуков ──────────────────────────────────────────────────────
@@ -193,7 +196,7 @@ export function registerKnowledgeTools(server: McpServer): void {
     {},
     async () => {
       return {
-        ...templateStructure,
+        ...loadSchemas().templateStructure,
         available_tpl_variables: {
           $cms_template: 'Экземпляр cmsTemplate — управление выводом',
           $cms_user: 'Текущий пользователь (id, login, is_logged, group_id, ...)',

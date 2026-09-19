@@ -1,13 +1,18 @@
-import { widgetsMap, getWidget, getWidgetsByController } from '../data/widgets-map.js';
-import { traitsMap, getTrait, getTraitsByNamespace } from '../data/traits-map.js';
-import { fieldsMap, getField } from '../data/fields-map.js';
-import { routesMap, getRoutesByController } from '../data/routes-map.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// Справочные карты (widgets/traits/fields/routes) нужны только при вызове
+// инструментов — загружаем лениво.
+const loadWidgetsMap =
+  lazyModule<typeof import('../data/widgets-map.js')>('../data/widgets-map.js');
+const loadTraitsMap = lazyModule<typeof import('../data/traits-map.js')>('../data/traits-map.js');
+const loadFieldsMap = lazyModule<typeof import('../data/fields-map.js')>('../data/fields-map.js');
+const loadRoutesMap = lazyModule<typeof import('../data/routes-map.js')>('../data/routes-map.js');
 
 export function listWidgets(controller?: string): object {
-  let widgets = widgetsMap.widgets;
+  let widgets = loadWidgetsMap().widgetsMap.widgets;
 
   if (controller) {
-    widgets = getWidgetsByController(controller);
+    widgets = loadWidgetsMap().getWidgetsByController(controller);
   }
 
   return {
@@ -23,12 +28,12 @@ export function listWidgets(controller?: string): object {
 }
 
 export function getWidgetInfo(name: string): object {
-  const widget = getWidget(name);
+  const widget = loadWidgetsMap().getWidget(name);
 
   if (!widget) {
     return {
       error: `Widget "${name}" not found`,
-      available: widgetsMap.widgets.map(w => w.name),
+      available: loadWidgetsMap().widgetsMap.widgets.map(w => w.name),
     };
   }
 
@@ -44,10 +49,10 @@ export function getWidgetInfo(name: string): object {
 }
 
 export function listTraits(namespace?: string): object {
-  let traits = traitsMap.traits;
+  let traits = loadTraitsMap().traitsMap.traits;
 
   if (namespace) {
-    traits = getTraitsByNamespace(namespace);
+    traits = loadTraitsMap().getTraitsByNamespace(namespace);
   }
 
   const byNamespace: Record<string, object[]> = {};
@@ -77,12 +82,12 @@ export function listTraits(namespace?: string): object {
 }
 
 export function getTraitInfo(name: string): object {
-  const trait = getTrait(name);
+  const trait = loadTraitsMap().getTrait(name);
 
   if (!trait) {
     return {
       error: `Trait "${name}" not found`,
-      available: traitsMap.traits.map(t => t.name),
+      available: loadTraitsMap().traitsMap.traits.map(t => t.name),
     };
   }
 
@@ -102,9 +107,9 @@ export function getTraitInfo(name: string): object {
 
 export function listFields(): object {
   return {
-    total: fieldsMap.fieldCount,
-    systemFieldsCount: fieldsMap.systemFields.length,
-    fields: fieldsMap.fields.map(f => ({
+    total: loadFieldsMap().fieldsMap.fieldCount,
+    systemFieldsCount: loadFieldsMap().fieldsMap.systemFields.length,
+    fields: loadFieldsMap().fieldsMap.fields.map(f => ({
       name: f.name,
       className: f.className,
       isSystem: f.isSystem,
@@ -115,12 +120,12 @@ export function listFields(): object {
 }
 
 export function getFieldInfo(name: string): object {
-  const field = getField(name);
+  const field = loadFieldsMap().getField(name);
 
   if (!field) {
     return {
       error: `Field "${name}" not found`,
-      available: fieldsMap.fields.map(f => f.name),
+      available: loadFieldsMap().fieldsMap.fields.map(f => f.name),
     };
   }
 
@@ -137,11 +142,11 @@ export function getFieldInfo(name: string): object {
 
 export function listRoutes(controller?: string): object {
   if (controller) {
-    const routes = getRoutesByController(controller);
+    const routes = loadRoutesMap().getRoutesByController(controller);
     if (!routes) {
       return {
         error: `Controller "${controller}" has no routes`,
-        available: routesMap.controllers.map(c => c.name),
+        available: loadRoutesMap().routesMap.controllers.map(c => c.name),
       };
     }
     return {
@@ -154,9 +159,9 @@ export function listRoutes(controller?: string): object {
   }
 
   return {
-    total: routesMap.routeCount,
-    controllersCount: routesMap.controllers.length,
-    controllers: routesMap.controllers.map(c => ({
+    total: loadRoutesMap().routesMap.routeCount,
+    controllersCount: loadRoutesMap().routesMap.controllers.length,
+    controllers: loadRoutesMap().routesMap.controllers.map(c => ({
       name: c.name,
       functionName: c.functionName,
       routeCount: c.routes.length,

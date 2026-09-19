@@ -1,11 +1,16 @@
-import { controllersMap, getController } from '../data/controllers-map.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// controllers-map (~7.6k строк) нужен только при вызове инструментов — лениво.
+const loadControllersMap = lazyModule<typeof import('../data/controllers-map.js')>(
+  '../data/controllers-map.js'
+);
 
 export function analyzeController(name: string, type?: 'frontend' | 'backend'): object {
-  const controller = getController(name, type);
+  const controller = loadControllersMap().getController(name, type);
 
   if (!controller) {
-    const suggestions = controllersMap.controllers
-      .filter(c => c.name.includes(name.toLowerCase()))
+    const suggestions = loadControllersMap()
+      .controllersMap.controllers.filter(c => c.name.includes(name.toLowerCase()))
       .slice(0, 5)
       .map(c => ({ name: c.name, type: c.type }));
 
@@ -47,7 +52,7 @@ export function analyzeController(name: string, type?: 'frontend' | 'backend'): 
 }
 
 export function listControllers(filter?: string): object {
-  let controllers = controllersMap.controllers;
+  let controllers = loadControllersMap().controllersMap.controllers;
 
   if (filter === 'frontend') {
     controllers = controllers.filter(c => c.type === 'frontend');
@@ -85,7 +90,7 @@ export function listControllers(filter?: string): object {
 }
 
 export function getControllerActionsList(name: string, type?: 'frontend' | 'backend'): object {
-  const controller = getController(name, type);
+  const controller = loadControllersMap().getController(name, type);
 
   if (!controller) {
     return { error: `Контроллер "${name}" не найден` };
@@ -109,7 +114,7 @@ export function getControllerActionsList(name: string, type?: 'frontend' | 'back
 export function listSystemTraits(): object {
   const allTraits: Record<string, Set<string>> = {};
 
-  for (const controller of controllersMap.controllers) {
+  for (const controller of loadControllersMap().controllersMap.controllers) {
     for (const action of controller.actions) {
       for (const trait of action.traits) {
         const parts = trait.split('\\');

@@ -1,4 +1,6 @@
-import { addonStructures } from '../data/schemas.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+const loadSchemas = lazyModule<typeof import('../data/schemas.js')>('../data/schemas.js');
 
 export interface RequirementAnalysis {
   addon_type: 'basic' | 'with_admin' | 'with_hooks' | 'with_routes' | 'with_widget';
@@ -246,12 +248,12 @@ function generateTitle(requirement: string): string {
 }
 
 export function suggestAddonStructure(type: string): object {
-  const structure = addonStructures[type];
+  const structure = loadSchemas().addonStructures[type];
 
   if (!structure) {
     return {
       error: `Тип "${type}" не найден`,
-      available: Object.keys(addonStructures),
+      available: Object.keys(loadSchemas().addonStructures),
     };
   }
 
