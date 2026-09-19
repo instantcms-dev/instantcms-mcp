@@ -2077,6 +2077,8 @@ const fs = require('fs');
 const SOURCE_PATH = './source/system/core/user.php';
 const sourceExists = fs.existsSync(SOURCE_PATH);
 
+// Пропускается без локальных исходников InstantCMS (./source/system/core/*.php).
+// Запускается при наличии исходников; см. CONTRIBUTING.md «Skipped tests».
 const describeOrSkip = sourceExists ? describe : describe.skip;
 
 describeOrSkip('Core Parser', () => {
