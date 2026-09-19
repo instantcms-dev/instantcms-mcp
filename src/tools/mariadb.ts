@@ -1,4 +1,4 @@
-import * as mysql from 'mysql2/promise';
+import type * as mysql from 'mysql2/promise';
 
 import {
   DEFAULT_MAX_ROWS,
@@ -6,6 +6,11 @@ import {
   assertSqlAllowed,
   redactSecrets,
 } from '../utils/sql-safety.js';
+import { lazyModule } from '../utils/lazy-module.js';
+
+// mysql2 — самая тяжёлая зависимость (~40 мс загрузки) и нужна только при
+// реальном запросе к БД. Загружаем лениво, чтобы старт сервера не платил за неё.
+const loadMysql = lazyModule<typeof mysql>('mysql2/promise');
 
 export interface ExecuteOptions {
   /** Разрешить изменение данных. */
@@ -78,7 +83,7 @@ function getConnection(): MariaDBConfig {
 export function getPool(): mysql.Pool {
   if (!pool) {
     const config = getConnection();
-    pool = mysql.createPool({
+    pool = loadMysql().createPool({
       host: config.host,
       port: config.port,
       user: config.user,
