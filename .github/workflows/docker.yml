@@ -51,3 +51,43 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  smoke:
+    name: Dockerfile smoke (build + /health)
+    # Закрывает риск «Dockerfile компилируется, но контейнер не стартует»:
+    # поднимаем образ, ждём /health=200. Только на PR — теги идут в publish.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: instantcms-mcp:smoke
+
+      - name: Start container and probe /health
+        run: |
+          set -euo pipefail
+          docker run --rm -d --name instantcms-mcp-smoke \
+            -p 13001:3001 instantcms-mcp:smoke
+          # HEALTHCHECK в Dockerfile — 3 попытки × 30s = 90s максимум; тут даём 30s.
+          for _ in $(seq 1 30); do
+            sleep 1
+            code=$(curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:13001/health || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "OK: /health=200"; exit 0
+            fi
+          done
+          echo "FAIL: /health never returned 200"; exit 1
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f instantcms-mcp-smoke || true
