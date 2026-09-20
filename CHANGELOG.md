@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **P2: типовые ответы больше не отдают сотни килобайт, а размеры проверяются тестом.** Измерение показало: `instantcms://components/all` — 602 KiB, `instantcms://hooks/all` — 333 KiB, а `get_component_api` для `cmsTemplate` — 185 KiB одним ответом. Добавлено: `instantcms://components/summary` (8 KiB) и `instantcms://hooks/summary` (24 KiB) — компактные списки для навигации без полного справочника; `get_component_api` теперь отдаёт методы страницами (`methods`, `methods_page` с `total`/`next_cursor`, по умолчанию 50, максимум 200) — 55 KiB вместо 185 KiB, полный список доступен курсором или `limit`. Новый тест `src/__tests__/response-size.test.ts` измеряет размеры крупнейших resources и инструментов, печатает их в лог CI и держит бюджеты (страницы ≤ 64 KiB, summary ≤ 32 KiB, инструменты ≤ 96 KiB, полные справочники ≤ 1 MiB), а также проверяет, что постраничные ответы меньше полных.
+
 ## 1.6.0
 
 - **Инструменты: 100 в 9 доменных группах.** Регистрация, контракт, ошибки, lazy-load и двуязычные описания унифицированы; README переведён на автогенерируемую таблицу (`scripts/generate-tools-md.ts`, `npm run docs:tools`, проверка в `check:readme`).

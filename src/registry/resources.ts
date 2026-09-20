@@ -88,6 +88,60 @@ export function registerResources(server: McpServer): void {
   );
 
   server.resource(
+    'instantcms-components-summary',
+    'instantcms://components/summary',
+    {
+      mimeType: 'application/json',
+      description:
+        'Компактный список компонентов: имя, класс, число методов. Полные API — instantcms://components/all или постранично. / Compact component list / 组件紧凑列表',
+    },
+    async () => ({
+      contents: [
+        {
+          uri: 'instantcms://components/summary',
+          mimeType: 'application/json',
+          text: JSON.stringify({
+            total: loadComponents().components.length,
+            components: loadComponents().components.map(component => ({
+              name: component.name,
+              class: component.class,
+              methods: component.methods.length,
+              description: component.description.slice(0, 120),
+            })),
+          }),
+        },
+      ],
+    })
+  );
+
+  server.resource(
+    'instantcms-hooks-summary',
+    'instantcms://hooks/summary',
+    {
+      mimeType: 'application/json',
+      description:
+        'Компактный список хуков: имя, категория, тип. Полные данные — instantcms://hooks/all или постранично. / Compact hook list / 钩子紧凑列表',
+    },
+    async () => ({
+      contents: [
+        {
+          uri: 'instantcms://hooks/summary',
+          mimeType: 'application/json',
+          text: JSON.stringify({
+            total: hooks.length,
+            categories: hookCategories,
+            hooks: hooks.map(hook => ({
+              name: hook.name,
+              category: hook.category,
+              type: hook.type,
+            })),
+          }),
+        },
+      ],
+    })
+  );
+
+  server.resource(
     'instantcms-addon-types',
     'instantcms://addon/types',
     { mimeType: 'application/json', description: 'Типы дополнений и их структуры' },
