@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Новый генератор `scaffold_content_type`: регистрация типа контента через API ядра.** Регистрация типа контента была единственным оставшимся пунктом «не автоматизировано»: `scaffold_migration` и `scaffold_crud` просили делать её вручную в `install_package()`, потому что тип создаётся не файлами, а вызовом `modelBackendContent::addContentType()`/`addContentField()` и порождает таблицы `cms_con_<name>_*`. Теперь `scaffold_content_type` принимает имя и заголовок, флаги (категории, комментарии, теги, рейтинг, срок публикации), `url_pattern`, подписи, SEO, опции и список предметных полей; проверяет имена полей против системных колонок контента и типов из `fields-map`; отдаёт два артефакта — `[pkg] install.php` с идемпотентным `install_package()` и CLI-скрипт `scripts/register_<name>.php` для уже установленного сайта. Raw SQL сознательно не генерируется: DDL таблиц, поля-колонки и сброс кэша делает ядро. `diagnose_request`/`get_workflow` получили workflow `content_type`, `find_tool` — категорию `content`. Покрыто runtime-контрактом генераторов (php -l и проверка используемых символов) и registry-контрактом: набор инструментов 100 → 101.
+
 ## 1.7.0
 
 Ломающих изменений нет. Изменения поведения: `get_component_api` отдаёт методы страницами (`methods_page`, по умолчанию 50), `instantcms://components/all` и `hooks/all` остаются полными, но появились компактные `components/summary` и `hooks/summary`; Docker-образ слушает `0.0.0.0` внутри контейнера.

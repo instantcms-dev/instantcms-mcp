@@ -75,6 +75,12 @@ export const FIXTURES: Record<string, Record<string, unknown>> = {
     addon_name: 'ci_smoke',
     partials: [{ name: 'menu', type: 'sidebar' }],
   },
+  scaffold_content_type: {
+    name: 'ci_items',
+    title: 'CI Items',
+    is_cats: true,
+    fields: [{ name: 'price', type: 'number', title: 'Цена' }],
+  },
   list_template_overrides: {},
   get_template_override_info: { controller: 'content' },
   scaffold_cron: {
@@ -246,7 +252,7 @@ describe('registry contract', () => {
     const { server, client } = await connect();
     try {
       const { tools } = await client.listTools();
-      expect(tools).toHaveLength(100);
+      expect(tools).toHaveLength(101);
 
       const missing = tools.filter(tool => !(tool.name in FIXTURES)).map(tool => tool.name);
       expect(missing).toEqual([]);
@@ -307,6 +313,7 @@ describe('registry contract', () => {
         ['обновить проект на новую версию', 'upgrade'],
         ['исправить структуру проекта', 'repair'],
         ['написать контроллер каталога', 'addon'],
+        ['создать тип контента для каталога', 'content_type'],
       ];
       for (const [request, workflow] of cases) {
         const result = (await client.callTool({

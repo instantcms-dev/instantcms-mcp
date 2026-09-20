@@ -15,6 +15,7 @@ import {
   getTemplateOverrideInfo,
 } from '../tools/template-overrides-tool.js';
 import { scaffoldCron } from '../tools/cron-tool.js';
+import { scaffoldContentType } from '../tools/content-type-tool.js';
 import { hooks } from '../data/hooks.js';
 import { defineTool } from '../utils/define-tool.js';
 
@@ -559,6 +560,95 @@ export function registerGeneratorTools(server: McpServer): void {
     },
     async (opts: any) => {
       return scaffoldCron(opts as Parameters<typeof scaffoldCron>[0]) as Record<string, unknown>;
+    }
+  );
+
+  // ── 2.12. Регистрация типа контента ──────────────────────────────────────
+  defineTool(
+    server,
+    'scaffold_content_type',
+    'Генерирует код регистрации типа контента InstantCMS: поля, категории, SEO и URL-паттерн через API ядра (addContentType, addContentField), без raw SQL. / Generates InstantCMS content type registration code: fields, categories, SEO and URL pattern via the core API (addContentType, addContentField), without raw SQL.',
+    {
+      name: z
+        .string()
+        .regex(/^[a-z][a-z0-9_]{1,31}$/)
+        .describe('Системное имя типа: 2–32 строчных латинских символа, цифры и подчёркивания'),
+      title: z.string().trim().min(1).max(100).describe('Отображаемое название типа'),
+      description: z.string().trim().max(1000).optional().describe('Описание типа контента'),
+      url_pattern: z
+        .string()
+        .max(255)
+        .optional()
+        .describe(
+          'Шаблон URL материала. Токены: {id}, {title}, {category} и имя любого поля типа. По умолчанию {id}-{title}'
+        ),
+      is_cats: z.boolean().optional().describe('Включить категории'),
+      is_comments: z.boolean().optional().describe('Включить комментарии'),
+      is_tags: z.boolean().optional().describe('Включить теги'),
+      is_rating: z.boolean().optional().describe('Включить рейтинг'),
+      is_date_range: z.boolean().optional().describe('Управление сроком публикации'),
+      labels: z
+        .object({
+          one: z.string().optional(),
+          two: z.string().optional(),
+          many: z.string().optional(),
+          create: z.string().optional(),
+          list: z.string().optional(),
+          profile: z.string().optional(),
+        })
+        .optional()
+        .describe('Подписи числительных и кнопок типа'),
+      options: z
+        .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe('Дополнительные опции типа (is_item_form_add_cat, show_items_counts, ...)'),
+      seo: z
+        .object({
+          title: z.string().optional(),
+          keys: z.string().optional(),
+          desc: z.string().optional(),
+        })
+        .optional()
+        .describe('SEO-шаблоны типа контента'),
+      fields: z
+        .array(
+          z.object({
+            name: z
+              .string()
+              .describe('Имя поля (латиница, snake_case). Нельзя использовать системные колонки'),
+            type: z
+              .string()
+              .describe(
+                'Тип поля ICMS: string, text, html, image, images, file, list, number, url, date, checkbox, ...'
+              ),
+            title: z.string().describe('Заголовок поля'),
+            is_in_list: z.boolean().optional().describe('Показывать в списке (по умолчанию true)'),
+            is_in_item: z
+              .boolean()
+              .optional()
+              .describe('Показывать в материале (по умолчанию true)'),
+            is_in_filter: z
+              .boolean()
+              .optional()
+              .describe('Доступно в фильтре (по умолчанию false)'),
+            is_system: z.boolean().optional().describe('Системное поле'),
+            is_private: z.boolean().optional().describe('Приватное поле'),
+            options: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe('Опции поля (is_required, max_length, ...)'),
+          })
+        )
+        .optional()
+        .describe(
+          'Предметные поля типа; стандартные title/date_pub/user/photo/content создаются ядром'
+        ),
+    },
+    async (opts: any) => {
+      return scaffoldContentType(opts as Parameters<typeof scaffoldContentType>[0]) as Record<
+        string,
+        unknown
+      >;
     }
   );
 }
