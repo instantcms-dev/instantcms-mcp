@@ -1,6 +1,6 @@
 {
   "name": "@maxisoft/instantcms-mcp",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "MCP server and reusable AI workflows for InstantCMS 2 development",
   "main": "dist/index.js",
   "bin": {

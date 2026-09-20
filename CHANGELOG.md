@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.7.0
+
+Ломающих изменений нет. Изменения поведения: `get_component_api` отдаёт методы страницами (`methods_page`, по умолчанию 50), `instantcms://components/all` и `hooks/all` остаются полными, но появились компактные `components/summary` и `hooks/summary`; Docker-образ слушает `0.0.0.0` внутри контейнера.
+
+- **Docker-образ теперь отвечает на опубликованном порту, а публикация идёт только на тегах.** В `Dockerfile` не задавался `MCP_HTTP_HOST`, и сервер слушал `127.0.0.1` **внутри** контейнера: Docker не мог доставить трафик с `-p 13001:3001` (job `Dockerfile smoke` падал с `curl: Connection reset by peer`), а встроенный `HEALTHCHECK` этого не видел, потому что ходил на loopback внутри контейнера. Добавлено `ENV MCP_HTTP_HOST=0.0.0.0` (дефолт в коде остаётся `127.0.0.1` для не-контейнерного запуска). Job `publish` больше не запускается на PR (там образ собирает и проверяет `smoke`), а multi-arch сборка на теге повторяется до трёх раз: arm64 под QEMU недетерминированно падает с SIGILL на `npm ci`.
+
+- **`qs` в dev-зависимости обновлён до безопасной версии.** `npm audit` показывал 2 moderate advisory на `qs@6.15.1`, которую тянет `@stryker-mutator/core` → `typed-rest-client@2.3.1`; тот пинит `qs` ровно в `6.15.1`, поэтому `npm audit fix` не помогал, а `--force` выводил `typed-rest-client` за диапазон Stryker. Добавлен `overrides: { "typed-rest-client": { "qs": "^6.16.0" } }` — `npm audit` чистый и для прод, и целиком.
+
+- **Обновления зависимостей и CI.** `actions/checkout` v4→v7, `actions/setup-node` v4→v7, `peter-evans/create-pull-request` v7→v8, `softprops/action-gh-release` v1→v3, `eslint` 10, `@eslint/js` 10, `lint-staged` 17, `@types/node` 26 и группа dev-tooling.
+
 - **P1: парсеры проверяются на закреплённом исходнике, а еженедельная синхронизация стала строгой.** Новый тест `src/__tests__/upstream-parsers.test.ts` требует, чтобы коммит исходника совпадал с `knowledge/upstream.json`, и на нём проверяет конкретные факты: хуки (`render_page` в `system/core/template.php`, `sitemap_urls` в `system/controllers/sitemap/hooks/cron_generate.php`), публичные методы ядра и отсутствие protected (`cmsCore::loadModel`), события и таблицы (`cms_users`, `cms_events`) из реального дампа установки. Без исходника тест пропускается, но в job `Test against pinned InstantCMS source` задан `ICMS_REQUIRE_SOURCE=1`, поэтому пропуск запрещён, а несовпадение коммита — ошибка. Workflow `Sync InstantCMS knowledge` теперь: пишет в PR прежний и новый коммит, падает, если синхронизация изменила файлы вне `src/data/`/`src/generated/`/`knowledge/`, и проверяет `knowledge:versions:check` (для чего отдельно фетчит закреплённые теги). Заодно все CI-job'ы переведены на Node 22 — движок проекта уже `>=22`, а часть job'ов оставалась на 20.
 
 - **`@eslint/js` 10 и чистка двух замечаний новых правил.** Обновление до `@eslint/js@^10.0.1` включает новые рекомендуемые правила, которые нашли два места: мёртвая переменная `chosen` в тесте `get-component-api.test.ts` и бесполезная инициализация `returnBracket = -1` в `fields-parser.ts` (цикл всё равно присваивал значение перед первым чтением). Оба исправлены, `npm run lint` с новым набором правил чистый. Заменяет dependabot-PR #70.
