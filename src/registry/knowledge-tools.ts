@@ -96,9 +96,17 @@ export function registerKnowledgeTools(server: McpServer): void {
         .describe(
           'Имя компонента или класса. Пример: cmsModel, cmsTemplate, cmsRequest, cmsCache, cmsEventsManager'
         ),
+      cursor: z.string().optional().describe('Курсор страницы методов из methods_page.next_cursor'),
+      limit: z
+        .number()
+        .optional()
+        .describe('Сколько методов вернуть за раз (по умолчанию 50, максимум 200)'),
     },
-    async ({ component_name }) => {
-      return getComponentApi(component_name as string) as Record<string, unknown>;
+    async ({ component_name, cursor, limit }) => {
+      return getComponentApi(component_name as string, {
+        cursor: cursor as string | undefined,
+        limit: limit as number | undefined,
+      }) as Record<string, unknown>;
     }
   );
 

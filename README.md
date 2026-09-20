@@ -374,9 +374,12 @@ git push && git push --tags
 
 Сервер также публикует MCP resources со всеми хуками, компонентами, типами дополнений и quickstart.
 
-- RU: Для небольших ответов читайте `instantcms://hooks/page/first` (50 записей) или `instantcms://components/page/first` (10 записей). Используйте `page.next_cursor` в конце URI следующей страницы. Прежние полные URI остаются доступны.
-- EN: For smaller responses, read `instantcms://hooks/page/first` (50 entries) or `instantcms://components/page/first` (10 entries). Append `page.next_cursor` to the page URI for the next page. The existing full URIs remain available.
-- 中文：如需较小响应，请读取 `instantcms://hooks/page/first`（50 条）或 `instantcms://components/page/first`（10 条）。将 `page.next_cursor` 放到下一页 URI 末尾。原有完整 URI 仍可使用。
+- RU: Для небольших ответов читайте `instantcms://hooks/page/first` (50 записей) или `instantcms://components/page/first` (10 записей). Используйте `page.next_cursor` в конце URI следующей страницы. Совсем компактные списки — `instantcms://hooks/summary` и `instantcms://components/summary` (имя, категория/число методов). Прежние полные URI остаются доступны.
+- EN: For smaller responses, read `instantcms://hooks/page/first` (50 entries) or `instantcms://components/page/first` (10 entries). Append `page.next_cursor` to the page URI for the next page. For very compact lists use `instantcms://hooks/summary` and `instantcms://components/summary` (name, category/method count). The existing full URIs remain available.
+- 中文：如需较小响应，请读取 `instantcms://hooks/page/first`（50 条）或 `instantcms://components/page/first`（10 条）。将 `page.next_cursor` 放到下一页 URI 末尾。更紧凑的列表可用 `instantcms://hooks/summary` 与 `instantcms://components/summary`（名称、分类/方法数量）。原有完整 URI 仍可使用。
+- RU: `get_component_api` отдаёт методы страницами (по умолчанию 50): ответ содержит `methods` и `methods_page` с `total` и `next_cursor`. Для полного списка передайте `cursor` из `methods_page.next_cursor` или увеличьте `limit` (максимум 200).
+- EN: `get_component_api` returns methods in pages (50 by default): the response carries `methods` and `methods_page` with `total` and `next_cursor`. For the full list pass `cursor` from `methods_page.next_cursor` or raise `limit` (max 200).
+- 中文：`get_component_api` 分页返回方法（默认 50）：响应包含 `methods` 与 `methods_page`（含 `total` 和 `next_cursor`）。要获取完整列表，请传入 `methods_page.next_cursor` 或提高 `limit`（最大 200）。
 
 ### Языки инструкций / Instruction languages / 说明语言
 

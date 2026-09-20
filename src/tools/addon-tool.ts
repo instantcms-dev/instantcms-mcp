@@ -76,7 +76,7 @@ export function getAddonStructure(addonType: string = 'basic'): object {
   };
 }
 
-export function getComponentApi(componentName: string): object {
+export function getComponentApi(componentName: string, pageOptions: PageOptions = {}): object {
   const lower = componentName.toLowerCase();
   const exact = loadComponents().components.filter(
     c => c.name.toLowerCase() === lower || c.class.toLowerCase() === lower
@@ -112,6 +112,7 @@ export function getComponentApi(componentName: string): object {
   }
 
   const [component] = matches;
+  const page = paginate(component.methods, pageOptions);
 
   return {
     name: component.name,
@@ -119,7 +120,10 @@ export function getComponentApi(componentName: string): object {
     description: component.description,
     access: component.access,
     source: component.source,
-    methods: component.methods,
+    methods: page.items,
+    // Полный список методов доступен постранично: cmsTemplate отдаёт ~180 KiB
+    // одним ответом, что для типового запроса «какой API у класса» лишнее.
+    methods_page: page.page,
   };
 }
 
