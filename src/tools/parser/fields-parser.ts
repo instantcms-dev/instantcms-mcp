@@ -148,17 +148,15 @@ function parseFieldFile(filePath: string): FieldInfo | null {
   function extractOptionsBlock(content: string): string | null {
     const returnArray = content.indexOf('return array(');
 
-    let returnBracket = -1;
     let searchFrom = 0;
+    let returnBracket = content.indexOf('return [', searchFrom);
 
-    while (true) {
+    while (
+      returnBracket >= 0 &&
+      content.substring(returnBracket, returnBracket + 9) === 'return []'
+    ) {
+      searchFrom = returnBracket + 8;
       returnBracket = content.indexOf('return [', searchFrom);
-      if (returnBracket < 0) break;
-      if (content.substring(returnBracket, returnBracket + 9) === 'return []') {
-        searchFrom = returnBracket + 8;
-        continue;
-      }
-      break;
     }
 
     if (returnBracket < 0 && returnArray < 0) return null;

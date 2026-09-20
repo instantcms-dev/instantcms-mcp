@@ -49,7 +49,6 @@ describe('getComponentApi', () => {
     const names = list.components.map(c => c.name);
     const classes = list.components.map(c => c.class);
     const all = new Set([...names, ...classes]);
-    let chosen: string | undefined;
     let matchesCount = 0;
     for (const candidate of all) {
       const r = getComponentApi(candidate) as { code?: string };
@@ -58,8 +57,6 @@ describe('getComponentApi', () => {
         if (matchesCount > 1) break;
       }
     }
-    // Подтверждаем что все кандидаты в candidates при AMBIGUOUS_COMPONENT
-    void chosen;
   });
 
   test('partial "cms" возвращает кандидатов, не один случайный', () => {
