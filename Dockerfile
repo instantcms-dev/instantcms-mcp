@@ -21,6 +21,10 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 RUN addgroup -S mcp && adduser -S mcp -G mcp
 USER mcp
 
+# В контейнере сервер обязан слушать все интерфейсы: иначе Docker не может
+# доставить трафик с опубликованного порта (внутри остаётся 127.0.0.1-привязка,
+# а HEALTHCHECK ходит на loopback и потому не ловит проблему).
+ENV MCP_HTTP_HOST=0.0.0.0
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.MCP_HTTP_PORT||3001)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
