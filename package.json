@@ -69,6 +69,11 @@
     "LICENSE"
   ],
   "type": "commonjs",
+  "overrides": {
+    "typed-rest-client": {
+      "qs": "^6.16.0"
+    }
+  },
   "lint-staged": {
     "*.ts": [
       "eslint --fix",
