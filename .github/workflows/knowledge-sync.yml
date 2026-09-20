@@ -21,12 +21,53 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          # Движок проекта — Node >= 22 (см. package.json:engines и CI matrix).
+          node-version: '22'
           cache: npm
       - run: npm ci
+
+      # Фиксируем, с какого коммита уходим и на какой: эти значения попадают
+      # в PR, чтобы ревьюер видел, что именно меняется, а не «какой-то sync».
+      - name: Record upstream drift
+        id: drift
+        run: |
+          set -euo pipefail
+          current=$(node -e "console.log(require('./knowledge/upstream.json').commit)")
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          npm run knowledge:source:status -- --ref "${{ inputs.ref || 'latest' }}" | tee drift.json || true
+          node -e "
+            const fs = require('node:fs');
+            const drift = JSON.parse(fs.readFileSync('drift.json', 'utf8'));
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'target=' + drift.commit + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'resolved=' + drift.resolvedRef + '\n');
+          "
+          echo "drift: $current -> $(node -e "console.log(require('./drift.json').commit)")"
+
       - name: Update generated knowledge
         run: npm run knowledge:update -- --ref "${{ inputs.ref || 'latest' }}"
+
+      # Синхронизация имеет право менять только артефакты знаний: если парсер
+      # тронул что-то ещё, это ошибка, а не «обновление справочника».
+      - name: Verify only knowledge artifacts changed
+        run: |
+          set -euo pipefail
+          unexpected=$(git status --porcelain | cut -c4- | grep -vE '^(src/data/|src/generated/|knowledge/)' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::Синхронизация изменила файлы вне knowledge-артефактов:"
+            echo "$unexpected"
+            exit 1
+          fi
+
+      # Снимки API по версиям восстанавливаются из git archive закреплённых
+      # тегов, поэтому нужны сами теги, а не только latest.
+      - name: Fetch pinned InstantCMS tags
+        run: git -C .cache/icms2 fetch --refetch --no-filter origin 2.16.3 2.17.3 2.18.1 2.18.2
+
+      - name: Verify version API evidence
+        run: npm run knowledge:versions:check
+
       - run: npm run check
+
       - uses: peter-evans/create-pull-request@v8
         with:
           branch: automation/instantcms-knowledge
@@ -35,4 +76,11 @@ jobs:
           title: 'chore: sync InstantCMS knowledge'
           body: |
             Automated refresh from the official `instantsoft/icms2` repository.
+
+            - ref: `${{ steps.drift.outputs.resolved }}`
+            - previous commit: `${{ steps.drift.outputs.current }}`
+            - new commit: `${{ steps.drift.outputs.target }}`
+
             The pinned ref and commit are recorded in `knowledge/upstream.json`.
+            Only knowledge artifacts (`src/data/`, `src/generated/`, `knowledge/`) may change;
+            the job fails if anything else does.
