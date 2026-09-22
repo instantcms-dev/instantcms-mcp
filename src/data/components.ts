@@ -549,16 +549,20 @@ $activity->addEntry('myaddon', 'create', ['subject_id' => $id]);`,
         example: `return $this->cms_template->renderInternal($this, 'list', ['items' => $items]);`,
       },
       {
-        name: 'fetch',
-        signature: 'fetch(string $tpl_file, array $data = []): string',
-        description: 'Рендер шаблона в строку (без вывода)',
+        name: 'addCSS',
+        signature: 'addCSS(string $file, bool $allow_merge = true): bool',
+        description: 'Подключает CSS-файл по URL/пути.',
         parameters: [
-          { name: '$tpl_file', type: 'string', description: 'Путь к шаблону', required: true },
-          { name: '$data', type: 'array', description: 'Переменные', default: '[]' },
+          { name: '$file', type: 'string', description: 'Путь/URL CSS', required: true },
+          {
+            name: '$allow_merge',
+            type: 'bool',
+            description: 'Разрешить объединение',
+            default: 'true',
+          },
         ],
-        return_type: 'string',
-        example: `$html = $this->cms_template->fetch('myaddon/block', ['item' => $item]);
-echo $html;`,
+        return_type: 'bool',
+        example: `$this->cms_template->addCSS('/static/myaddon/style.css');`,
       },
       {
         name: 'setTitle',
@@ -571,47 +575,53 @@ echo $html;`,
         example: `$this->cms_template->setTitle('Название страницы | ' . cmsConfig::get('sitename'));`,
       },
       {
-        name: 'addHeadCSS',
-        signature: 'addHeadCSS(string $file, bool $no_merge = false): void',
-        description: 'Добавить CSS файл в <head>',
+        name: 'addJS',
+        signature: "addJS(string $file, string $comment = '', bool $allow_merge = true): bool",
+        description: 'Подключает JS-файл по URL/пути.',
         parameters: [
-          { name: '$file', type: 'string', description: 'URL CSS файла', required: true },
+          { name: '$file', type: 'string', description: 'Путь/URL JS', required: true },
+          { name: '$comment', type: 'string', description: 'Комментарий', default: "''" },
           {
-            name: '$no_merge',
+            name: '$allow_merge',
             type: 'bool',
-            description: 'Не объединять с другими CSS',
-            default: 'false',
+            description: 'Разрешить объединение',
+            default: 'true',
           },
         ],
-        return_type: 'void',
-        example: `$this->cms_template->addHeadCSS('/static/myaddon/style.css');`,
-      },
-      {
-        name: 'addHeadJS',
-        signature: 'addHeadJS(string $file, bool $no_merge = false): void',
-        description: 'Добавить JS файл в <head>',
-        parameters: [
-          { name: '$file', type: 'string', description: 'URL JS файла', required: true },
-          { name: '$no_merge', type: 'bool', description: 'Не объединять', default: 'false' },
-        ],
-        return_type: 'void',
-        example: `$this->cms_template->addHeadJS('/static/myaddon/app.js');`,
+        return_type: 'bool',
+        example: `$this->cms_template->addJS('/static/myaddon/app.js');`,
       },
       {
         name: 'addBottom',
-        signature: 'addBottom(string $html): void',
-        description: 'Добавить HTML перед закрывающим </body>',
+        signature:
+          'addBottom(string $tag, ?cmsRequest $request = null, bool $at_begin = false): void',
+        description: 'Добавить HTML-тег перед закрывающим </body>',
         parameters: [
-          { name: '$html', type: 'string', description: 'HTML для вставки', required: true },
+          { name: '$tag', type: 'string', description: 'HTML для вставки', required: true },
+          {
+            name: '$request',
+            type: '?cmsRequest',
+            description: 'Контекст запроса',
+            required: false,
+          },
+          { name: '$at_begin', type: 'bool', description: 'Вставить в начало', default: 'false' },
         ],
         return_type: 'void',
         example: `$this->cms_template->addBottom('<script>initMyPlugin();</script>');`,
       },
       {
         name: 'renderJSON',
-        signature: 'renderJSON(array $data): void',
+        signature: 'renderJSON(array $data, bool $with_header = false): void',
         description: 'Вернуть JSON ответ и завершить выполнение',
-        parameters: [{ name: '$data', type: 'array', description: 'Данные', required: true }],
+        parameters: [
+          { name: '$data', type: 'array', description: 'Данные', required: true },
+          {
+            name: '$with_header',
+            type: 'bool',
+            description: 'Отправить JSON-заголовок',
+            default: 'false',
+          },
+        ],
         return_type: 'void',
         example: `$this->cms_template->renderJSON(['success' => true, 'message' => 'OK']);`,
       },
@@ -1512,53 +1522,75 @@ function grid_items($controller) {
     methods: [
       {
         name: 'title',
-        signature: 'title(): string',
-        description: 'Возвращает заголовок страницы. МЕТОД с (), не свойство!',
+        signature: 'title(): void',
+        description:
+          'Выводит заголовок страницы (эхо, не возвращает строку). МЕТОД с (), не свойство!',
         parameters: [],
-        return_type: 'string',
-        example: `<title><?= $this->title() ?></title>`,
+        return_type: 'void',
+        example: `<title><?php $this->title(); ?></title>`,
       },
       {
         name: 'body',
-        signature: 'body(): string',
-        description: 'Возвращает основной HTML-контент страницы (результат экшена контроллера).',
+        signature: 'body(): void',
+        description:
+          'Выводит основной HTML-контент страницы (результат экшена контроллера). Эхо, не строка.',
         parameters: [],
-        return_type: 'string',
-        example: `<main class="content"><?= $this->body() ?></main>`,
+        return_type: 'void',
+        example: `<main class="content"><?php $this->body(); ?></main>`,
       },
       {
         name: 'head',
-        signature: 'head(bool $include_css_js = true, ...): string',
-        description: 'Возвращает теги для вставки в <head>: мета-теги, CSS, JS.',
+        signature:
+          'head(bool $is_seo_meta = true, bool $print_js = true, bool $print_css = true): void',
+        description:
+          'Выводит теги для <head>: мета-теги, CSS, JS (эхо). Подключённые ассеты печатаются здесь.',
         parameters: [
           {
-            name: '$include_css_js',
+            name: '$is_seo_meta',
             type: 'bool',
-            description: 'Включить CSS/JS теги (default: true)',
+            description: 'Печатать SEO-метатеги (default: true)',
+            required: false,
+            default: 'true',
+          },
+          {
+            name: '$print_js',
+            type: 'bool',
+            description: 'Печатать JS-теги (default: true)',
+            required: false,
+            default: 'true',
+          },
+          {
+            name: '$print_css',
+            type: 'bool',
+            description: 'Печатать CSS-теги (default: true)',
             required: false,
             default: 'true',
           },
         ],
-        return_type: 'string',
+        return_type: 'void',
         example: `<head>
     <meta charset="utf-8">
-    <title><?= $this->title() ?></title>
-    <?= $this->head(true) ?>
+    <title><?php $this->title(); ?></title>
+    <?php
+        $this->addMainTplCSSName('main');
+        $this->addMainTplJSName('main');
+        $this->head();
+    ?>
 </head>`,
       },
       {
         name: 'bottom',
-        signature: 'bottom(): string',
-        description: 'Возвращает JS-скрипты для вставки перед </body>.',
+        signature: 'bottom(): void',
+        description: 'Выводит JS-скрипты перед </body> (эхо).',
         parameters: [],
-        return_type: 'string',
-        example: `    <?= $this->bottom() ?>
+        return_type: 'void',
+        example: `<?php $this->bottom(); ?>
 </body>`,
       },
       {
         name: 'widgets',
-        signature: 'widgets(string $position): string',
-        description: 'Выводит виджеты на указанной позиции.',
+        signature: "widgets(string $position, bool $is_titles = true, string $wrapper = ''): void",
+        description: 'Выводит виджеты на указанной позиции (эхо).',
         parameters: [
           {
             name: '$position',
@@ -1567,11 +1599,24 @@ function grid_items($controller) {
               'Имя позиции: header, top, left-top, left-bottom, right-top, right-center, right-bottom, footer',
             required: true,
           },
+          {
+            name: '$is_titles',
+            type: 'bool',
+            description: 'Выводить заголовки виджетов (default: true)',
+            required: false,
+            default: 'true',
+          },
+          {
+            name: '$wrapper',
+            type: 'string',
+            description: "Имя обёртки из widgets/ (например 'wrapper_plain')",
+            required: false,
+          },
         ],
-        return_type: 'string',
-        example: `<?= $this->widgets('header') ?>
-<?= $this->widgets('right-top') ?>
-<?= $this->widgets('footer') ?>`,
+        return_type: 'void',
+        example: `<?php $this->widgets('header'); ?>
+<?php $this->widgets('right-top'); ?>
+<?php $this->widgets('footer'); ?>`,
       },
       {
         name: 'hasWidgetsOn',
@@ -1588,63 +1633,108 @@ function grid_items($controller) {
         return_type: 'bool',
         example: `<?php if ($this->hasWidgetsOn('right-top')): ?>
     <aside class="sidebar">
-        <?= $this->widgets('right-top') ?>
+        <?php $this->widgets('right-top'); ?>
     </aside>
 <?php endif ?>`,
       },
       {
         name: 'widgetsInHtml',
-        signature: "widgetsInHtml(string $position, string $wrapper = ''): void",
-        description: 'Выводит виджеты позиции в HTML-обёртке.',
+        signature: 'widgetsInHtml(string $position, string $wrapper_html): void',
+        description: 'Выводит виджеты позиции в HTML-обёртке (эхо).',
         parameters: [
           { name: '$position', type: 'string', description: 'Позиция виджетов', required: true },
           {
-            name: '$wrapper',
+            name: '$wrapper_html',
             type: 'string',
-            description: 'HTML-обёртка (класс или тег)',
+            description: 'HTML-обёртка (тег/класс)',
+            required: true,
+          },
+        ],
+        return_type: 'void',
+        example: `<?php $this->widgetsInHtml('left-top', 'sidebar-section'); ?>`,
+      },
+      {
+        name: 'breadcrumbs',
+        signature: 'breadcrumbs(array $options = []): void',
+        description: 'Выводит HTML хлебных крошек (эхо).',
+        parameters: [
+          {
+            name: '$options',
+            type: 'array',
+            description: 'Опции: home_url, template, strip_last',
             required: false,
           },
         ],
         return_type: 'void',
-        example: `<?php $this->widgetsInHtml('left-top', 'sidebar-section') ?>`,
+        example: `<nav aria-label="breadcrumb"><?php $this->breadcrumbs(); ?></nav>`,
       },
       {
-        name: 'breadcrumbs',
-        signature: 'breadcrumbs(): string',
-        description: 'Возвращает HTML хлебных крошек.',
-        parameters: [],
-        return_type: 'string',
-        example: `<nav aria-label="breadcrumb"><?= $this->breadcrumbs() ?></nav>`,
-      },
-      {
-        name: 'linkCSS',
-        signature: 'linkCSS(string $path): string',
-        description: 'Возвращает <link> тег для CSS файла из папки темы.',
+        name: 'addMainTplCSSName',
+        signature: 'addMainTplCSSName(string|array $name): bool',
+        description:
+          'Подключает CSS файл темы css/<name>.css (без расширения) выше остальных CSS. Печатается в head().',
         parameters: [
           {
-            name: '$path',
-            type: 'string',
-            description: 'Путь относительно папки темы',
+            name: '$name',
+            type: 'string|array',
+            description: "Имя файла без расширения, например 'main' для css/main.css",
             required: true,
           },
         ],
-        return_type: 'string',
-        example: `<?= $this->linkCSS('css/main.css') ?>`,
+        return_type: 'bool',
+        example: `<?php $this->addMainTplCSSName('main'); ?>`,
       },
       {
-        name: 'linkJS',
-        signature: 'linkJS(string $path): string',
-        description: 'Возвращает <script> тег для JS файла из папки темы.',
+        name: 'addMainTplJSName',
+        signature: 'addMainTplJSName(string|array $name, bool $at_begin = false): bool',
+        description: 'Подключает JS файл темы js/<name>.js (без расширения). Печатается в head().',
         parameters: [
           {
-            name: '$path',
-            type: 'string',
-            description: 'Путь относительно папки темы',
+            name: '$name',
+            type: 'string|array',
+            description: "Имя файла без расширения, например 'main' для js/main.js",
+            required: true,
+          },
+          {
+            name: '$at_begin',
+            type: 'bool',
+            description: 'Подключить выше остальных JS',
+            required: false,
+            default: 'false',
+          },
+        ],
+        return_type: 'bool',
+        example: `<?php $this->addMainTplJSName('main'); ?>`,
+      },
+      {
+        name: 'addTplCSSName',
+        signature: 'addTplCSSName(string|array $name): bool',
+        description: 'Подключает CSS файл темы css/<name>.css в общем порядке.',
+        parameters: [
+          {
+            name: '$name',
+            type: 'string|array',
+            description: 'Имя файла без расширения',
             required: true,
           },
         ],
-        return_type: 'string',
-        example: `<?= $this->linkJS('js/main.js') ?>`,
+        return_type: 'bool',
+        example: `<?php $this->addTplCSSName('main'); ?>`,
+      },
+      {
+        name: 'addTplJSName',
+        signature: 'addTplJSName(string|array $name): bool',
+        description: 'Подключает JS файл темы js/<name>.js в общем порядке.',
+        parameters: [
+          {
+            name: '$name',
+            type: 'string|array',
+            description: 'Имя файла без расширения',
+            required: true,
+          },
+        ],
+        return_type: 'bool',
+        example: `<?php $this->addTplJSName('main'); ?>`,
       },
       {
         name: 'renderLayoutChild',
@@ -1688,21 +1778,13 @@ function grid_items($controller) {
 <a href="<?= $this->href_to() ?>">← Назад</a>`,
       },
       {
-        name: 'addMainTplCSSName',
-        signature: 'addMainTplCSSName(string $name): void',
-        description: 'Добавляет CSS-класс к корневому элементу шаблона.',
-        parameters: [{ name: '$name', type: 'string', description: 'CSS-класс', required: true }],
-        return_type: 'void',
-        example: `<?php $this->addMainTplCSSName('page-catalog') ?>`,
-      },
-      {
         name: 'onDemandPrint',
         signature: 'onDemandPrint(): void',
         description:
           'Выводит on-demand ресурсы (CSS/JS), добавленные контроллерами в процессе выполнения. Обычно вставляется перед </head>.',
         parameters: [],
         return_type: 'void',
-        example: `<?= $this->onDemandPrint() ?>`,
+        example: `<?php $this->onDemandPrint(); ?>`,
       },
     ],
   },

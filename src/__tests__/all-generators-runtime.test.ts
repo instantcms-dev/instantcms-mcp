@@ -20,6 +20,7 @@ import { scaffoldApi } from '../tools/api-tool.js';
 import { scaffoldCache } from '../tools/cache-tool.js';
 import { scaffoldComponent } from '../tools/component-tool.js';
 import { scaffoldCron } from '../tools/cron-tool.js';
+import { scaffoldContentType } from '../tools/content-type-tool.js';
 import { scaffoldCrud } from '../tools/crud-tool.js';
 import { scaffoldEmail } from '../tools/email-tool.js';
 import { scaffoldExternalApi } from '../tools/external-api-tool.js';
@@ -307,6 +308,22 @@ const cases: Case[] = [
         scaffoldCron({
           addon_name: 'gencron',
           tasks: [{ name: 'cleanup', schedule: { minute: '0' }, action: 'taskCleanup' }],
+        })
+      ),
+  },
+  {
+    name: 'scaffold_content_type',
+    run: () =>
+      asFiles(
+        scaffoldContentType({
+          name: 'genctype',
+          title: 'Gen Ctype',
+          is_cats: true,
+          is_comments: true,
+          fields: [
+            { name: 'price', type: 'number', title: 'Цена' },
+            { name: 'cover', type: 'image', title: 'Обложка' },
+          ],
         })
       ),
   },

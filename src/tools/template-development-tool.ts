@@ -49,11 +49,7 @@ export function scaffoldCompleteTemplate(options: {
   files['js/main.js'] =
     `(() => {\n    'use strict';\n    document.documentElement.classList.add('js');\n})();\n`;
   files['widgets/wrapper.tpl.php'] =
-    `<section class="widget<?= !empty($widget->css_class) ? ' ' . html($widget->css_class) : '' ?>">\n    <?php if (!empty($widget->title)): ?>\n        <h2 class="widget-title"><?= html($widget->title) ?></h2>\n    <?php endif ?>\n    <div class="widget-body"><?= $widget->body ?></div>\n</section>\n`;
-  files['main.tpl.php'] = files['main.tpl.php'].replace(
-    "<?= $this->linkCSS('css/main.css') ?>",
-    "<?= $this->linkCSS('css/main.css') ?>\n    <?= $this->linkJS('js/main.js') ?>"
-  );
+    `<?php\n/**\n * Обёртка виджета. Начинается с PHP-блока, чтобы проходить проверку артефактов.\n */\n?>\n<section class="widget<?= !empty($widget->css_class) ? ' ' . html($widget->css_class) : '' ?>">\n    <?php if (!empty($widget->title)): ?>\n        <h2 class="widget-title"><?= html($widget->title) ?></h2>\n    <?php endif ?>\n    <div class="widget-body"><?= $widget->body ?></div>\n</section>\n`;
 
   const layout =
     options.with_layout_scheme === false

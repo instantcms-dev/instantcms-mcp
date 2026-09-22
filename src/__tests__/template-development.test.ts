@@ -15,11 +15,36 @@ describe('template development workflows', () => {
     });
     expect(result.files['manifest.php']).toContain("'inherit' => ['modern']");
     expect(result.files['manifest.php']).toContain("'has_options'                => false");
-    expect(result.files['main.tpl.php']).toContain("linkJS('js/main.js')");
     expect(result.files['widgets/wrapper.tpl.php']).toContain('html($widget->title)');
     expect(result.layout_scheme?.summary.positions).toEqual(
       expect.arrayContaining(['header', 'content', 'right-top', 'footer'])
     );
+  });
+
+  test('generated main.tpl.php uses the real cmsTemplate API (echo methods)', () => {
+    const { files } = scaffoldCompleteTemplate({ name: 'runtime_theme', title: 'Runtime Theme' });
+    const main = files['main.tpl.php']!;
+
+    // Ассеты темы подключаются до head(), head() печатает их сам.
+    expect(main).toContain("$this->addMainTplCSSName('main')");
+    expect(main).toContain("$this->addMainTplJSName('main')");
+    expect(main).toContain('$this->head();');
+    expect(main).toContain('$this->body();');
+    expect(main).toContain("$this->widgets('header');");
+    expect(main).toContain('$this->bottom();');
+
+    // Запрещённые конструкции: linkCSS/linkJS/LANG_CODE не существуют,
+    // а echo-методы нельзя вызывать через <?= ... ?> (fatal на живом ICMS).
+    expect(main).not.toContain('linkCSS');
+    expect(main).not.toContain('linkJS');
+    expect(main).not.toContain('LANG_CODE');
+    expect(main).not.toMatch(/<\?=\s*\$this->head\(/);
+    expect(main).not.toMatch(/<\?=\s*\$this->widgets\(/);
+    expect(main).not.toMatch(/<\?=\s*\$this->bottom\(/);
+
+    // Обёртка виджета должна начинаться с PHP-блока (требование валидатора артефактов).
+    expect(files['widgets/wrapper.tpl.php']!.trimStart().startsWith('<?php')).toBe(true);
+    expect(files['js/main.js']).toContain("document.documentElement.classList.add('js')");
   });
 
   test('analyzes template structure, positions and overrides', () => {

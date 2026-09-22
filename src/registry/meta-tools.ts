@@ -69,6 +69,7 @@ const workflows = {
     'plan_project_changes',
     'audit_instantcms_project',
   ],
+  content_type: ['scaffold_content_type', 'scaffold_crud', 'validate_generated_artifacts'],
 };
 
 const toolCatalog = [
@@ -81,6 +82,11 @@ const toolCatalog = [
     category: 'database',
     keywords: ['database', 'база', 'sql', 'migration'],
     tools: ['introspect_database', 'describe_table', 'scaffold_migration'],
+  },
+  {
+    category: 'content',
+    keywords: ['content type', 'тип контента', 'контент-тип', 'ctype', 'каталог', 'поля'],
+    tools: ['scaffold_content_type', 'list_content_types', 'list_field_types', 'scaffold_crud'],
   },
   {
     category: 'integration',
@@ -141,7 +147,17 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
     server,
     'get_workflow',
     'Возвращает рекомендуемую последовательность инструментов. / Returns the recommended sequence of tools.',
-    { workflow: z.enum(['addon', 'widget', 'template', 'audit', 'repair', 'upgrade']) },
+    {
+      workflow: z.enum([
+        'addon',
+        'widget',
+        'template',
+        'audit',
+        'repair',
+        'upgrade',
+        'content_type',
+      ]),
+    },
     args => {
       const workflow = (args as { workflow: keyof typeof workflows }).workflow;
       return { workflow, tools: workflows[workflow] };
@@ -157,17 +173,22 @@ export function registerMetaTools(server: McpServer, getToolsCount: () => number
       const request = (args as { request: string }).request;
       const lower = request.toLowerCase();
       const workflow =
-        lower.includes('виджет') || lower.includes('widget')
-          ? 'widget'
-          : lower.includes('шаблон') || lower.includes('template') || lower.includes('layout')
-            ? 'template'
-            : lower.includes('провер') || lower.includes('audit')
-              ? 'audit'
-              : lower.includes('обнов') || lower.includes('upgrade')
-                ? 'upgrade'
-                : lower.includes('исправ') || lower.includes('repair')
-                  ? 'repair'
-                  : 'addon';
+        lower.includes('тип контента') ||
+        lower.includes('контент-тип') ||
+        lower.includes('типы контента') ||
+        lower.includes('ctype')
+          ? 'content_type'
+          : lower.includes('виджет') || lower.includes('widget')
+            ? 'widget'
+            : lower.includes('шаблон') || lower.includes('template') || lower.includes('layout')
+              ? 'template'
+              : lower.includes('провер') || lower.includes('audit')
+                ? 'audit'
+                : lower.includes('обнов') || lower.includes('upgrade')
+                  ? 'upgrade'
+                  : lower.includes('исправ') || lower.includes('repair')
+                    ? 'repair'
+                    : 'addon';
       return { workflow, tools: workflows[workflow] };
     }
   );

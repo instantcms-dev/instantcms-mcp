@@ -128,7 +128,7 @@ function generateLayoutTemplate(
     code += `
 
     <aside class="${name}-sidebar">
-        <?php echo $this->widgets('${override.controller}_sidebar'); ?>
+        <?php $this->widgets('${override.controller}_sidebar'); ?>
     </aside>
 `;
   }

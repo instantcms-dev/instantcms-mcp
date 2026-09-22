@@ -1104,42 +1104,46 @@ export const templateStructure = {
                 └── {widget_name}.tpl.php
 `,
   widget_positions: `
-Стандартные позиции виджетов (вызов в main.tpl.php):
-  <?= $this->widgets('header') ?>       ← шапка
-  <?= $this->widgets('top') ?>          ← навигация
-  <?= $this->widgets('left-top') ?>     ← левая колонка верх
-  <?= $this->widgets('left-bottom') ?>  ← левая колонка низ
-  <?= $this->widgets('right-top') ?>    ← правая колонка верх
-  <?= $this->widgets('right-center') ?> ← правая колонка середина
-  <?= $this->widgets('right-bottom') ?> ← правая колонка низ
-  <?= $this->widgets('footer') ?>       ← подвал
-  <?= $this->body() ?>                  ← основной контент страницы
+Стандартные позиции виджетов (вызов в main.tpl.php).
+ВАЖНО: widgets()/body()/title()/head()/bottom()/breadcrumbs() ВЫВОДЯТ HTML сами
+(эхо), поэтому вызываются как инструкции, а не через <?= ... ?>:
+  <?php $this->widgets('header'); ?>       ← шапка
+  <?php $this->widgets('top'); ?>          ← навигация
+  <?php $this->widgets('left-top'); ?>     ← левая колонка верх
+  <?php $this->widgets('left-bottom'); ?>  ← левая колонка низ
+  <?php $this->widgets('right-top'); ?>    ← правая колонка верх
+  <?php $this->widgets('right-center'); ?> ← правая колонка середина
+  <?php $this->widgets('right-bottom'); ?> ← правая колонка низ
+  <?php $this->widgets('footer'); ?>       ← подвал
+  <?php $this->body(); ?>                  ← основной контент страницы
 
 Проверка наличия виджетов:
   <?php if ($this->hasWidgetsOn('right-top')): ?>
 `,
   template_variables: `
-Переменные доступные в .tpl.php шаблонах:
-  $this->title()                    — заголовок страницы (метод с (), не свойство!)
-  $this->body()                     — основной контент (HTML)
-  $this->widgets($pos)              — вывод виджетов позиции
-  $this->widgetsInHtml($pos, $w)    — виджеты позиции в HTML-обёртке
-  $this->hasWidgetsOn($pos)         — проверка наличия виджетов на позиции
-  $this->breadcrumbs()              — хлебные крошки
-  $this->head(true, ...)            — теги <head>; первый параметр = include_css_js
-  $this->bottom()                   — скрипты перед </body>
-  $this->linkCSS('css/main.css')    — подключение CSS файла темы
-  $this->linkJS('js/main.js')       — подключение JS файла темы
-  $this->addMainTplCSSName(...)     — добавить CSS класс к <html>/<body>
-  $this->addMainTplJSName(...)      — добавить JS класс
-  $this->renderLayoutChild($name, $vars) — рендер фрагмента из layout_childs/
-  $this->href_to($action, $params)  — формирование URL к экшену контроллера
+Методы cmsTemplate в .tpl.php. ВНИМАНИЕ: title/body/head/bottom/widgets/
+widgetsInHtml/breadcrumbs ВЫВОДЯТ HTML напрямую (return void) — вызывать
+как инструкции: <?php $this->head(); ?>, НЕ <?= $this->head() ?>.
+  $this->title()                    — вывод заголовка страницы (эхо)
+  $this->body()                     — вывод основного контента (эхо)
+  $this->widgets($pos, $titles, $wrapper) — вывод виджетов позиции (эхо)
+  $this->widgetsInHtml($pos, $w)    — виджеты позиции в HTML-обёртке (эхо)
+  $this->hasWidgetsOn($pos)         — проверка наличия виджетов (bool)
+  $this->breadcrumbs($options)      — вывод хлебных крошек (эхо)
+  $this->head($seo, $js, $css)      — вывод тегов <head> (эхо)
+  $this->bottom()                   — вывод скриптов перед </body> (эхо)
+  $this->addMainTplCSSName('main')  — подключить css/main.css темы (до head())
+  $this->addMainTplJSName('main')   — подключить js/main.js темы (до head())
+  $this->addTplCSSName('main')      — подключить css темы в общем порядке
+  $this->addTplJSName('main')       — подключить js темы в общем порядке
+  $this->renderLayoutChild($name, $vars) — вывод фрагмента из layout_childs/ (эхо)
+  $this->href_to($action, $params)  — URL к экшену контроллера (строка)
   $config                           — объект конфигурации сайта
   $cms_user                         — текущий пользователь (cmsUser)
   cmsUser::isAdmin()                — проверка на администратора
   cmsUser::isLogged()               — проверка авторизации
   $device_type                      — 'mobile' или 'desktop'
-  LANG_CODE                         — код активного языка (ru, en, ...)
+  cmsConfig::get('language')        — код активного языка (ru, en, ...)
 `,
   inheritance: {
     description:
@@ -1215,49 +1219,52 @@ return [
       path: 'main.tpl.php',
       description: 'Главный макет. HTML-скелет. Вызывает позиции виджетов и основной контент.',
       template: `<!DOCTYPE html>
-<html lang="<?= LANG_CODE ?>">
+<html lang="<?= cmsConfig::get('language') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $this->title() ?></title>
-    <?= $this->head() ?>
-    <?= $this->linkCSS('css/theme-layout.css') ?>
-    <?= $this->linkCSS('css/theme-gui.css') ?>
+    <title><?php $this->title(); ?></title>
+    <?php
+        // Ассеты темы подключаются ДО head(); head() печатает их теги.
+        $this->addMainTplCSSName('main');
+        $this->addMainTplJSName('main');
+        $this->head();
+    ?>
 </head>
 <body>
     <header>
-        <?= $this->widgets('header') ?>
-        <?= $this->widgets('top') ?>
+        <?php $this->widgets('header'); ?>
+        <?php $this->widgets('top'); ?>
     </header>
 
-    <?= $this->breadcrumbs() ?>
+    <?php $this->breadcrumbs(); ?>
 
     <div class="container">
         <?php if ($this->hasWidgetsOn('left-top') || $this->hasWidgetsOn('left-bottom')): ?>
         <aside class="sidebar-left">
-            <?= $this->widgets('left-top') ?>
-            <?= $this->widgets('left-bottom') ?>
+            <?php $this->widgets('left-top'); ?>
+            <?php $this->widgets('left-bottom'); ?>
         </aside>
         <?php endif ?>
 
         <main>
-            <?= $this->body() ?>
+            <?php $this->body(); ?>
         </main>
 
         <?php if ($this->hasWidgetsOn('right-top')): ?>
         <aside class="sidebar-right">
-            <?= $this->widgets('right-top') ?>
-            <?= $this->widgets('right-center') ?>
-            <?= $this->widgets('right-bottom') ?>
+            <?php $this->widgets('right-top'); ?>
+            <?php $this->widgets('right-center'); ?>
+            <?php $this->widgets('right-bottom'); ?>
         </aside>
         <?php endif ?>
     </div>
 
     <footer>
-        <?= $this->widgets('footer') ?>
+        <?php $this->widgets('footer'); ?>
     </footer>
 
-    <?= $this->bottom() ?>
+    <?php $this->bottom(); ?>
 </body>
 </html>`,
     },

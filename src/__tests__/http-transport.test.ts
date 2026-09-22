@@ -26,7 +26,7 @@ describe('HTTP transport (--http)', () => {
       await client.connect(transport);
       try {
         const listed = await client.listTools();
-        expect(listed.tools.length).toBe(100);
+        expect(listed.tools.length).toBe(101);
         const health = await client.callTool({ name: 'get_project_health', arguments: {} });
         expect(health).toHaveProperty('structuredContent');
       } finally {
@@ -79,7 +79,7 @@ describe('HTTP transport (--http)', () => {
       await client.connect(transport);
       try {
         const listed = await client.listTools();
-        expect(listed.tools.length).toBe(100);
+        expect(listed.tools.length).toBe(101);
       } finally {
         await client.close();
       }
@@ -225,7 +225,7 @@ describe('HTTP transport (--http)', () => {
       const client = new Client({ name: 'stateful-test', version: '0' });
       await client.connect(clientTransport);
       try {
-        expect((await client.listTools()).tools.length).toBe(100);
+        expect((await client.listTools()).tools.length).toBe(101);
       } finally {
         await client.close();
       }

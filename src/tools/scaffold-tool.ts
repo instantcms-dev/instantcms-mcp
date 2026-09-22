@@ -400,49 +400,54 @@ return [
     ]
 ];`,
     'main.tpl.php': `<!DOCTYPE html>
-<html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
+<html lang="<?= cmsConfig::get('language') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $this->title() ?></title>
-    <?= $this->head() ?>
-    <?= $this->linkCSS('css/main.css') ?>
+    <title><?php $this->title(); ?></title>
+    <?php
+        // Ассеты темы подключаются до head(): addMainTplCSSName/JSName('main')
+        // печатают css/main.css и js/main.js из папки темы.
+        $this->addMainTplCSSName('main');
+        $this->addMainTplJSName('main');
+        $this->head();
+    ?>
 </head>
 <body>
 
 <header class="site-header">
-    <?= $this->widgets('header') ?>
-    <?= $this->widgets('top') ?>
+    <?php $this->widgets('header'); ?>
+    <?php $this->widgets('top'); ?>
 </header>
 
-<?= $this->breadcrumbs() ?>
+<?php $this->breadcrumbs(); ?>
 
 <div class="site-wrap">
     <?php if ($this->hasWidgetsOn('left-top') || $this->hasWidgetsOn('left-bottom')): ?>
     <aside class="sidebar sidebar-left">
-        <?= $this->widgets('left-top') ?>
-        <?= $this->widgets('left-bottom') ?>
+        <?php $this->widgets('left-top'); ?>
+        <?php $this->widgets('left-bottom'); ?>
     </aside>
     <?php endif ?>
 
     <main class="site-main">
-        <?= $this->body() ?>
+        <?php $this->body(); ?>
     </main>
 
     <?php if ($this->hasWidgetsOn('right-top')): ?>
     <aside class="sidebar sidebar-right">
-        <?= $this->widgets('right-top') ?>
-        <?= $this->widgets('right-center') ?>
-        <?= $this->widgets('right-bottom') ?>
+        <?php $this->widgets('right-top'); ?>
+        <?php $this->widgets('right-center'); ?>
+        <?php $this->widgets('right-bottom'); ?>
     </aside>
     <?php endif ?>
 </div>
 
 <footer class="site-footer">
-    <?= $this->widgets('footer') ?>
+    <?php $this->widgets('footer'); ?>
 </footer>
 
-<?= $this->bottom() ?>
+<?php $this->bottom(); ?>
 </body>
 </html>`,
     'css/main.css': `/* ${opts.title} */
@@ -458,6 +463,11 @@ body { font-family: sans-serif; color: var(--color-text); background: var(--colo
 .site-wrap { display: flex; max-width: 1200px; margin: 0 auto; padding: 0 16px; gap: 24px; }
 .site-main { flex: 1; min-width: 0; }
 .sidebar { width: 240px; flex-shrink: 0; }`,
+    'js/main.js': `(() => {
+    'use strict';
+    document.documentElement.classList.add('js');
+})();
+`,
   };
 
   return {

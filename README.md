@@ -38,7 +38,7 @@ node dist/index.js
 - диагностические коды для автоматического исправления;
 - экранирование пользовательских данных для XML, INI, PHP и YAML;
 - AI-инструкции и skills без дублирования базы знаний.
-- 100 MCP-инструментов и четыре встроенных MCP resource;
+- 101 MCP-инструментов и четыре встроенных MCP resource;
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 22 и 24 (Stryker 10 требует ≥22).
@@ -223,7 +223,7 @@ git push && git push --tags
 
 <!-- tools:start -->
 
-Сервер регистрирует **100 инструментов**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
+Сервер регистрирует **101 инструментов**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
 
 ### Мета / Meta / 元 (10)
 
@@ -240,7 +240,7 @@ git push && git push --tags
 | `build_addon_archive` | Создаёт ZIP дополнения в памяти и возвращает base64 | Creates an addon ZIP in memory and returns base64 | — |
 | `inspect_addon_archive` | Проверяет пути и синтаксис файлов ZIP-архива base64 | Checks paths and syntax of files inside a base64 ZIP archive | — |
 
-### Генераторы дополнений / Generators / 生成器 (13)
+### Генераторы дополнений / Generators / 生成器 (14)
 
 | Инструмент / Tool / 工具 | Назначение / RU | Purpose / EN | 用途 / 中文 |
 | --- | --- | --- | --- |
@@ -257,6 +257,7 @@ git push && git push --tags
 | `list_template_overrides` | Возвращает список всех доступных переопределений шаблонов контроллеров InstantCMS | Returns the list of all available InstantCMS controller template overrides | — |
 | `get_template_override_info` | Возвращает подробную информацию о конкретном переопределении шаблона | Returns detailed information about a specific template override | — |
 | `scaffold_cron` | Генерирует PHP cron контроллер для периодических задач с настройкой расписания, блокировками и логированием | Generates a PHP cron controller for periodic tasks with schedule configuration, locking, and logging | — |
+| `scaffold_content_type` | Генерирует код регистрации типа контента InstantCMS: поля, категории, SEO и URL-паттерн через API ядра (addContentType, addContentField), без raw SQL | Generates InstantCMS content type registration code: fields, categories, SEO and URL pattern via the core API (addContentType, addContentField), without raw SQL | — |
 
 ### База знаний / Knowledge / 知识库 (20)
 
@@ -398,7 +399,7 @@ git push && git push --tags
 | Registry                     | Количество | Что входит                                                                       |
 | ---------------------------- | ---------: | -------------------------------------------------------------------------------- |
 | `meta-tools`                 |         10 | capabilities, подбор workflow, диагностика, версии и артефакты                   |
-| `generator-tools`            |         13 | addon, CRUD, формы, grid, REST API, тесты, email, cron и overrides               |
+| `generator-tools`            |         14 | addon, CRUD, типы контента, формы, grid, REST API, тесты, email, cron и overrides |
 | `knowledge-tools`            |         20 | хуки, компоненты, поля, шаблоны, layout, БД и контроллеры                        |
 | `database-tools`             |          6 | безопасный доступ к MariaDB и исследование таблиц                                |
 | `source-tools`               |         12 | widgets, traits, fields, routes, миграции и анализ требований                    |
