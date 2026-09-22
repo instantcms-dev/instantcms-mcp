@@ -34,14 +34,22 @@ jobs:
           set -euo pipefail
           current=$(node -e "console.log(require('./knowledge/upstream.json').commit)")
           echo "current=$current" >> "$GITHUB_OUTPUT"
-          npm run knowledge:source:status -- --ref "${{ inputs.ref || 'latest' }}" | tee drift.json || true
+          # --silent: иначе npm печатает баннер "> package@version script" и
+          # drift.json перестаёт быть валидным JSON.
+          npm run --silent knowledge:source:status -- --ref "${{ inputs.ref || 'latest' }}" > drift.json || true
           node -e "
             const fs = require('node:fs');
-            const drift = JSON.parse(fs.readFileSync('drift.json', 'utf8'));
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'target=' + drift.commit + '\n');
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'resolved=' + drift.resolvedRef + '\n');
+            const out = process.env.GITHUB_OUTPUT;
+            let drift = {};
+            try {
+              drift = JSON.parse(fs.readFileSync('drift.json', 'utf8'));
+            } catch (error) {
+              console.log('::warning::Не удалось разобрать ответ knowledge:source:status: ' + error.message);
+            }
+            fs.appendFileSync(out, 'target=' + (drift.commit || '') + '\n');
+            fs.appendFileSync(out, 'resolved=' + (drift.resolvedRef || '') + '\n');
+            console.log('drift: ' + '$current' + ' -> ' + (drift.commit || 'unknown'));
           "
-          echo "drift: $current -> $(node -e "console.log(require('./drift.json').commit)")"
 
       - name: Update generated knowledge
         run: npm run knowledge:update -- --ref "${{ inputs.ref || 'latest' }}"
