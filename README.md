@@ -226,7 +226,7 @@ git push && git push --tags
 
 <!-- tools:start -->
 
-Сервер регистрирует **101 инструмент**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
+Сервер регистрирует **101 инструментов**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
 
 ### Мета / Meta / 元 (10)
 
@@ -260,7 +260,7 @@ git push && git push --tags
 | `list_template_overrides` | Возвращает список всех доступных переопределений шаблонов контроллеров InstantCMS | Returns the list of all available InstantCMS controller template overrides | — |
 | `get_template_override_info` | Возвращает подробную информацию о конкретном переопределении шаблона | Returns detailed information about a specific template override | — |
 | `scaffold_cron` | Генерирует PHP cron контроллер для периодических задач с настройкой расписания, блокировками и логированием | Generates a PHP cron controller for periodic tasks with schedule configuration, locking, and logging | — |
-| `scaffold_content_type` | Генерирует код регистрации типа контента InstantCMS: поля, категории, SEO и URL-паттерн через API ядра (addContentType, addContentField), без raw SQL | Generates InstantCMS content type registration code: fields, categories, SEO and URL pattern via the core API (addContentType, addContentField), without raw SQL | — |
+| `scaffold_content_type` | Генерирует регистрацию типа контента InstantCMS через API ядра (addContentType, addContentField) без raw SQL: поля, категории, SEO и URL-паттерн. Повторный запуск докатывает только отсутствующие поля на существующий тип | Generates InstantCMS content type registration via the core API (addContentType, addContentField) without raw SQL: fields, categories, SEO and URL pattern. Re-running adds only missing fields to an existing type | 通过核心 API（addContentType、addContentField）生成 InstantCMS 内容类型注册，不使用原始 SQL：字段、分类、SEO 与 URL 模板。重跑仅向已存在类型补加缺失字段。 |
 
 ### База знаний / Knowledge / 知识库 (20)
 
