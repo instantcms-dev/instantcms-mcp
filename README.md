@@ -2,10 +2,12 @@
 
 [![CI](https://github.com/instantcms-dev/instantcms-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/instantcms-dev/instantcms-mcp/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/instantcms-dev/instantcms-mcp)](https://github.com/instantcms-dev/instantcms-mcp/releases/latest)
-[![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022%20%7C%2024-339933)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22%20%7C%2024-339933)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 MCP-сервер и набор переносимых AI-workflows для разработки дополнений, виджетов, шаблонов и layout-схем InstantCMS 2.
+
+![Агент вызывает get_hook_details и получает ответ, собранный из реального исходника InstantCMS](docs/images/agent-demo.gif)
 
 Сервер предоставляет структурированную базу API InstantCMS, безопасные генераторы, валидатор пакетов, диагностические инструменты и MCP resources. Runtime-данные синхронизированы с официальным репозиторием [`instantsoft/icms2`](https://github.com/instantsoft/icms2), последняя проверенная стабильная версия — **InstantCMS 2.18.2**.
 
@@ -42,6 +44,8 @@ node dist/index.js
 - воспроизводимая генерация runtime-справочников из зафиксированного commit InstantCMS;
 - автоматическая еженедельная проверка обновлений и Pull Request с изменившимися данными;
 - CI на Node.js 22 и 24 (Stryker 10 требует ≥22).
+
+![Объём базы знаний и уровень достоверности источников](docs/images/knowledge.png)
 
 ## Требования и установка
 
@@ -88,7 +92,7 @@ npm run check
 node dist/index.js --http                # http://127.0.0.1:3001/mcp
 node dist/index.js --http --port 8080    # порт флагом или MCP_HTTP_PORT
 MCP_HTTP_TOKEN=secret node dist/index.js --http   # требовать Authorization: Bearer secret
-MCP_HTTP_HOST=0.0.0.0 node dist/index.js --http   # слушать внешний интерфейр
+MCP_HTTP_HOST=0.0.0.0 node dist/index.js --http   # слушать внешний интерфейс
 node dist/index.js --http --session      # stateful: сессии Mcp-Session-Id (GET/DELETE)
 MCP_HTTP_RATE_LIMIT=120 node dist/index.js --http # лимит 120 запросов/мин с одного IP (429 + Retry-After)
 ```
@@ -184,6 +188,10 @@ git push && git push --tags
 
 Уровень достоверности каждого источника задан в `knowledge/catalog.yaml` и **проверяется сборкой**: `verified` допустим только для файлов, созданных парсером закреплённого исходника, а рукописные данные помечаются `curated` и `inferred`. `npm run knowledge:build` падает, если достоверность завышена. Текущая сводка доступна в `get_server_capabilities` (`knowledge.sources`).
 
+Ответ на несуществующий или неоднозначный запрос — это отказ с кандидатами, а не правдоподобная выдумка:
+
+![Сервер отвечает AMBIGUOUS_HOOK и HOOK_NOT_FOUND вместо выдуманного хука](docs/images/honest-refusal.png)
+
 ## Матрица проверки генераторов
 
 Проверено на живом InstantCMS 2.18.2 (скрипт `npm run verify:generated` и ручные сценарии).
@@ -227,6 +235,10 @@ git push && git push --tags
 <!-- tools:start -->
 
 Сервер регистрирует **101 инструментов**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
+
+Так выглядит ответ по конкретному хуку — с параметрами, файлами-источниками в ядре и примером реализации:
+
+![get_hook_details: параметры хука, файлы-источники, пример кода и manifest.xml](docs/images/hook-details.png)
 
 ### Мета / Meta / 元 (10)
 
