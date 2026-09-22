@@ -2078,7 +2078,8 @@ const SOURCE_PATH = './source/system/core/user.php';
 const sourceExists = fs.existsSync(SOURCE_PATH);
 
 // Пропускается без локальных исходников InstantCMS (./source/system/core/*.php).
-// Запускается при наличии исходников; см. CONTRIBUTING.md «Skipped tests».
+// Запускается при наличии исходников; в CI это job «Test against pinned InstantCMS
+// source» с ICMS_REQUIRE_SOURCE=1 (см. .github/workflows/ci.yml), где пропуск запрещён.
 const describeOrSkip = sourceExists ? describe : describe.skip;
 
 describeOrSkip('Core Parser', () => {
