@@ -28,6 +28,7 @@ import { scaffoldApi } from '../src/tools/api-tool.js';
 import { scaffoldComponent } from '../src/tools/component-tool.js';
 import { scaffoldCron } from '../src/tools/cron-tool.js';
 import { scaffoldCrud } from '../src/tools/crud-tool.js';
+import { scaffoldContentType } from '../src/tools/content-type-tool.js';
 import { scaffoldEmail } from '../src/tools/email-tool.js';
 import { scaffoldExternalApi } from '../src/tools/external-api-tool.js';
 import { scaffoldCache } from '../src/tools/cache-tool.js';
@@ -108,6 +109,8 @@ interface Artifact {
   widgetBinding?: { position: string; options: string };
   /** Таблицы, создаваемые install.sql (для очистки). */
   tables: string[];
+  /** SQL, который нужно выполнить при очистке (например, удалить строку типа контента). */
+  cleanupSql?: string[];
   /** Демонстрационные строки. */
   seed?: Array<{ table: string; columns: string; values: string }>;
 }
@@ -843,6 +846,157 @@ echo $missing ? 'missing:' . implode(',', $missing) : 'ok';`,
         ],
       };
     }
+    case 'content_type': {
+      // Регистрация типа контента: таблицы, записи, поля, колонки и опции.
+      const baseFields = [
+        { name: 'price', type: 'number', title: 'Цена', is_in_filter: true },
+        { name: 'sku', type: 'string', title: 'Артикул', is_in_filter: true },
+        { name: 'details', type: 'text', title: 'Детали' },
+        {
+          name: 'color',
+          type: 'list',
+          title: 'Цвет',
+          options: { items: { red: 'Красный', blue: 'Синий' } },
+        },
+        { name: 'published_at', type: 'date', title: 'Дата' },
+      ];
+      const baseParams = {
+        name: options.name,
+        title: 'Verify CT',
+        description: 'Проверка типа контента',
+        url_pattern: '{id}-{title}',
+        is_cats: true,
+        is_comments: true,
+        is_tags: true,
+        is_rating: true,
+        is_date_range: true,
+        labels: {
+          one: 'Материал',
+          two: 'Материала',
+          many: 'Материалов',
+          create: 'Создать материал',
+          list: 'Материалы',
+          profile: 'Мои материалы',
+        },
+        seo: { title: 'SEO {title}', keys: 'ключ1,ключ2', desc: 'SEO описание' },
+        options: { limit: 10 },
+      };
+
+      const base = scaffoldContentType({ ...baseParams, fields: baseFields }) as {
+        files: Record<string, string>;
+        tables: string[];
+      };
+      files['.verify/install_ct.php'] = base.files['[pkg] install.php'];
+
+      // Второй установщик с дополнительным полем проверяет докатку поля
+      // на уже существующий тип (только новые поля, без дублей).
+      const extended = scaffoldContentType({
+        ...baseParams,
+        fields: [
+          ...baseFields,
+          { name: 'weight', type: 'number', title: 'Вес', is_in_filter: true },
+        ],
+      }) as { files: Record<string, string> };
+      files['.verify/install_ct_extended.php'] = extended.files['[pkg] install.php'];
+
+      return {
+        files,
+        sql,
+        tables: base.tables,
+        cleanupSql: [`DELETE FROM cms_content_types WHERE name='${options.name}';`],
+        runtimePhp: [
+          {
+            note: 'тип контента: таблицы, записи, поля и опции',
+            script: `$db = cmsCore::getInstance()->db;
+$name = ${JSON.stringify(options.name)};
+$prefix = cmsConfig::get('db_prefix');
+$contentTable = $prefix . 'con_' . $name;
+
+$query = function (string $sql) use ($db) {
+    $result = $db->query($sql);
+    $rows = [];
+    while ($row = $db->fetchAssoc($result)) { $rows[] = $row; }
+    return $rows;
+};
+
+require_once PATH . '/.verify/install_ct.php';
+if (install_package([]) !== true) { echo 'fail:install'; return; }
+
+$ctype = $db->getRow('content_types', "name = '" . $name . "'");
+if (!$ctype) { echo 'fail:no-ctype'; return; }
+
+$tables = array_column($query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE '" . $contentTable . "%'"), 'TABLE_NAME');
+sort($tables);
+$expectedTables = [$contentTable, $contentTable . '_cats', $contentTable . '_cats_bind', $contentTable . '_fields', $contentTable . '_props', $contentTable . '_props_bind', $contentTable . '_props_values'];
+sort($expectedTables);
+
+$fields = $query("SELECT name, type, is_in_filter FROM " . $contentTable . "_fields ORDER BY ordering");
+$fieldNames = array_column($fields, 'name');
+$fieldType = [];
+foreach ($fields as $field) { $fieldType[$field['name']] = $field['type']; }
+$fieldFilter = [];
+foreach ($fields as $field) { $fieldFilter[$field['name']] = (int) $field['is_in_filter']; }
+
+$columns = [];
+foreach ($query("SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" . $contentTable . "'") as $column) {
+    $columns[$column['COLUMN_NAME']] = $column['COLUMN_TYPE'];
+}
+
+$rootCats = (int) $query("SELECT COUNT(*) AS cnt FROM " . $contentTable . "_cats WHERE parent_id = 0")[0]['cnt'];
+
+$problems = [];
+if ((int) $ctype['is_cats'] !== 1 || (int) $ctype['is_comments'] !== 1 || (int) $ctype['is_tags'] !== 1 || (int) $ctype['is_rating'] !== 1 || (int) $ctype['is_date_range'] !== 1) { $problems[] = 'flags'; }
+if ($ctype['url_pattern'] !== '{id}-{title}') { $problems[] = 'url_pattern'; }
+foreach (['labels', 'options', 'seo_title', 'seo_keys', 'seo_desc'] as $key) {
+    if (empty($ctype[$key])) { $problems[] = 'empty:' . $key; }
+}
+if ($tables !== $expectedTables) { $problems[] = 'tables:' . implode(',', $tables); }
+foreach (['title', 'date_pub', 'user', 'photo', 'content'] as $std) {
+    if (!in_array($std, $fieldNames, true)) { $problems[] = 'std:' . $std; }
+}
+foreach (['price', 'sku', 'details', 'color', 'published_at'] as $custom) {
+    if (!in_array($custom, $fieldNames, true)) { $problems[] = 'custom:' . $custom; }
+}
+if (($fieldType['price'] ?? '') !== 'number' || ($fieldType['sku'] ?? '') !== 'string' || ($fieldType['color'] ?? '') !== 'list') { $problems[] = 'field-types'; }
+if (($fieldFilter['price'] ?? 0) !== 1 || ($fieldFilter['sku'] ?? 0) !== 1 || ($fieldFilter['details'] ?? -1) !== 0) { $problems[] = 'field-filter'; }
+if (strpos($columns['price'] ?? '', 'decimal') !== 0 || strpos($columns['sku'] ?? '', 'varchar') !== 0 || ($columns['details'] ?? '') !== 'text' || strpos($columns['color'] ?? '', 'int') !== 0) { $problems[] = 'columns'; }
+if ($rootCats !== 1) { $problems[] = 'cats-root'; }
+
+echo $problems ? 'fail:' . implode('|', $problems) : 'ok';`,
+            expect: output => output.trim() === 'ok',
+          },
+          {
+            note: 'докатка поля на существующий тип',
+            script: `$db = cmsCore::getInstance()->db;
+$name = ${JSON.stringify(options.name)};
+$prefix = cmsConfig::get('db_prefix');
+$contentTable = $prefix . 'con_' . $name;
+
+$query = function (string $sql) use ($db) {
+    $result = $db->query($sql);
+    $rows = [];
+    while ($row = $db->fetchAssoc($result)) { $rows[] = $row; }
+    return $rows;
+};
+
+$before = array_column($query("SELECT name FROM " . $contentTable . "_fields"), 'name');
+
+require_once PATH . '/.verify/install_ct_extended.php';
+if (install_package([]) !== true) { echo 'fail:install'; return; }
+
+$after = array_column($query("SELECT name FROM " . $contentTable . "_fields"), 'name');
+
+$problems = [];
+if (count($after) !== count($before) + 1) { $problems[] = 'count:' . count($before) . '->' . count($after); }
+if (count(array_keys($after, 'weight', true)) !== 1) { $problems[] = 'weight'; }
+if (count($after) !== count(array_unique($after))) { $problems[] = 'dup'; }
+
+echo $problems ? 'fail:' . implode('|', $problems) : 'ok';`,
+            expect: output => output.trim() === 'ok',
+          },
+        ],
+      };
+    }
     case 'component': {
       // Реальный multi-controller пакет: frontend/model/backend/actions/шаблоны.
       const result = scaffoldComponent({
@@ -1414,6 +1568,9 @@ function cleanup(options: Options, artifact: Artifact, deployed: Deployed): void
   if (artifact.events?.length) {
     mysql(options, `DELETE FROM cms_events WHERE listener='${artifact.controller?.name}';`);
   }
+  for (const statement of artifact.cleanupSql ?? []) {
+    mysql(options, statement);
+  }
   for (const table of artifact.tables) {
     mysql(options, `DROP TABLE IF EXISTS \`${table}\`;`);
   }
@@ -1691,13 +1848,14 @@ echo $model->createApiToken(1);
     const tokenPath = path.join(options.site, '_verify_token.php');
     fs.writeFileSync(tokenPath, tokenScript);
 
-    let token = '';
-    try {
-      const executed = spawnSync('php', [tokenPath], { encoding: 'utf8' });
-      token = (executed.stdout || '').trim();
-    } finally {
-      fs.rmSync(tokenPath, { force: true });
-    }
+    const token = ((): string => {
+      try {
+        const executed = spawnSync('php', [tokenPath], { encoding: 'utf8' });
+        return (executed.stdout || '').trim();
+      } finally {
+        fs.rmSync(tokenPath, { force: true });
+      }
+    })();
     add('токен выдан через createApiToken()', 1, token.length === 64 ? 1 : 0);
 
     if (token) {
@@ -1825,13 +1983,14 @@ echo $id;
     const scriptPath = path.join(options.site, '_verify_cron.php');
     fs.writeFileSync(scriptPath, registerScript);
 
-    let taskId = 0;
-    try {
-      const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
-      taskId = Number((executed.stdout || '').trim()) || 0;
-    } finally {
-      fs.rmSync(scriptPath, { force: true });
-    }
+    const taskId = ((): number => {
+      try {
+        const executed = spawnSync('php', [scriptPath], { encoding: 'utf8' });
+        return Number((executed.stdout || '').trim()) || 0;
+      } finally {
+        fs.rmSync(scriptPath, { force: true });
+      }
+    })();
     add('задача планировщика зарегистрирована', 1, taskId > 0 ? 1 : 0);
 
     if (taskId) {
@@ -1867,7 +2026,7 @@ async function main(): Promise<void> {
 
   if (!options.scenario) {
     die(
-      'укажите --scenario crud|api|addon|component|webhook|external_api|oauth|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|integration|routes|crud_options|crud_slug'
+      'укажите --scenario crud|api|addon|component|webhook|external_api|oauth|widget|cron|form|grid|filter|cache|core_artifacts|template_override|admin_partial|import_export|content_type|integration|routes|crud_options|crud_slug'
     );
   }
   const config = path.join(options.site, 'system', 'config', 'config.php');
@@ -1895,16 +2054,17 @@ async function main(): Promise<void> {
   registerRows(options, artifact);
   clearCache(options);
 
-  let results: CheckResult[] = [];
-  try {
-    results = await runChecks(options, artifact);
-  } finally {
-    // Очистка выполняется даже при падении проверок, чтобы не оставлять мусор.
-    if (options.cleanup) {
-      cleanup(options, artifact, deployed);
-      console.log('\nСозданные файлы, записи и таблицы удалены.');
+  const results = await (async (): Promise<CheckResult[]> => {
+    try {
+      return await runChecks(options, artifact);
+    } finally {
+      // Очистка выполняется даже при падении проверок, чтобы не оставлять мусор.
+      if (options.cleanup) {
+        cleanup(options, artifact, deployed);
+        console.log('\nСозданные файлы, записи и таблицы удалены.');
+      }
     }
-  }
+  })();
 
   console.log('\nСценарии:');
   for (const result of results) {
