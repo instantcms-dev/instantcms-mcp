@@ -34,6 +34,13 @@ updates:
           - 'yaml'
           - 'zod'
         update-types: ['minor', 'patch']
+    # TypeScript 7 (нативный компилятор) не собирается на текущем тулчейне:
+    # ts-jest@29 требует typescript <7, typescript-eslint@8 — <6.1. Мажорные
+    # PR по typescript не открываем, пока оба не объявят поддержку; вернёмся
+    # к вопросу руками.
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   # actions/checkout, setup-node и прочие — еженедельно, minor/patch.
   - package-ecosystem: github-actions
