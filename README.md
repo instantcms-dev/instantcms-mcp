@@ -9,7 +9,7 @@ MCP-сервер и набор переносимых AI-workflows для раз
 
 Сервер предоставляет структурированную базу API InstantCMS, безопасные генераторы, валидатор пакетов, диагностические инструменты и MCP resources. Runtime-данные синхронизированы с официальным репозиторием [`instantsoft/icms2`](https://github.com/instantsoft/icms2), последняя проверенная стабильная версия — **InstantCMS 2.18.2**.
 
-Текущий релиз: [`v1.7.0`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.7.0). Генераторы проверяются в рантайме на живом InstantCMS (`npm run verify:generated`): CRUD, API с токенами, виджеты, маршруты, ЧПУ по `slug`, фильтры, cron, формы и гриды. Сгенерированные API-дополнения при отсутствии метода модели отвечают `501 NOT_IMPLEMENTED`, а не падают; `scaffold_crud` с `with_api_model` добавляет нужный контракт и токены. MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
+Текущий релиз: [`v1.8.0`](https://github.com/instantcms-dev/instantcms-mcp/releases/tag/v1.8.0). Генераторы проверяются в рантайме на живом InstantCMS (`npm run verify:generated`): CRUD, API с токенами, виджеты, маршруты, ЧПУ по `slug`, фильтры, cron, формы и гриды. Сгенерированные API-дополнения при отсутствии метода модели отвечают `501 NOT_IMPLEMENTED`, а не падают; `scaffold_crud` с `with_api_model` добавляет нужный контракт и токены. MCP работает автономно: доступ к GitHub нужен только сопровождающим проекта для обновления базы знаний.
 
 ### Установка
 
@@ -20,8 +20,8 @@ npm install @maxisoft/instantcms-mcp
 npm-пакет: `@maxisoft/instantcms-mcp`. Автоматическая публикация использует Trusted Publishing (GitHub Actions OIDC). Готовая сборка также доступна в GitHub Release ZIP:
 
 ```bash
-curl -L -O https://github.com/instantcms-dev/instantcms-mcp/releases/download/v1.7.0/instantcms-mcp-v1.7.0.zip
-unzip instantcms-mcp-v1.7.0.zip && cd instantcms-mcp-*/release
+curl -L -O https://github.com/instantcms-dev/instantcms-mcp/releases/download/v1.8.0/instantcms-mcp-v1.8.0.zip
+unzip instantcms-mcp-v1.8.0.zip && cd instantcms-mcp-*/release
 npm install --production
 node dist/index.js
 ```
@@ -225,7 +225,7 @@ git push && git push --tags
 
 <!-- tools:start -->
 
-Сервер регистрирует **101 инструментов**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
+Сервер регистрирует **101 инструмент**. Ниже — сгруппированный список (RU/EN/中文). Полные схемы и описания доступны через стандартный MCP `tools/list`.
 
 ### Мета / Meta / 元 (10)
 
