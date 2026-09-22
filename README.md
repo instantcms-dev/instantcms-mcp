@@ -124,7 +124,7 @@ npm run verify:generated -- \
   --insecure --yes --cleanup
 ```
 
-- `--scenario`: `crud`, `api`, `addon`, `component`, `webhook`, `external_api`, `oauth`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `template_override`, `admin_partial`, `import_export`, `cron`, `form`, `grid` или `integration`.
+- `--scenario`: `crud`, `api`, `addon`, `component`, `webhook`, `external_api`, `oauth`, `content_type`, `widget`, `routes`, `crud_options`, `crud_slug`, `filter`, `cache`, `core_artifacts`, `template_override`, `admin_partial`, `import_export`, `cron`, `form`, `grid` или `integration`.
 - Без `--yes` скрипт только печатает план.
 - `--cleanup` удаляет созданные файлы, записи и таблицы; удаляются только пустые каталоги, которые создал сам скрипт, и это проверяется тестами в `src/__tests__/site-deploy.test.ts`.
 - Скрипт отказывается работать, если в каталоге нет `system/config/config.php`.
@@ -214,6 +214,7 @@ git push && git push --tags
 | `scaffold_external_api`                                                                                   | рантайм: cURL-клиент, auth-заголовки, rate limiting и кэш на `cmsCache`      |
 | `scaffold_oauth`                                                                                          | рантайм: OAuth-обмен кода на токен через cURL, PKCE и токены в БД            |
 | `scaffold_migration`, `generate_migration`, `scaffold_lang`, `scaffold_hook`                          | рантайм: таблица создаётся из SQL, `install_package()` и хук вызываются ядром |
+| `scaffold_content_type`                                                                                   | рантайм: 7 таблиц ТК, записи, поля/колонки, опции и докатка поля на существующий тип |
 | `scaffold_test`                                                                                           | только статически: нужны PHPUnit/Codeception                              |
 | `scaffold_template`, `scaffold_complete_template`                                                         | только статически: активация темы затрагивает весь сайт                     |
 

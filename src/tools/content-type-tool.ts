@@ -182,7 +182,7 @@ function buildCtypeEntries(params: ScaffoldContentTypeParams, labels: Required<C
 
 function buildInstallPhp(params: ScaffoldContentTypeParams): string {
   const labels = normalizeLabels(params.name, params.title, params.labels);
-  const ctype = phpAssoc(
+  const ctypeData = phpAssoc(
     buildCtypeEntries(params, labels).map(([key, value]) => [key, value]),
     '        '
   );
@@ -216,12 +216,9 @@ function install_package(array $install_options = []) {
 
     $model = new modelBackendContent();
 
-    // Повторная установка не должна дублировать тип.
-    if ($model->getContentTypeByName(${phpStr(params.name)})) {
-        return true;
-    }
-
-    $ctype_id = $model->addContentType(${ctype});
+    // Повторная установка не дублирует тип.
+    $ctype    = $model->getContentTypeByName(${phpStr(params.name)});
+    $ctype_id = $ctype ? $ctype['id'] : $model->addContentType(${ctypeData});
 
     if (!$ctype_id) {
         return ${phpStr(`Не удалось создать тип контента ${params.name}`)};
@@ -231,7 +228,14 @@ function install_package(array $install_options = []) {
     // Ниже — только предметные поля; ctype_id проставляется автоматически.
     $fields = ${fieldsPhp};
 
+    // Повторный запуск добавляет ТОЛЬКО отсутствующие поля: так новый набор полей
+    // докатывается на уже существующий тип и не создаёт дублей.
+    $existing = array_keys($model->getContentFields(${phpStr(params.name)}, 0, false));
+
     foreach ($fields as $field) {
+        if (in_array($field['name'], $existing, true)) {
+            continue;
+        }
         $field['ctype_id'] = $ctype_id;
         $model->addContentField(${phpStr(params.name)}, $field);
     }
@@ -243,7 +247,7 @@ function install_package(array $install_options = []) {
 
 function buildCliScript(params: ScaffoldContentTypeParams): string {
   const labels = normalizeLabels(params.name, params.title, params.labels);
-  const ctype = phpAssoc(buildCtypeEntries(params, labels), '    ');
+  const ctypeData = phpAssoc(buildCtypeEntries(params, labels), '    ');
   const fields = params.fields ?? [];
   const fieldsPhp = fields.length
     ? `[\n${fields.map(field => `    ${phpAssoc(fieldEntries(field), '    ')},`).join('\n')}\n]`
@@ -273,12 +277,8 @@ require_once PATH . '/system/controllers/content/backend/model.php';
 
 $model = new modelBackendContent();
 
-if ($model->getContentTypeByName(${phpStr(params.name)})) {
-    echo "Тип контента ${params.name} уже существует\\n";
-    exit(0);
-}
-
-$ctype_id = $model->addContentType(${ctype});
+$ctype    = $model->getContentTypeByName(${phpStr(params.name)});
+$ctype_id = $ctype ? $ctype['id'] : $model->addContentType(${ctypeData});
 
 if (!$ctype_id) {
     echo "Не удалось создать тип контента ${params.name}\\n";
@@ -287,12 +287,21 @@ if (!$ctype_id) {
 
 $fields = ${fieldsPhp};
 
+// Повторный запуск добавляет только отсутствующие поля: так новый набор полей
+// докатывается на существующий тип без дублей.
+$existing = array_keys($model->getContentFields(${phpStr(params.name)}, 0, false));
+$added    = 0;
+
 foreach ($fields as $field) {
+    if (in_array($field['name'], $existing, true)) {
+        continue;
+    }
     $field['ctype_id'] = $ctype_id;
     $model->addContentField(${phpStr(params.name)}, $field);
+    $added++;
 }
 
-echo "Готово: тип контента ${params.name}, id=" . $ctype_id . ", полей=" . count($fields) . "\\n";
+echo "Готово: тип контента ${params.name}, id=" . $ctype_id . ", добавлено полей=" . $added . "\\n";
 `;
 }
 
@@ -384,7 +393,7 @@ export function scaffoldContentType(params: ScaffoldContentTypeParams): object {
       registration:
         'Тип создаётся через API ядра modelBackendContent::addContentType()/addContentField() — как в админке и установщиках пакетов.',
       install_php:
-        'Файл кладётся в корень пакета; ядро вызывает install_package() при установке. Повторная установка не дублирует тип.',
+        'Файл кладётся в корень пакета; ядро вызывает install_package() при установке. Повторная установка не дублирует тип и добавляет только отсутствующие поля — так новый набор полей докатывается на существующий тип.',
       cli_script: `Для уже установленного сайта: положите scripts/register_${name}.php в корень сайта и запустите "php scripts/register_${name}.php".`,
       system_fields:
         'Стандартные поля title, date_pub, user, photo, content создаются автоматически; в custom_fields их указывать нельзя.',

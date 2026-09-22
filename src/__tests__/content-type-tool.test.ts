@@ -125,4 +125,21 @@ describe('scaffoldContentType', () => {
     expect(install).toContain("'show_items_counts' => 1");
     expect(install).toContain("'is_cats' => true");
   });
+
+  test('повторный запуск докатывает только отсутствующие поля', () => {
+    const files = filesOf(scaffoldContentType(base));
+
+    for (const path of ['[pkg] install.php', 'scripts/register_catalog.php']) {
+      const code = files[path]!;
+      // Тип берётся, если уже существует, иначе создаётся — без раннего выхода.
+      expect(code).toContain('$ctype    = $model->getContentTypeByName(');
+      expect(code).toContain("$ctype ? $ctype['id'] : $model->addContentType(");
+      expect(code).not.toMatch(
+        /if \(\$model->getContentTypeByName\([^)]*\)\) \{\s*\n\s*return true;/
+      );
+      // Поля добавляются только те, которых ещё нет.
+      expect(code).toContain("array_keys($model->getContentFields('catalog', 0, false))");
+      expect(code).toContain("if (in_array($field['name'], $existing, true)) {");
+    }
+  });
 });
