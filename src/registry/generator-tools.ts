@@ -567,7 +567,7 @@ export function registerGeneratorTools(server: McpServer): void {
   defineTool(
     server,
     'scaffold_content_type',
-    'Генерирует регистрацию типа контента InstantCMS через API ядра (addContentType, addContentField) без raw SQL: поля, категории, SEO и URL-паттерн. Повторный запуск докатывает только отсутствующие поля на существующий тип. / Generates InstantCMS content type registration via the core API (addContentType, addContentField) without raw SQL: fields, categories, SEO and URL pattern. Re-running adds only missing fields to an existing type. / 通过核心 API（addContentType、addContentField）生成 InstantCMS 内容类型注册，不使用原始 SQL：字段、分类、SEO 与 URL 模板。重跑仅向已存在类型补加缺失字段。',
+    'Генерирует регистрацию типа контента через API ядра (addContentType, addContentField) без raw SQL; повторный запуск докатывает только отсутствующие поля. / Generates content type registration via the core API without raw SQL; re-runs add only missing fields. / 通过核心 API 生成内容类型注册，不使用原始 SQL；重跑仅补加缺失字段。',
     {
       name: z
         .string()
@@ -580,7 +580,7 @@ export function registerGeneratorTools(server: McpServer): void {
         .max(255)
         .optional()
         .describe(
-          'Шаблон URL материала. Токены: {id}, {title}, {category} и имя любого поля типа. По умолчанию {id}-{title}'
+          'Шаблон URL материала: {id}, {title}, {category} или имя поля (по умолчанию {id}-{title})'
         ),
       is_cats: z.boolean().optional().describe('Включить категории'),
       is_comments: z.boolean().optional().describe('Включить комментарии'),

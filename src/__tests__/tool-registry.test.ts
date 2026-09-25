@@ -1,4 +1,8 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+
 import { trackRegisteredTools } from '../utils/tool-registry.js';
+import { createServer } from '../server.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 type CapturedHandler = (...args: unknown[]) => Promise<unknown> | unknown;
@@ -110,4 +114,43 @@ describe('trackRegisteredTools', () => {
     expect(getToolsCount()).toBe(2);
     expect(fake.registrations).toHaveLength(2);
   });
+});
+
+describe('createServer: профиль инструментов (disableGroups)', () => {
+  test('disableGroups исключает группу из tools/list, счётчик совпадает', async () => {
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = createServer({ disableGroups: ['templates', 'sources'] });
+    const client = new Client({ name: 'profile-test', version: '1.0.0' });
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    try {
+      const { tools } = await client.listTools();
+      const names = new Set(tools.map(tool => tool.name));
+      expect(names.has('scaffold_complete_template')).toBe(false);
+      expect(names.has('index_upstream_template_sources')).toBe(false);
+      expect(names.has('list_hooks')).toBe(true);
+      expect(tools.length).toBeLessThan(101);
+
+      // get_server_capabilities показывает фактическое число инструментов.
+      const caps = await client.callTool({ name: 'get_server_capabilities', arguments: {} });
+      const payload = caps.structuredContent as { tools_count: number };
+      expect(payload.tools_count).toBe(tools.length);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  }, 30_000);
+
+  test('неизвестная группа игнорируется — набор остаётся полным', async () => {
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = createServer({ disableGroups: ['no-such-group'] });
+    const client = new Client({ name: 'profile-test', version: '1.0.0' });
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    try {
+      const { tools } = await client.listTools();
+      expect(tools).toHaveLength(101);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  }, 30_000);
 });

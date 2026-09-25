@@ -15,11 +15,18 @@ function withStructuredContent(result: unknown): unknown {
   }
 }
 
+/** Опции учёта и регистрации. */
+export interface TrackOptions {
+  /** Предикат отказа: true — инструмент не регистрируется вовсе. */
+  skip?: (name: string) => boolean;
+}
+
 /** Учёт и формат ответов / Registration and result shape / 注册与结果格式。 */
-export function trackRegisteredTools(server: McpServer): () => number {
+export function trackRegisteredTools(server: McpServer, options: TrackOptions = {}): () => number {
   const names = new Set<string>();
   const register = server.tool.bind(server);
   server.tool = ((name: string, ...args: unknown[]) => {
+    if (options.skip?.(name)) return undefined;
     const parameters = [...args];
     const last = parameters.length - 1;
     const handler = parameters[last];

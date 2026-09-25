@@ -103,7 +103,7 @@ describe('бюджет токенов / token budget / 令牌预算', () => {
     });
 
     // Постоянный оверхед сеанса: на каждый запрос модели уходят определения.
-    expect(tokens).toBeLessThanOrEqual(30_000);
+    expect(tokens).toBeLessThanOrEqual(29_000);
   });
 
   test('ответы типовых вызовов укладываются в бюджет', async () => {

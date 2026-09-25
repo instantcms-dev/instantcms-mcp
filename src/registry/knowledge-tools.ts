@@ -246,13 +246,7 @@ export function registerKnowledgeTools(server: McpServer): void {
   defineToolWithManualResult(
     server,
     'scaffold_layout_scheme',
-    `Генерирует YAML-схему расположения виджетов для импорта в шаблон modern InstantCMS.
-Схема описывает ряды (rows) и колонки (cols) Bootstrap 4 сетки с позициями для виджетов.
-Результат импортируется через: Панель управления → Оформление → Шаблоны → Modern → Схема → Импорт.
-Можно задать произвольную схему через параметр rows, или использовать готовый пресет через preset. / Generates a YAML widget layout scheme for import into the InstantCMS modern template.
-The scheme describes rows and columns of the Bootstrap 4 grid with widget positions.
-The result is imported via: Control Panel → Design → Templates → Modern → Scheme → Import.
-You can define a custom scheme via the rows parameter, or use a ready-made preset via preset.`,
+    `Генерирует YAML-схему расположения виджетов для импорта в шаблон modern (Панель управления → Оформление → Шаблоны → Modern → Схема → Импорт). Задайте rows или выберите preset — готовые пресеты со списком рядов отдаёт list_layout_presets. / Generates a YAML widget layout scheme for the modern template (import via Control Panel → Design → Templates → Modern → Scheme → Import). Provide rows or pick a preset; list_layout_presets returns ready presets with their rows.`,
     {
       template: z
         .string()
@@ -260,11 +254,10 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
         .default('modern')
         .describe('Имя шаблона. По умолчанию: modern'),
 
-      preset: z.enum(['simple', 'with_sidebar_left', 'modern_full']).optional()
-        .describe(`Готовый пресет схемы. Используйте вместо rows для быстрого старта:
-  simple          — шапка + контент/сайдбар + подвал
-  with_sidebar_left — три колонки: лево/контент/право + двухколоночный футер
-  modern_full     — полная схема modern (топ-бар, лого, навбар, баннер, три колонки, префутер, футер)`),
+      preset: z
+        .enum(['simple', 'with_sidebar_left', 'modern_full'])
+        .optional()
+        .describe('Готовый пресет вместо rows (детали — list_layout_presets)'),
 
       rows: z
         .array(
@@ -284,7 +277,7 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
               .string()
               .optional()
               .default('after')
-              .describe("Позиция вложения: 'after' (после виджетов, по умолчанию)"),
+              .describe("Позиция вложения ряда: 'after' (после виджетов родителя, по умолчанию)"),
             class: z
               .string()
               .nullish()
@@ -303,12 +296,7 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
                 "Класс контейнера Bootstrap 4: 'container', 'container-fluid', '' (без контейнера). По умолчанию: 'container'"
               ),
             container_tag: z.string().optional().describe('HTML тег контейнера. По умолчанию: div'),
-            container_class: z
-              .string()
-              .optional()
-              .describe(
-                "CSS классы контейнера. Примеры: 'd-flex justify-content-between align-items-center flex-nowrap'"
-              ),
+            container_class: z.string().optional().describe('CSS классы контейнера'),
             no_gutters: z.boolean().optional().describe('Добавить Bootstrap no-gutters к ряду'),
             cols: z
               .array(
@@ -318,7 +306,7 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
                     .string()
                     .optional()
                     .describe(
-                      'Имя позиции для привязки виджетов. Авто-генерируется как pos_N если не задано. Используйте con_* для полноширинных позиций'
+                      'Имя позиции для виджетов; по умолчанию pos_N, префикс con_* — полноширинные'
                     ),
                   tag: z
                     .string()
@@ -338,9 +326,7 @@ You can define a custom scheme via the rows parameter, or use a ready-made prese
                   wrapper: z
                     .string()
                     .optional()
-                    .describe(
-                      "Для type=custom: HTML-обёртка с плейсхолдером {position}. Примеры: '{position}' или '<div class=\"my-wrap\">{position}</div>'"
-                    ),
+                    .describe('Для type=custom: HTML-обёртка с плейсхолдером {position}'),
                   col: z
                     .string()
                     .optional()
