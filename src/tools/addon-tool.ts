@@ -76,7 +76,11 @@ export function getAddonStructure(addonType: string = 'basic'): object {
   };
 }
 
-export function getComponentApi(componentName: string, pageOptions: PageOptions = {}): object {
+export function getComponentApi(
+  componentName: string,
+  pageOptions: PageOptions = {},
+  brief = false
+): object {
   const lower = componentName.toLowerCase();
   const exact = loadComponents().components.filter(
     c => c.name.toLowerCase() === lower || c.class.toLowerCase() === lower
@@ -120,7 +124,16 @@ export function getComponentApi(componentName: string, pageOptions: PageOptions 
     description: component.description,
     access: component.access,
     source: component.source,
-    methods: page.items,
+    // brief — обзорный режим: полный метод стоит ~340 токенов, а для вопроса
+    // «какой API у класса» достаточно сигнатур (детали — полная страница).
+    methods: brief
+      ? page.items.map(m => ({
+          name: m.name,
+          signature: m.signature,
+          return_type: m.return_type,
+          ...(m.deprecated ? { deprecated: true } : {}),
+        }))
+      : page.items,
     // Полный список методов доступен постранично: cmsTemplate отдаёт ~180 KiB
     // одним ответом, что для типового запроса «какой API у класса» лишнее.
     methods_page: page.page,

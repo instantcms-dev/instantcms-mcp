@@ -1,7 +1,12 @@
 import { hooks, hookCategories, type Hook } from '../data/hooks.js';
 import { paginate, type PageOptions } from '../utils/pagination.js';
 
-export function listHooks(category?: string, type?: string, pageOptions: PageOptions = {}): object {
+export function listHooks(
+  category?: string,
+  type?: string,
+  pageOptions: PageOptions = {},
+  brief = false
+): object {
   let filtered = hooks;
 
   if (category) {
@@ -16,15 +21,21 @@ export function listHooks(category?: string, type?: string, pageOptions: PageOpt
     total: filtered.length,
     categories: hookCategories,
     page: page.page,
-    hooks: page.items.map(h => ({
-      name: h.name,
-      type: h.type,
-      category: h.category,
-      description: h.description,
-      parameters_count: h.parameters.length,
-      return_type: h.return_type,
-      source: h.source,
-    })),
+    // brief — обзорный режим: полные описания съедают ~280 токенов на хук,
+    // а для навигации достаточно имени, типа и категории (детали — get_hook_details).
+    hooks: page.items.map(h =>
+      brief
+        ? { name: h.name, type: h.type, category: h.category }
+        : {
+            name: h.name,
+            type: h.type,
+            category: h.category,
+            description: h.description,
+            parameters_count: h.parameters.length,
+            return_type: h.return_type,
+            source: h.source,
+          }
+    ),
   };
 }
 

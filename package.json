@@ -24,6 +24,7 @@
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "test": "jest",
+    "test:tokens": "jest src/__tests__/token-budget.test.ts",
     "test:integration": "jest src/__tests__/mcp-integration.test.ts --runInBand",
     "test:package": "node scripts/e2e-package.mjs",
     "test:coverage": "jest --coverage",

@@ -54,6 +54,19 @@ describe('hooks-tool knowledge lookups', () => {
       expect(names.size).toBe(10);
     });
 
+    test('brief отдаёт только имя, тип и категорию — для дешёвого обзора', () => {
+      const brief = listHooks(undefined, undefined, {}, true) as {
+        hooks: Array<Record<string, unknown>>;
+      };
+      expect(brief.hooks.length).toBeGreaterThan(0);
+      for (const hook of brief.hooks) {
+        expect(Object.keys(hook).sort()).toEqual(['category', 'name', 'type']);
+      }
+
+      const full = listHooks() as { hooks: Array<Record<string, unknown>> };
+      expect(Object.keys(full.hooks[0]!).length).toBeGreaterThan(3);
+    });
+
     test('несуществующая категория → пустой результат', () => {
       const result = listHooks('this-category-does-not-exist') as {
         hooks: Array<unknown>;

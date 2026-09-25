@@ -29,6 +29,27 @@ describe('getComponentApi', () => {
     }
   });
 
+  test('brief отдаёт только name/signature/return_type — для дешёвого обзора', () => {
+    const brief = getComponentApi('cmsTemplate', {}, true) as {
+      code?: string;
+      methods?: Array<Record<string, unknown>>;
+    };
+    if (brief.code) return; // компонент недоступен в этом снапшоте
+
+    expect(brief.methods!.length).toBeGreaterThan(0);
+    const allowed = ['deprecated', 'name', 'return_type', 'signature'];
+    for (const method of brief.methods!) {
+      const keys = Object.keys(method).sort();
+      // deprecated — единственный необязательный ключ, попадает только когда true.
+      expect(keys.every(key => allowed.includes(key))).toBe(true);
+      expect(typeof method['name']).toBe('string');
+      expect(typeof method['signature']).toBe('string');
+    }
+
+    const full = getComponentApi('cmsTemplate') as { methods?: Array<Record<string, unknown>> };
+    expect(Object.keys(full.methods![0]!).length).toBeGreaterThan(3);
+  });
+
   test('case-insensitive: "CMSMODEL" вернёт компонент без AMBIGUOUS', () => {
     const lower = getComponentApi('cmsmodel') as { code?: string; name?: string };
     const upper = getComponentApi('CMSMODEL') as { code?: string; name?: string };

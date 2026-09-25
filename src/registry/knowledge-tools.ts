@@ -47,9 +47,18 @@ export function registerKnowledgeTools(server: McpServer): void {
         .describe('Тип хука: filter (изменяет данные) или action (реагирует на событие)'),
       limit: z.number().int().min(1).max(200).optional(),
       cursor: z.string().optional(),
+      brief: z
+        .boolean()
+        .optional()
+        .describe(
+          'Компактный обзор: только имя, тип и категория, без описаний (детали — get_hook_details). / Compact overview: name, type, and category only, no descriptions (use get_hook_details for details).'
+        ),
     },
-    async ({ category, type, limit, cursor }: any) => {
-      const result = listHooks(category, type, { limit, cursor }) as Record<string, unknown>;
+    async ({ category, type, limit, cursor, brief }: any) => {
+      const result = listHooks(category, type, { limit, cursor }, brief === true) as Record<
+        string,
+        unknown
+      >;
       return result;
     }
   );
@@ -101,12 +110,22 @@ export function registerKnowledgeTools(server: McpServer): void {
         .number()
         .optional()
         .describe('Сколько методов вернуть за раз (по умолчанию 50, максимум 200)'),
+      brief: z
+        .boolean()
+        .optional()
+        .describe(
+          'Компактный обзор: только name/signature/return_type, без описаний и примеров. / Compact overview: name/signature/return_type only, no descriptions or examples.'
+        ),
     },
-    async ({ component_name, cursor, limit }) => {
-      return getComponentApi(component_name as string, {
-        cursor: cursor as string | undefined,
-        limit: limit as number | undefined,
-      }) as Record<string, unknown>;
+    async ({ component_name, cursor, limit, brief }) => {
+      return getComponentApi(
+        component_name as string,
+        {
+          cursor: cursor as string | undefined,
+          limit: limit as number | undefined,
+        },
+        brief === true
+      ) as Record<string, unknown>;
     }
   );
 
